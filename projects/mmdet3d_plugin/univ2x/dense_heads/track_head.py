@@ -9,7 +9,10 @@ from mmdet.core import (multi_apply, multi_apply, reduce_mean)
 from mmdet.models.utils.transformer import inverse_sigmoid
 from mmdet.models import HEADS
 from mmdet.models.dense_heads import DETRHead
-from mmdet3d.core.bbox.coders import build_bbox_coder
+try:
+    from mmdet3d.core.bbox.coders import build_bbox_coder
+except ImportError:
+    from mmdet3d.models.task_modules.coders import build_bbox_coder
 from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
 from mmcv.runner import force_fp32, auto_fp16
 
@@ -149,6 +152,44 @@ class BEVFormerTrackHead(DETRHead):
             bev_pos=bev_pos,
             prev_bev=prev_bev,
             img_metas=img_metas,
+        )
+        return bev_embed, bev_pos
+
+    def get_bev_features_trt(self, mlvl_feats, can_bus, lidar2img,
+                              image_shape, prev_bev, use_prev_bev):
+        """TRT-compatible BEV feature extraction (tensor-only inputs).
+
+        Args:
+            mlvl_feats (list[Tensor]): multi-scale image features
+            can_bus (Tensor): (18,) can-bus signals
+            lidar2img (Tensor): (bs, num_cam, 4, 4)
+            image_shape (Tensor): (2,) [img_h, img_w]
+            prev_bev (Tensor): (num_query, bs, embed_dims)
+            use_prev_bev (Tensor): scalar float 0.0 or 1.0
+        """
+        dtype = mlvl_feats[0].dtype
+        bev_queries = self.bev_embedding.weight.to(dtype)
+
+        bev_mask = torch.zeros((1, self.bev_h, self.bev_w),
+                               device=bev_queries.device).to(dtype)
+        bev_pos = self.positional_encoding(bev_mask).to(dtype)
+
+        grid_length = torch.tensor(
+            [self.real_h / self.bev_h, self.real_w / self.bev_w],
+            device=bev_queries.device)
+
+        bev_embed = self.transformer.get_bev_features_trt(
+            mlvl_feats,
+            bev_queries,
+            self.bev_h,
+            self.bev_w,
+            can_bus,
+            lidar2img,
+            grid_length=grid_length,
+            bev_pos=bev_pos,
+            prev_bev=prev_bev,
+            image_shape=image_shape,
+            use_prev_bev=use_prev_bev,
         )
         return bev_embed, bev_pos
 
@@ -523,3 +564,92 @@ class BEVFormerTrackHead(DETRHead):
             ret_list.append([bboxes, scores, labels, bbox_index, mask])
 
         return ret_list
+
+
+# ---------------------------------------------------------------------------
+# TRT-compatible variant
+# ---------------------------------------------------------------------------
+
+@HEADS.register_module()
+class BEVFormerTrackHeadTRT(BEVFormerTrackHead):
+    """TRT-compatible TrackHead.
+
+    Adds ``get_detections_trt()`` for tensor-only ONNX export of the detection
+    decoder (Stage C in the three-stage TRT inference pipeline).
+    All training methods are inherited unchanged from ``BEVFormerTrackHead``.
+    """
+
+    def get_detections_trt(self, bev_embed, query, ref_pts):
+        """Tensor-only detection decoder forward for ONNX/TRT export.
+
+        Args:
+            bev_embed (Tensor): (bev_h*bev_w, bs, embed_dims) — BEV features
+                                from the Stage-B TRT engine.
+            query     (Tensor): (num_query, embed_dims*2) — per-query
+                                position+content embedding (pos | feat).
+            ref_pts   (Tensor): (num_query, 3) — reference points in
+                                inverse-sigmoid space from the previous frame.
+
+        Returns:
+            all_cls_scores (Tensor): (num_dec_layers, bs, num_query, num_classes)
+            all_bbox_preds (Tensor): (num_dec_layers, bs, num_query, code_size)
+            all_past_trajs (Tensor): (num_dec_layers, bs, num_query,
+                                     past_steps+fut_steps, 2)
+            last_ref_pts   (Tensor): (bs, num_query, 3) — updated ref points
+                                     (inv-sigmoid) to feed next frame.
+            query_feats    (Tensor): (num_dec_layers, bs, num_query, embed_dims)
+        """
+        hs, _, inter_references = self.transformer.get_states_and_refs(
+            bev_embed,
+            query,
+            self.bev_h,
+            self.bev_w,
+            reference_points=ref_pts,
+            reg_branches=self.reg_branches if self.with_box_refine else None,
+            cls_branches=self.cls_branches if self.as_two_stage else None,
+            img_metas=None,
+        )
+        hs = hs.permute(0, 2, 1, 3)   # (num_dec, bs, num_query, C)
+
+        outputs_classes = []
+        outputs_coords = []
+        outputs_trajs = []
+        last_ref_pts = None
+
+        for lvl in range(hs.shape[0]):
+            if lvl == 0:
+                reference = ref_pts.sigmoid()
+            else:
+                reference = inter_references[lvl - 1]
+            reference = inverse_sigmoid(reference)
+
+            outputs_class = self.cls_branches[lvl](hs[lvl])
+            tmp = self.reg_branches[lvl](hs[lvl])
+            outputs_past_traj = self.past_traj_reg_branches[lvl](hs[lvl]).view(
+                tmp.shape[0], -1, self.past_steps + self.fut_steps, 2)
+
+            assert reference.shape[-1] == 3
+            tmp[..., 0:2] += reference[..., 0:2]
+            tmp[..., 0:2] = tmp[..., 0:2].sigmoid()
+            tmp[..., 4:5] += reference[..., 2:3]
+            tmp[..., 4:5] = tmp[..., 4:5].sigmoid()
+
+            last_ref_pts = torch.cat([tmp[..., 0:2], tmp[..., 4:5]], dim=-1)
+
+            tmp[..., 0:1] = (tmp[..., 0:1] * (self.pc_range[3] - self.pc_range[0])
+                             + self.pc_range[0])
+            tmp[..., 1:2] = (tmp[..., 1:2] * (self.pc_range[4] - self.pc_range[1])
+                             + self.pc_range[1])
+            tmp[..., 4:5] = (tmp[..., 4:5] * (self.pc_range[5] - self.pc_range[2])
+                             + self.pc_range[2])
+
+            outputs_classes.append(outputs_class)
+            outputs_coords.append(tmp)
+            outputs_trajs.append(outputs_past_traj)
+
+        outputs_classes = torch.stack(outputs_classes)
+        outputs_coords = torch.stack(outputs_coords)
+        outputs_trajs = torch.stack(outputs_trajs)
+        last_ref_pts = inverse_sigmoid(last_ref_pts)
+
+        return outputs_classes, outputs_coords, outputs_trajs, last_ref_pts, hs

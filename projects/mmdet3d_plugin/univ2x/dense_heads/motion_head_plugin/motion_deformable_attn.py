@@ -630,3 +630,226 @@ class CustomModeMultiheadAttention(BaseModule):
         out = identity + self.dropout_layer(self.proj_drop(out))
 
         return out.view(bs, n_agent, n_query, D)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRT variants — adapted from uniad-trt/patch/uniad-onnx-export.patch
+# ─────────────────────────────────────────────────────────────────────────────
+
+@TRANSFORMER_LAYER.register_module()
+class MotionTransformerAttentionLayerTRT(MotionTransformerAttentionLayer):
+    """Transformer layer that routes attentions through forward_trt."""
+
+    def forward_trt(self, query, key=None, value=None, query_pos=None,
+                    key_pos=None, attn_masks=None, query_key_padding_mask=None,
+                    key_padding_mask=None, **kwargs):
+        norm_index = attn_index = ffn_index = 0
+        identity = query
+        if attn_masks is None:
+            attn_masks = [None] * self.num_attn
+        elif isinstance(attn_masks, torch.Tensor):
+            attn_masks = [copy.deepcopy(attn_masks) for _ in range(self.num_attn)]
+
+        for layer in self.operation_order:
+            if layer == 'self_attn':
+                query = self.attentions[attn_index].forward_trt(
+                    query, query, query,
+                    identity if self.pre_norm else None,
+                    query_pos=query_pos, key_pos=query_pos,
+                    attn_mask=attn_masks[attn_index],
+                    key_padding_mask=query_key_padding_mask, **kwargs)
+                attn_index += 1; identity = query
+            elif layer == 'norm':
+                query = self.norms[norm_index](query); norm_index += 1
+            elif layer == 'cross_attn':
+                query = self.attentions[attn_index].forward_trt(
+                    query, key, value,
+                    identity if self.pre_norm else None,
+                    query_pos=query_pos, key_pos=key_pos,
+                    attn_mask=attn_masks[attn_index],
+                    key_padding_mask=key_padding_mask, **kwargs)
+                attn_index += 1; identity = query
+            elif layer == 'ffn':
+                query = self.ffns[ffn_index](query, identity if self.pre_norm else None)
+                ffn_index += 1
+        return query
+
+
+@TRANSFORMER_LAYER.register_module()
+class MotionTransformerAttentionLayerTRTP(MotionTransformerAttentionLayerTRT):
+    """Same as TRT but propagates gravity_center/yaw/track_boxes kwargs."""
+
+    def forward_trt(self, query, key=None, value=None, query_pos=None,
+                    key_pos=None, attn_masks=None, query_key_padding_mask=None,
+                    key_padding_mask=None,
+                    track_boxes_1=None, track_boxes_2=None,
+                    gravity_center=None, yaw=None, reference_trajs=None,
+                    **kwargs):
+        extra = dict(track_boxes_1=track_boxes_1, track_boxes_2=track_boxes_2,
+                     gravity_center=gravity_center, yaw=yaw,
+                     reference_trajs=reference_trajs)
+        norm_index = attn_index = ffn_index = 0
+        identity = query
+        if attn_masks is None:
+            attn_masks = [None] * self.num_attn
+        elif isinstance(attn_masks, torch.Tensor):
+            attn_masks = [copy.deepcopy(attn_masks) for _ in range(self.num_attn)]
+
+        for layer in self.operation_order:
+            if layer == 'self_attn':
+                query = self.attentions[attn_index].forward_trt(
+                    query, query, query,
+                    identity if self.pre_norm else None,
+                    query_pos=query_pos, key_pos=query_pos,
+                    attn_mask=attn_masks[attn_index],
+                    key_padding_mask=query_key_padding_mask, **extra, **kwargs)
+                attn_index += 1; identity = query
+            elif layer == 'norm':
+                query = self.norms[norm_index](query); norm_index += 1
+            elif layer == 'cross_attn':
+                query = self.attentions[attn_index].forward_trt(
+                    query, key, value,
+                    identity if self.pre_norm else None,
+                    query_pos=query_pos, key_pos=key_pos,
+                    attn_mask=attn_masks[attn_index],
+                    key_padding_mask=key_padding_mask, **extra, **kwargs)
+                attn_index += 1; identity = query
+            elif layer == 'ffn':
+                query = self.ffns[ffn_index](query, identity if self.pre_norm else None)
+                ffn_index += 1
+        return query
+
+
+@ATTENTION.register_module()
+class MotionDeformableAttentionTRT(MotionDeformableAttention):
+    """MotionDeformableAttention with tensor gravity_center instead of bbox_results."""
+
+    def agent_coords_to_ego_coords_trt(self, reference_trajs, gravity_center):
+        """gravity_center: (num_agents, 3) tensor."""
+        det_centers = gravity_center[:, None, None, None, :2]  # (A, 1, 1, 1, 2)
+        ref = reference_trajs[0]  # (A, ns, nl, np, 2)
+        return torch.stack([ref + det_centers])
+
+    def forward_trt(self, query, key=None, value=None, identity=None,
+                    query_pos=None, key_padding_mask=None,
+                    spatial_shapes=None, level_start_index=None,
+                    gravity_center=None, reference_trajs=None,
+                    flag='decoder', **kwargs):
+        bs, num_agent, num_mode, _ = query.shape
+        num_query = num_agent * num_mode
+        if value is None: value = query
+        if identity is None: identity = query
+        if query_pos is not None: query = query + query_pos
+        query = torch.flatten(query, start_dim=1, end_dim=2)
+
+        value = value.permute(1, 0, 2)
+        bs, num_value, _ = value.shape
+        value = self.value_proj(value)
+        if key_padding_mask is not None:
+            value = value.masked_fill(key_padding_mask[..., None], 0.0)
+        value = value.view(bs, num_value, self.num_heads, -1)
+
+        sampling_offsets = self.sampling_offsets(query).view(
+            bs, num_query, self.num_heads, self.num_steps, self.num_levels, self.num_points, 2)
+        attention_weights = self.attention_weights(query).view(
+            bs, num_query, self.num_heads, self.num_steps, self.num_levels * self.num_points)
+        attention_weights = attention_weights.softmax(-1).view(
+            bs, num_query, self.num_heads, self.num_steps, self.num_levels, self.num_points)
+
+        reference_trajs = reference_trajs[:, :, :, [self.sample_index], :, :]
+        reference_trajs_ego = self.agent_coords_to_ego_coords_trt(
+            reference_trajs.clone(), gravity_center).detach()
+        reference_trajs_ego = torch.flatten(reference_trajs_ego, start_dim=1, end_dim=2)
+        reference_trajs_ego = reference_trajs_ego[:, :, None, :, :, None, :]
+        reference_trajs_ego = reference_trajs_ego - reference_trajs_ego.new_tensor(
+            [self.bev_range[0], self.bev_range[1]])
+        reference_trajs_ego = reference_trajs_ego / reference_trajs_ego.new_tensor(
+            [self.bev_range[3] - self.bev_range[0], self.bev_range[4] - self.bev_range[1]])
+
+        offset_normalizer = torch.stack([spatial_shapes[..., 1], spatial_shapes[..., 0]], -1)
+        sampling_locations = (reference_trajs_ego
+                              + sampling_offsets / offset_normalizer[None, None, None, None, :, None, :])
+        sampling_locations = rearrange(sampling_locations, 'bs nq nh ns nl np c -> bs nq ns nh nl np c')
+        attention_weights = rearrange(attention_weights, 'bs nq nh ns nl np -> bs nq ns nh nl np')
+        sampling_locations = sampling_locations.reshape(
+            bs, num_query * self.num_steps, self.num_heads, self.num_levels, self.num_points, 2)
+        attention_weights = attention_weights.reshape(
+            bs, num_query * self.num_steps, self.num_heads, self.num_levels, self.num_points)
+
+        output = MultiScaleDeformableAttnFunction_fp32.apply(
+            value, spatial_shapes, level_start_index,
+            sampling_locations, attention_weights, self.im2col_step)
+        output = output.view(bs, num_query, self.num_steps, -1)
+        output = torch.flatten(output, start_dim=2, end_dim=3)
+        output = self.output_proj(output)
+        output = output.view(bs, num_agent, num_mode, -1)
+        return self.dropout(output) + identity
+
+
+@ATTENTION.register_module()
+class MotionDeformableAttentionTRTP(MotionDeformableAttentionTRT):
+    """TRT-Plugin variant: uses MSDAPlugin instead of CUDA kernel during ONNX export."""
+
+    def forward_trt(self, query, key=None, value=None, identity=None,
+                    query_pos=None, key_padding_mask=None,
+                    spatial_shapes=None, level_start_index=None,
+                    gravity_center=None, reference_trajs=None,
+                    flag='decoder', **kwargs):
+        bs, num_agent, num_mode, _ = query.shape
+        num_query = num_agent * num_mode
+        if value is None: value = query
+        if identity is None: identity = query
+        if query_pos is not None: query = query + query_pos
+        query = torch.flatten(query, start_dim=1, end_dim=2)
+
+        value = value.permute(1, 0, 2)
+        bs, num_value, _ = value.shape
+        value = self.value_proj(value)
+        if key_padding_mask is not None:
+            value = value.masked_fill(key_padding_mask[..., None], 0.0)
+        value = value.view(bs, num_value, self.num_heads, -1)
+
+        sampling_offsets = self.sampling_offsets(query).view(
+            bs, num_query, self.num_heads, self.num_steps, self.num_levels, self.num_points, 2)
+        attention_weights = self.attention_weights(query).view(
+            bs, num_query, self.num_heads, self.num_steps, self.num_levels * self.num_points)
+        attention_weights = attention_weights.softmax(-1).view(
+            bs, num_query, self.num_heads, self.num_steps, self.num_levels, self.num_points)
+
+        reference_trajs = reference_trajs[:, :, :, [self.sample_index], :, :]
+        reference_trajs_ego = self.agent_coords_to_ego_coords_trt(
+            reference_trajs.clone(), gravity_center).detach()
+        reference_trajs_ego = torch.flatten(reference_trajs_ego, start_dim=1, end_dim=2)
+        reference_trajs_ego = reference_trajs_ego[:, :, None, :, :, None, :]
+        reference_trajs_ego = reference_trajs_ego - reference_trajs_ego.new_tensor(
+            [self.bev_range[0], self.bev_range[1]])
+        reference_trajs_ego = reference_trajs_ego / reference_trajs_ego.new_tensor(
+            [self.bev_range[3] - self.bev_range[0], self.bev_range[4] - self.bev_range[1]])
+
+        offset_normalizer = torch.stack([spatial_shapes[..., 1], spatial_shapes[..., 0]], -1)
+        sampling_locations = (reference_trajs_ego
+                              + sampling_offsets / offset_normalizer[None, None, None, None, :, None, :])
+        sampling_locations = rearrange(sampling_locations, 'bs nq nh ns nl np c -> bs nq ns nh nl np c')
+        attention_weights = rearrange(attention_weights, 'bs nq nh ns nl np -> bs nq ns nh nl np')
+        sampling_locations = sampling_locations.reshape(
+            bs, num_query * self.num_steps, self.num_heads, self.num_levels, self.num_points, 2)
+        attention_weights = attention_weights.reshape(
+            bs, num_query * self.num_steps, self.num_heads, self.num_levels, self.num_points)
+
+        if torch.onnx.is_in_onnx_export():
+            from projects.mmdet3d_plugin.univ2x.functions import MSDAPlugin
+            N, _, M, D = value.shape
+            output = MSDAPlugin(
+                value, spatial_shapes, level_start_index,
+                sampling_locations, attention_weights, self.im2col_step,
+            ).view(bs, num_query * self.num_steps, M * D)
+        else:
+            output = MultiScaleDeformableAttnFunction_fp32.apply(
+                value, spatial_shapes, level_start_index,
+                sampling_locations, attention_weights, self.im2col_step)
+            output = output.view(bs, num_query * self.num_steps, -1)
+
+        output = output.view(bs, num_query, self.num_steps, -1)
+        output = torch.flatten(output, start_dim=2, end_dim=3)
+        output = self.output_proj(output)
+        output = output.view(bs, num_agent, num_mode, -1)
+        return self.dropout(output) + identity

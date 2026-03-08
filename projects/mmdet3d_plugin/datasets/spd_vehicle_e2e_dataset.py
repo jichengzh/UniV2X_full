@@ -197,15 +197,21 @@ class SPDE2EDataset(NuScenesDataset):
             list[dict]: List of annotations sorted by timestamps.
         """
         if self.file_client_args['backend'] == 'disk':
-            # data_infos = mmcv.load(ann_file)
-            data = pickle.loads(self.file_client.get(ann_file))
+            # mmdet3d 1.0.0rc6 passes a BufferedReader; older versions pass a str path
+            if hasattr(ann_file, 'read'):
+                data = pickle.load(ann_file)
+            else:
+                data = pickle.loads(self.file_client.get(ann_file))
             data_infos = list(
                 sorted(data['infos'], key=lambda e: e['timestamp']))
             data_infos = data_infos[::self.load_interval]
             self.metadata = data['metadata']
             self.version = self.metadata['version']
         elif self.file_client_args['backend'] == 'petrel':
-            data = pickle.loads(self.file_client.get(ann_file))
+            if hasattr(ann_file, 'read'):
+                data = pickle.load(ann_file)
+            else:
+                data = pickle.loads(self.file_client.get(ann_file))
             data_infos = list(
                 sorted(data['infos'], key=lambda e: e['timestamp']))
             data_infos = data_infos[::self.load_interval]

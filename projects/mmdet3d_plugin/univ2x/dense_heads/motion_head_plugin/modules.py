@@ -278,3 +278,122 @@ class IntentionInteraction(BaseModule):
         rebatch_x = self.interaction_transformer(rebatch_x)
         out = rebatch_x.view(B, A, P, D)
         return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRT variants
+# ─────────────────────────────────────────────────────────────────────────────
+
+from einops import rearrange  # needed by trajectory_coordinate_transform_trt
+
+
+def _rot_2d_trt(yaw):
+    sy, cy = torch.sin(yaw), torch.cos(yaw)
+    return torch.stack([torch.stack([cy, -sy]), torch.stack([sy, cy])]).permute(2, 0, 1)
+
+
+@TRANSFORMER_LAYER_SEQUENCE.register_module()
+class MotionTransformerDecoderTRT(MotionTransformerDecoder):
+    """Decoder that routes through forward_trt and accepts flat tensor args."""
+
+    def trajectory_coordinate_transform_trt(self, trajectory, yaw, gravity_center,
+                                            with_translation_transform=True,
+                                            with_rotation_transform=True):
+        """tensor-only coordinate transform; no Python bbox_results list."""
+        transformed = trajectory[0]  # (A, G, P, T, 2) where batch=1
+        yaw = yaw.to(trajectory.device)
+        bbox_centers = gravity_center.to(trajectory.device)
+        if with_rotation_transform:
+            angle = -(yaw.squeeze(-1) - 3.1415953)  # (A,) — _rot_2d_trt expects 1-D
+            rot = _rot_2d_trt(angle)[:, None, None, :, :]  # (A, 1, 1, 2, 2)
+            t = rearrange(transformed, 'a g p t c -> a g p c t')
+            transformed = torch.matmul(rot, t)
+            transformed = rearrange(transformed, 'a g p c t -> a g p t c')
+        if with_translation_transform:
+            transformed = bbox_centers[:, None, None, None, :2] + transformed
+        return torch.stack([transformed])
+
+    def forward_trt(self, track_query, lane_query,
+                    track_query_pos=None, lane_query_pos=None,
+                    track_boxes_1=None, track_boxes_2=None,
+                    gravity_center=None, yaw=None,
+                    bev_embed=None, reference_trajs=None,
+                    traj_reg_branches=None,
+                    agent_level_embedding=None,
+                    scene_level_ego_embedding=None,
+                    scene_level_offset_embedding=None,
+                    learnable_embed=None,
+                    agent_level_embedding_layer=None,
+                    scene_level_ego_embedding_layer=None,
+                    scene_level_offset_embedding_layer=None,
+                    **kwargs):
+        from einops import rearrange as _rearrange
+        intermediate = []
+        intermediate_reference_trajs = []
+
+        _, _, P, _ = agent_level_embedding.shape
+        track_query_bc = track_query[:, :, None, ...].expand(-1, -1, P, -1)
+        track_query_pos_bc = track_query_pos[:, :, None, ...].expand(-1, -1, P, -1)
+
+        agent_level_embedding = self.intention_interaction_layers(agent_level_embedding)
+        static_intention_embed = agent_level_embedding + scene_level_offset_embedding + learnable_embed
+        reference_trajs_input = reference_trajs[:, :, :, :, None, ...].detach()
+        query_embed = torch.zeros_like(static_intention_embed)
+
+        for lid in range(self.num_layers):
+            dynamic_query_embed = self.dynamic_embed_fuser(torch.cat(
+                [agent_level_embedding, scene_level_offset_embedding, scene_level_ego_embedding], dim=-1))
+            query_embed_intention = self.static_dynamic_fuser(torch.cat(
+                [static_intention_embed, dynamic_query_embed], dim=-1))
+            query_embed = self.in_query_fuser(torch.cat([query_embed, query_embed_intention], dim=-1))
+
+            track_query_embed = self.track_agent_interaction_layers[lid](
+                query_embed, track_query, query_pos=track_query_pos_bc, key_pos=track_query_pos)
+            map_query_embed = self.map_interaction_layers[lid](
+                query_embed, lane_query, query_pos=track_query_pos_bc, key_pos=lane_query_pos)
+            bev_query_embed = self.bev_interaction_layers[lid].forward_trt(
+                query_embed, value=bev_embed, query_pos=track_query_pos_bc,
+                track_boxes_1=track_boxes_1, track_boxes_2=track_boxes_2,
+                gravity_center=gravity_center, yaw=yaw,
+                reference_trajs=reference_trajs_input, **kwargs)
+
+            query_embed = self.out_query_fuser(torch.cat(
+                [track_query_embed, map_query_embed, bev_query_embed,
+                 track_query_bc + track_query_pos_bc], dim=-1))
+
+            if traj_reg_branches is not None:
+                tmp = traj_reg_branches[lid](query_embed)
+                bs, n_agent, n_modes, n_steps, _ = reference_trajs.shape
+                last_dim = tmp.numel() // (bs * n_agent * n_modes * n_steps)
+                tmp = tmp.view(bs, n_agent, n_modes, n_steps, last_dim)
+                tmp[..., :2] = torch.cumsum(tmp[..., :2], dim=3)
+                reference_trajs = tmp[..., :2].detach()
+                reference_trajs_input = reference_trajs[:, :, :, :, None, ...]
+
+                ep_offset_embed = reference_trajs.detach()
+                ep_ego_embed = self.trajectory_coordinate_transform_trt(
+                    reference_trajs[:, :, None, ...], yaw, gravity_center,
+                    with_translation_transform=True, with_rotation_transform=False,
+                )[:, :, 0, ...].detach()
+                ep_agent_embed = self.trajectory_coordinate_transform_trt(
+                    reference_trajs[:, :, None, ...], yaw, gravity_center,
+                    with_translation_transform=False, with_rotation_transform=True,
+                )[:, :, 0, ...].detach()
+
+                agent_level_embedding = agent_level_embedding_layer(
+                    pos2posemb2d(norm_points(ep_agent_embed[..., -1, :], self.pc_range)))
+                scene_level_ego_embedding = scene_level_ego_embedding_layer(
+                    pos2posemb2d(norm_points(ep_ego_embed[..., -1, :], self.pc_range)))
+                scene_level_offset_embedding = scene_level_offset_embedding_layer(
+                    pos2posemb2d(norm_points(ep_offset_embed[..., -1, :], self.pc_range)))
+
+                intermediate.append(query_embed)
+                intermediate_reference_trajs.append(reference_trajs)
+
+        return torch.stack(intermediate), torch.stack(intermediate_reference_trajs)
+
+
+@TRANSFORMER_LAYER_SEQUENCE.register_module()
+class MotionTransformerDecoderTRTP(MotionTransformerDecoderTRT):
+    """Registry alias; TRT-Plugin behavior via config sub-layer type."""
+    pass

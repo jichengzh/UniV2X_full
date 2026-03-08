@@ -381,3 +381,64 @@ class PlanningHeadSingleMode(nn.Module):
         loss_ade = self.loss_planning(sdc_traj_all, sdc_planning[0, :, :self.planning_steps, :2], torch.any(sdc_planning_mask[0, :, :self.planning_steps], dim=-1))
         loss_dict.update(dict(loss_ade=loss_ade))
         return loss_dict
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRT variants — adapted from uniad-trt (casadi collision opt. removed)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@HEADS.register_module()
+class PlanningHeadSingleModeTRT(PlanningHeadSingleMode):
+    """PlanningHead without casadi collision optimization for ONNX/TRT export."""
+
+    def forward_trt(self, bev_embed, occ_mask, bev_pos,
+                    sdc_traj_query, sdc_track_query, command):
+        """
+        Args:
+            bev_embed      (H*W, 1, C)
+            occ_mask       occupancy mask (not used inside graph; kept for API compat)
+            bev_pos        (1, C, H, W)  BEV positional embedding
+            sdc_traj_query (num_dec, 1, P, C)
+            sdc_track_query (1, C)
+            command        long scalar (0/1/2)
+        Returns:
+            sdc_traj_all   (1, planning_steps, 2)
+        """
+        sdc_track_query = sdc_track_query.detach()
+        sdc_traj_query = sdc_traj_query[-1]   # (1, P, C)
+        P = sdc_traj_query.shape[1]
+        sdc_track_query = sdc_track_query[:, None].expand(-1, P, -1)
+
+        navi_embed = self.navi_embed.weight[command]
+        # navi_embed may be (C,) for scalar command or (1, C) for 1-D command;
+        # reshape to (1, 1, C) then expand to (1, P, C) for both cases.
+        navi_embed = navi_embed.reshape(1, 1, -1).expand(-1, P, -1)
+        plan_query = torch.cat([sdc_traj_query, sdc_track_query, navi_embed], dim=-1)
+        plan_query = self.mlp_fuser(plan_query).max(1, keepdim=True)[0]  # (1, 1, C)
+        plan_query = rearrange(plan_query, 'b p c -> p b c')
+
+        bev_pos = rearrange(bev_pos, 'b c h w -> (h w) b c')
+        bev_feat = bev_embed + bev_pos
+        bev_feat = rearrange(bev_feat, '(h w) b c -> b c h w', h=self.bev_h, w=self.bev_w)
+        bev_feat = bev_feat + self.bev_adapter(bev_feat)
+        bev_feat = rearrange(bev_feat, 'b c h w -> (h w) b c')
+
+        pos_embed = self.pos_embed.weight
+        plan_query = plan_query + pos_embed[None]
+        plan_query = self.attn_module(plan_query, bev_feat)   # (1, 1, C)
+
+        sdc_traj_all = self.reg_branch(plan_query).view(-1, self.planning_steps, 2)
+        sdc_traj_all[..., :2] = torch.cumsum(sdc_traj_all[..., :2], dim=1)
+        sdc_traj_all[0] = bivariate_gaussian_activation(sdc_traj_all[0])
+        return sdc_traj_all
+
+    def forward_test_trt(self, bev_embed, sdc_traj_query, sdc_track_query,
+                         bev_pos, seg_out, command=None):
+        return self.forward_trt(bev_embed, seg_out, bev_pos,
+                                sdc_traj_query, sdc_track_query, command)
+
+
+@HEADS.register_module()
+class PlanningHeadSingleModeTRTP(PlanningHeadSingleModeTRT):
+    """Registry alias."""
+    pass

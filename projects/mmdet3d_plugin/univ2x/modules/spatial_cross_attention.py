@@ -396,3 +396,175 @@ class MSDeformableAttention3D(BaseModule):
             output = output.permute(1, 0, 2)
 
         return output
+
+
+# ---------------------------------------------------------------------------
+# TRT variants: replace dynamic nonzero() indexing with mask multiplication
+# ---------------------------------------------------------------------------
+
+@ATTENTION.register_module()
+class MSDeformableAttention3DTRT(MSDeformableAttention3D):
+    """TRT-compatible variant of MSDeformableAttention3D.
+
+    Replaces MultiScaleDeformableAttnFunction with MSDAPlugin during ONNX export
+    so the resulting graph contains MSDAPlugin nodes understood by TRT.
+    """
+
+    def forward(self,
+                query,
+                key=None,
+                value=None,
+                identity=None,
+                query_pos=None,
+                key_padding_mask=None,
+                reference_points=None,
+                spatial_shapes=None,
+                level_start_index=None,
+                **kwargs):
+        if value is None:
+            value = query
+        if identity is None:
+            identity = query
+        if query_pos is not None:
+            query = query + query_pos
+
+        if not self.batch_first:
+            query = query.permute(1, 0, 2)
+            value = value.permute(1, 0, 2)
+
+        bs, num_query, _ = query.shape
+        bs, num_value, _ = value.shape
+        assert (spatial_shapes[:, 0] * spatial_shapes[:, 1]).sum() == num_value
+
+        value = self.value_proj(value)
+        if key_padding_mask is not None:
+            value = value.masked_fill(key_padding_mask[..., None], 0.0)
+        value = value.view(bs, num_value, self.num_heads, -1)
+        sampling_offsets = self.sampling_offsets(query).view(
+            bs, num_query, self.num_heads, self.num_levels, self.num_points, 2)
+        attention_weights = self.attention_weights(query).view(
+            bs, num_query, self.num_heads, self.num_levels * self.num_points)
+        attention_weights = attention_weights.softmax(-1).view(
+            bs, num_query, self.num_heads, self.num_levels, self.num_points)
+
+        if reference_points.shape[-1] == 2:
+            offset_normalizer = torch.stack(
+                [spatial_shapes[..., 1], spatial_shapes[..., 0]], -1)
+            bs, num_query, num_Z_anchors, xy = reference_points.shape
+            reference_points = reference_points[:, :, None, None, None, :, :]
+            sampling_offsets = sampling_offsets / \
+                offset_normalizer[None, None, None, :, None, :]
+            bs, num_query, num_heads, num_levels, num_all_points, xy = sampling_offsets.shape
+            sampling_offsets = sampling_offsets.view(
+                bs, num_query, num_heads, num_levels,
+                num_all_points // num_Z_anchors, num_Z_anchors, xy)
+            sampling_locations = reference_points + sampling_offsets
+            bs, num_query, num_heads, num_levels, num_points, num_Z_anchors, xy = \
+                sampling_locations.shape
+            assert num_all_points == num_points * num_Z_anchors
+            sampling_locations = sampling_locations.view(
+                bs, num_query, num_heads, num_levels, num_all_points, xy)
+        elif reference_points.shape[-1] == 4:
+            assert False
+        else:
+            raise ValueError(
+                f'Last dim of reference_points must be 2 or 4, '
+                f'but got {reference_points.shape[-1]}')
+
+        if torch.onnx.is_in_onnx_export():
+            from ..functions import MSDAPlugin
+            # MSDAPlugin output: (N, num_queries, num_heads, head_dim)
+            N, _, M, D = value.shape
+            output = MSDAPlugin(
+                value, spatial_shapes, level_start_index,
+                sampling_locations, attention_weights, self.im2col_step,
+            ).view(N, num_query, M * D)
+        else:
+            output = MultiScaleDeformableAttnFunction_fp32.apply(
+                value, spatial_shapes, level_start_index,
+                sampling_locations, attention_weights, self.im2col_step)
+
+        if not self.batch_first:
+            output = output.permute(1, 0, 2)
+
+        return output
+
+
+@ATTENTION.register_module()
+class SpatialCrossAttentionTRT(SpatialCrossAttention):
+    """TRT-compatible SpatialCrossAttention.
+
+    Replaces nonzero()-based dynamic indexing with mask multiplication so the
+    graph has static shapes and can be compiled by TRT.
+    """
+
+    @force_fp32(apply_to=('query', 'key', 'value', 'query_pos', 'reference_points_cam'))
+    def forward(self,
+                query,
+                key,
+                value,
+                residual=None,
+                query_pos=None,
+                key_padding_mask=None,
+                reference_points=None,
+                spatial_shapes=None,
+                reference_points_cam=None,
+                bev_mask=None,
+                level_start_index=None,
+                flag='encoder',
+                **kwargs):
+        if key is None:
+            key = query
+        if value is None:
+            value = key
+
+        if residual is None:
+            inp_residual = query
+        if query_pos is not None:
+            query = query + query_pos
+
+        bs, num_query, _ = query.size()
+
+        # TRT-compatible: use mask instead of nonzero() indexing
+        # indexes: (num_cams, bs, num_query, 1)  — bool mask broadcast
+        indexes = (bev_mask.sum(-1) > 0).permute(1, 0, 2)[..., None]
+
+        # reference_points_cam: (num_cams, bs, num_query, D, 2)
+        # Expand query to all cameras and zero out invisible ones
+        # queries_rebatch: (bs*num_cams, num_query, embed_dims)
+        num_cams = bev_mask.shape[0]
+        D = reference_points_cam.size(3)
+
+        # (bs, num_cams, num_query, embed_dims)
+        queries_rebatch = query.unsqueeze(1).expand(
+            bs, num_cams, num_query, self.embed_dims)
+        # (bs, num_cams, num_query, D, 2)
+        ref_rebatch = reference_points_cam.permute(1, 0, 2, 3, 4)
+
+        num_cams_key, l, bs_key, embed_dims = key.shape
+        key = key.permute(2, 0, 1, 3).reshape(
+            bs * self.num_cams, l, self.embed_dims)
+        value = value.permute(2, 0, 1, 3).reshape(
+            bs * self.num_cams, l, self.embed_dims)
+
+        queries = self.deformable_attention(
+            query=queries_rebatch.reshape(bs * self.num_cams, num_query, self.embed_dims),
+            key=key,
+            value=value,
+            reference_points=ref_rebatch.reshape(bs * self.num_cams, num_query, D, 2),
+            spatial_shapes=spatial_shapes,
+            level_start_index=level_start_index,
+        ).view(bs, self.num_cams, num_query, self.embed_dims)
+
+        # mask-multiply instead of scatter-add via dynamic indices
+        # indexes: (bs, num_cams, num_query, 1)
+        idx = indexes.float()  # (bs, num_cams, num_query, 1)
+        slots = (queries * idx).sum(1)  # (bs, num_query, embed_dims)
+
+        count = bev_mask.sum(-1) > 0  # (num_cams, bs, num_query)
+        count = count.permute(1, 2, 0).sum(-1).float()  # (bs, num_query)
+        count = torch.clamp(count, min=1.0)
+        slots = slots / count[..., None]
+        slots = self.output_proj(slots)
+
+        return self.dropout(slots) + inp_residual

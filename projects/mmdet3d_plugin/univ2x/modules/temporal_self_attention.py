@@ -267,3 +267,112 @@ class TemporalSelfAttention(BaseModule):
             output = output.permute(1, 0, 2)
 
         return self.dropout(output) + identity
+
+
+# ---------------------------------------------------------------------------
+# TRT variant
+# ---------------------------------------------------------------------------
+
+@ATTENTION.register_module()
+class TemporalSelfAttentionTRT(TemporalSelfAttention):
+    """TRT-compatible TemporalSelfAttention.
+
+    Key differences from the original:
+    - Uses value[:1] (static slice) instead of value[:bs] (dynamic)
+    - Emits MSDAPlugin nodes during ONNX export
+    """
+
+    def forward(self,
+                query,
+                key=None,
+                value=None,
+                identity=None,
+                query_pos=None,
+                key_padding_mask=None,
+                reference_points=None,
+                spatial_shapes=None,
+                level_start_index=None,
+                flag='decoder',
+                **kwargs):
+        if value is None:
+            assert self.batch_first
+            bs, len_bev, c = query.shape
+            value = torch.stack([query, query], 1).reshape(bs * 2, len_bev, c)
+
+        if identity is None:
+            identity = query
+        if query_pos is not None:
+            query = query + query_pos
+        if not self.batch_first:
+            query = query.permute(1, 0, 2)
+            value = value.permute(1, 0, 2)
+
+        bs, num_query, embed_dims = query.shape
+        _, num_value, _ = value.shape
+        assert (spatial_shapes[:, 0] * spatial_shapes[:, 1]).sum() == num_value
+        assert self.num_bev_queue == 2
+
+        # Use value[:1] (static) instead of value[:bs] (dynamic shape)
+        query = torch.cat([value[:1], query], -1)
+        value = self.value_proj(value)
+
+        if key_padding_mask is not None:
+            value = value.masked_fill(key_padding_mask[..., None], 0.0)
+
+        value = value.reshape(bs * self.num_bev_queue, num_value, self.num_heads, -1)
+
+        sampling_offsets = self.sampling_offsets(query).view(
+            bs, num_query, self.num_heads, self.num_bev_queue,
+            self.num_levels, self.num_points, 2)
+        attention_weights = self.attention_weights(query).view(
+            bs, num_query, self.num_heads, self.num_bev_queue,
+            self.num_levels * self.num_points).softmax(-1).view(
+            bs, num_query, self.num_heads, self.num_bev_queue,
+            self.num_levels, self.num_points)
+
+        attention_weights = attention_weights.permute(0, 3, 1, 2, 4, 5).reshape(
+            bs * self.num_bev_queue, num_query, self.num_heads,
+            self.num_levels, self.num_points).contiguous()
+        sampling_offsets = sampling_offsets.permute(0, 3, 1, 2, 4, 5, 6).reshape(
+            bs * self.num_bev_queue, num_query, self.num_heads,
+            self.num_levels, self.num_points, 2)
+
+        if reference_points.shape[-1] == 2:
+            offset_normalizer = torch.stack(
+                [spatial_shapes[..., 1], spatial_shapes[..., 0]], -1)
+            sampling_locations = reference_points[:, :, None, :, None, :] \
+                + sampling_offsets \
+                / offset_normalizer[None, None, None, :, None, :]
+        elif reference_points.shape[-1] == 4:
+            sampling_locations = reference_points[:, :, None, :, None, :2] \
+                + sampling_offsets / self.num_points \
+                * reference_points[:, :, None, :, None, 2:] \
+                * 0.5
+        else:
+            raise ValueError(
+                f'Last dim of reference_points must be 2 or 4, '
+                f'but got {reference_points.shape[-1]}')
+
+        if torch.onnx.is_in_onnx_export():
+            from ..functions import MSDAPlugin
+            N, _, M, D = value.shape
+            output = MSDAPlugin(
+                value, spatial_shapes, level_start_index,
+                sampling_locations, attention_weights, self.im2col_step,
+            ).view(N, num_query, M * D)
+        else:
+            output = MultiScaleDeformableAttnFunction_fp32.apply(
+                value, spatial_shapes, level_start_index,
+                sampling_locations, attention_weights, self.im2col_step)
+
+        # (bs*num_bev_queue, num_query, embed_dims)
+        # -> (num_query, embed_dims, bs*num_bev_queue)
+        output = output.permute(1, 2, 0)
+        output = output.view(num_query, embed_dims, bs, self.num_bev_queue).mean(-1)
+        output = output.permute(2, 0, 1)  # (bs, num_query, embed_dims)
+
+        output = self.output_proj(output)
+        if not self.batch_first:
+            output = output.permute(1, 0, 2)
+
+        return self.dropout(output) + identity

@@ -552,3 +552,174 @@ class MotionHead(BaseMotionHead):
                 preds['traj_scores' + subfix] = traj_scores
             ret_list.append(preds)
         return ret_list
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRT variants — adapted from uniad-trt
+# ─────────────────────────────────────────────────────────────────────────────
+
+import torch as _torch
+
+
+def _for_loop_agent_num_vec(mode_query_pos, grouped_label):
+    """Vectorized per-agent mode-query selection (no Python loop).
+    mode_query_pos : (A, G, P, C) — per-agent group embeddings
+    grouped_label  : (A,)          — group index for each agent
+    returns        : (A, P, C)     — selected embedding per agent
+    """
+    A = mode_query_pos.shape[0]
+    return mode_query_pos[_torch.arange(A, device=mode_query_pos.device), grouped_label]
+
+
+@HEADS.register_module()
+class MotionHeadTRT(MotionHead):
+    """MotionHead with tensor-only forward path for ONNX export.
+
+    Replaces Python bbox_results lists with flat tensor arguments:
+        gravity_center  (A, 3)  — box gravity centres (x, y, z)
+        yaw             (A, 1)  — heading in radians
+        track_boxes_1   (A,)    — detection scores
+        track_boxes_2   (A,)    — detection class labels (long)
+    """
+
+    def _extract_tracking_centers_trt(self, gravity_center):
+        """Normalise gravity-centre xy to [0,1] inside pc_range."""
+        bev = self.pc_range
+        xy = gravity_center[:, :2]
+        xn = (xy[:, 0] - bev[0]) / (bev[3] - bev[0])
+        yn = (xy[:, 1] - bev[1]) / (bev[4] - bev[1])
+        return _torch.stack([xn, yn], dim=-1).unsqueeze(0)  # (1, A, 2)
+
+    def anchor_coordinate_transform_trt(self, anchors, yaw, gravity_center,
+                                        with_translation_transform=True,
+                                        with_rotation_transform=True):
+        """Transform k-means anchors into agent-centric / scene-centric coords."""
+        from projects.mmdet3d_plugin.models.utils.functional import rot_2d
+        transformed = anchors[None, ...]  # (1, G, P, T, 2)
+        yaw = yaw.to(transformed.device)
+        bbox_centers = gravity_center.to(transformed.device)
+        if with_rotation_transform:
+            angle = yaw.squeeze(-1) - 3.1415953  # (A,) — rot_2d expects 1-D
+            rot = rot_2d(angle)[:, None, None, :, :]  # (A, 1, 1, 2, 2)
+            t = transformed.permute(0, 1, 2, 4, 3)
+            transformed = _torch.matmul(rot, t).permute(0, 1, 2, 4, 3)
+        if with_translation_transform:
+            transformed = bbox_centers[:, None, None, None, :2] + transformed
+        return transformed.unsqueeze(0)  # (1, A, G, P, T, 2)
+
+    def group_mode_query_pos_trt(self, labels, mode_query_pos):
+        """Select mode-query embeddings by class-group (vectorised)."""
+        self.cls2group = self.cls2group.to(mode_query_pos.device)
+        labels = labels.to(mode_query_pos.device)
+        grouped_label = self.cls2group[labels.long()]
+        return _for_loop_agent_num_vec(mode_query_pos[0], grouped_label).unsqueeze(0)
+
+    @auto_fp16(apply_to=('bev_embed', 'track_query', 'lane_query',
+                          'lane_query_pos', 'gravity_center', 'yaw'))
+    def forward_trt(self, bev_embed, track_query, lane_query, lane_query_pos,
+                    track_boxes_1, track_boxes_2, gravity_center, yaw):
+        """
+        Args:
+            bev_embed      (H*W, 1, C)
+            track_query    (1, num_dec, A, C)
+            lane_query     (1, M, C)
+            lane_query_pos (1, M, C)
+            track_boxes_1  (A,)   detection scores
+            track_boxes_2  (A,)   detection class labels
+            gravity_center (A, 3) box centres in lidar frame
+            yaw            (A, 1) heading in radians
+        Returns 6-tuple of tensors (same as MotionHead forward_test output)
+        """
+        import torch
+        from projects.mmdet3d_plugin.models.utils.functional import norm_points, pos2posemb2d
+        dtype = track_query.dtype
+        device = track_query.device
+        num_groups = self.kmeans_anchors.shape[0]
+
+        track_query = track_query[:, -1]  # (1, A, C)
+
+        reference_points_track = self._extract_tracking_centers_trt(gravity_center)
+        track_query_pos = self.boxes_query_embedding_layer(
+            pos2posemb2d(reference_points_track.to(device)))
+
+        learnable_query_pos = self.learnable_motion_query_embedding.weight.to(dtype)
+        learnable_query_pos = torch.stack(torch.split(learnable_query_pos, self.num_anchor, dim=0))
+
+        agent_level_anchors = self.kmeans_anchors.to(dtype).to(device).view(
+            num_groups, self.num_anchor, self.predict_steps, 2).detach()
+        scene_level_ego_anchors = self.anchor_coordinate_transform_trt(
+            agent_level_anchors, yaw, gravity_center, with_translation_transform=True)
+        scene_level_offset_anchors = self.anchor_coordinate_transform_trt(
+            agent_level_anchors, yaw, gravity_center, with_translation_transform=False)
+
+        agent_level_norm = norm_points(agent_level_anchors, self.pc_range)
+        scene_level_ego_norm = norm_points(scene_level_ego_anchors, self.pc_range)
+        scene_level_offset_norm = norm_points(scene_level_offset_anchors, self.pc_range)
+
+        agent_level_embedding = self.agent_level_embedding_layer(
+            pos2posemb2d(agent_level_norm[..., -1, :]))
+        scene_level_ego_embedding = self.scene_level_ego_embedding_layer(
+            pos2posemb2d(scene_level_ego_norm[..., -1, :]))
+        scene_level_offset_embedding = self.scene_level_offset_embedding_layer(
+            pos2posemb2d(scene_level_offset_norm[..., -1, :]))
+
+        bs, num_agents = scene_level_ego_embedding.shape[:2]
+        agent_level_embedding = agent_level_embedding[None, None, ...].expand(bs, num_agents, -1, -1, -1)
+        learnable_embed = learnable_query_pos[None, None, ...].expand(bs, num_agents, -1, -1, -1)
+
+        scene_level_offset_anchors = self.group_mode_query_pos_trt(track_boxes_2, scene_level_offset_anchors)
+        agent_level_embedding = self.group_mode_query_pos_trt(track_boxes_2, agent_level_embedding)
+        scene_level_ego_embedding = self.group_mode_query_pos_trt(track_boxes_2, scene_level_ego_embedding)
+        scene_level_offset_embedding = self.group_mode_query_pos_trt(track_boxes_2, scene_level_offset_embedding)
+        learnable_embed = self.group_mode_query_pos_trt(track_boxes_2, learnable_embed)
+
+        init_reference = scene_level_offset_anchors.detach()
+
+        inter_states, _ = self.motionformer.forward_trt(
+            track_query, lane_query,
+            track_query_pos=track_query_pos,
+            lane_query_pos=lane_query_pos,
+            track_boxes_1=track_boxes_1,
+            track_boxes_2=track_boxes_2,
+            gravity_center=gravity_center,
+            yaw=yaw,
+            bev_embed=bev_embed,
+            reference_trajs=init_reference,
+            traj_reg_branches=self.traj_reg_branches,
+            traj_cls_branches=self.traj_cls_branches,
+            agent_level_embedding=agent_level_embedding,
+            scene_level_ego_embedding=scene_level_ego_embedding,
+            scene_level_offset_embedding=scene_level_offset_embedding,
+            learnable_embed=learnable_embed,
+            agent_level_embedding_layer=self.agent_level_embedding_layer,
+            scene_level_ego_embedding_layer=self.scene_level_ego_embedding_layer,
+            scene_level_offset_embedding_layer=self.scene_level_offset_embedding_layer,
+            spatial_shapes=torch.tensor([[self.bev_h, self.bev_w]], device=device),
+            level_start_index=torch.tensor([0], device=device),
+        )
+
+        outputs_traj_scores = []
+        outputs_trajs = []
+        for lvl in range(inter_states.shape[0]):
+            outputs_class = self.traj_cls_branches[lvl](inter_states[lvl])
+            tmp = self.traj_reg_branches[lvl](inter_states[lvl])
+            tmp = self.unflatten_traj(tmp)
+            tmp[..., :2] = torch.cumsum(tmp[..., :2], dim=3)
+            outputs_class = self.log_softmax(outputs_class[:, :, :, 0, ...])
+            outputs_traj_scores.append(outputs_class)
+            for b in range(tmp.shape[0]):
+                tmp[b] = bivariate_gaussian_activation(tmp[b])
+            outputs_trajs.append(tmp)
+        outputs_traj_scores = torch.stack(outputs_traj_scores)
+        outputs_trajs = torch.stack(outputs_trajs)
+
+        B, A_track, D = track_query.shape
+        valid_traj_masks = track_query.new_ones((B, A_track)).float()
+        return (outputs_traj_scores, outputs_trajs, valid_traj_masks,
+                inter_states, track_query, track_query_pos)
+
+
+@HEADS.register_module()
+class MotionHeadTRTP(MotionHeadTRT):
+    """Registry alias; TRT-Plugin behavior via config sub-layer type."""
+    pass

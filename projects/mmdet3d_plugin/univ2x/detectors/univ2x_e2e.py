@@ -414,8 +414,13 @@ class UniV2X(UniV2XTrack):
             out_dir (str): Output directory of visualization result.
         """
 
-        from mmdet3d.core import (Box3DMode, Coord3DMode, bbox3d2result,
-                          merge_aug_bboxes_3d, show_result)
+        try:
+            from mmdet3d.core import (Box3DMode, Coord3DMode, bbox3d2result,
+                              merge_aug_bboxes_3d, show_result)
+        except ImportError:
+            from mmdet3d.structures import (Box3DMode, Coord3DMode,
+                              bbox3d2result, merge_aug_bboxes_3d)
+            from mmdet3d.visualization import Det3DLocalVisualizer as show_result
         import mmcv
         from os import path as osp
         from mmcv.parallel import DataContainer as DC

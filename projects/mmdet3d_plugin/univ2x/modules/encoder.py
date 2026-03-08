@@ -400,3 +400,241 @@ class BEVFormerLayer(MyCustomBaseTransformerLayer):
                 ffn_index += 1
 
         return query
+
+
+# ---------------------------------------------------------------------------
+# TRT variants: static shapes, tensor-only inputs
+# ---------------------------------------------------------------------------
+
+@TRANSFORMER_LAYER.register_module()
+class BEVFormerLayerTRT(BEVFormerLayer):
+    """TRT-compatible BEVFormerLayer.
+
+    forward_trt() accepts use_prev_bev as a float scalar tensor (0. or 1.)
+    to avoid Python if/else on prev_bev, producing a static graph.
+    """
+
+    def forward_trt(self,
+                    query,
+                    key,
+                    value,
+                    bev_pos,
+                    ref_2d,
+                    ref_3d,
+                    bev_h,
+                    bev_w,
+                    spatial_shapes,
+                    level_start_index,
+                    reference_points_cam,
+                    bev_mask,
+                    prev_bev,
+                    **kwargs):
+        """prev_bev is already the merged (use_prev_bev applied) stack from BEVFormerEncoderTRT."""
+        norm_index = 0
+        attn_index = 0
+        ffn_index = 0
+        identity = query
+
+        attn_masks = [None, None]
+
+        for layer in self.operation_order:
+            if layer == 'self_attn':
+                # use_prev_bev blending already applied at BEVFormerEncoderTRT level;
+                # prev_bev here is already the merged stack, so call normal forward()
+                query = self.attentions[attn_index](
+                    query,
+                    prev_bev,
+                    prev_bev,
+                    identity if self.pre_norm else None,
+                    query_pos=bev_pos,
+                    key_pos=bev_pos,
+                    attn_mask=attn_masks[attn_index],
+                    reference_points=ref_2d,
+                    spatial_shapes=torch.tensor(
+                        [[bev_h, bev_w]], device=query.device),
+                    level_start_index=torch.tensor([0], device=query.device),
+                    **kwargs)
+                attn_index += 1
+                identity = query
+
+            elif layer == 'norm':
+                query = self.norms[norm_index](query)
+                norm_index += 1
+
+            elif layer == 'cross_attn':
+                query = self.attentions[attn_index](
+                    query,
+                    key,
+                    value,
+                    identity if self.pre_norm else None,
+                    query_pos=None,
+                    key_pos=None,
+                    reference_points=ref_3d,
+                    reference_points_cam=reference_points_cam,
+                    mask=None,
+                    attn_mask=attn_masks[attn_index],
+                    spatial_shapes=spatial_shapes,
+                    level_start_index=level_start_index,
+                    bev_mask=bev_mask,
+                    **kwargs)
+                attn_index += 1
+                identity = query
+
+            elif layer == 'ffn':
+                query = self.ffns[ffn_index](
+                    query, identity if self.pre_norm else None)
+                ffn_index += 1
+
+        return query
+
+
+@TRANSFORMER_LAYER_SEQUENCE.register_module()
+class BEVFormerEncoderTRT(BEVFormerEncoder):
+    """TRT-compatible BEVFormerEncoder.
+
+    forward_trt() takes lidar2img and image_shape as tensors instead of
+    img_metas dicts, making the computation graph fully static.
+    """
+
+    def point_sampling_trt(self, reference_points, pc_range, lidar2img, image_shape):
+        """Tensor-only version of point_sampling.
+
+        Args:
+            reference_points (Tensor): (D, B, num_query, 3) normalized 3D refs
+            pc_range (list[float]): [xmin,ymin,zmin,xmax,ymax,zmax]
+            lidar2img (Tensor): (B, num_cam, 4, 4)
+            image_shape (Tensor): (2,) = [img_h, img_w]
+
+        Returns:
+            reference_points_cam (Tensor): (num_cam, B, num_query, D, 2)
+            bev_mask (Tensor): (num_cam, B, num_query, D)
+        """
+        reference_points = reference_points.clone()
+        reference_points[..., 0:1] = reference_points[..., 0:1] * \
+            (pc_range[3] - pc_range[0]) + pc_range[0]
+        reference_points[..., 1:2] = reference_points[..., 1:2] * \
+            (pc_range[4] - pc_range[1]) + pc_range[1]
+        reference_points[..., 2:3] = reference_points[..., 2:3] * \
+            (pc_range[5] - pc_range[2]) + pc_range[2]
+
+        reference_points = torch.cat(
+            (reference_points, torch.ones_like(reference_points[..., :1])), -1)
+
+        # reference_points: (D, B, num_query, 4)
+        reference_points = reference_points.permute(1, 0, 2, 3)  # (B, D, num_query, 4)
+        B, D, num_query, _ = reference_points.shape
+        num_cam = lidar2img.size(1)
+
+        # (B, D, num_query, 4) -> (B, num_cam, D, num_query, 4, 1)
+        pts = reference_points.view(B, 1, D, num_query, 4).repeat(1, num_cam, 1, 1, 1).unsqueeze(-1)
+        # lidar2img: (B, num_cam, 4, 4) -> (B, num_cam, 1, 1, 4, 4)
+        l2i = lidar2img.view(B, num_cam, 1, 1, 4, 4).repeat(1, 1, D, num_query, 1, 1)
+
+        reference_points_cam = torch.matmul(l2i.float(), pts.float()).squeeze(-1)
+        # (B, num_cam, D, num_query, 4)
+
+        eps = 1e-5
+        bev_mask = (reference_points_cam[..., 2:3] > eps)
+        reference_points_cam = reference_points_cam[..., 0:2] / torch.maximum(
+            reference_points_cam[..., 2:3],
+            torch.ones_like(reference_points_cam[..., 2:3]) * eps)
+
+        # normalize by image size
+        img_h = image_shape[0].float()
+        img_w = image_shape[1].float()
+        reference_points_cam[..., 0] /= img_w
+        reference_points_cam[..., 1] /= img_h
+
+        bev_mask = (bev_mask
+                    & (reference_points_cam[..., 1:2] > 0.0)
+                    & (reference_points_cam[..., 1:2] < 1.0)
+                    & (reference_points_cam[..., 0:1] < 1.0)
+                    & (reference_points_cam[..., 0:1] > 0.0))
+        bev_mask = torch.nan_to_num(bev_mask)
+
+        # (B, num_cam, D, num_query, 2) -> (num_cam, B, num_query, D, 2)
+        reference_points_cam = reference_points_cam.permute(1, 0, 3, 2, 4)
+        bev_mask = bev_mask.squeeze(-1).permute(1, 0, 3, 2)
+
+        return reference_points_cam, bev_mask
+
+    def forward_trt(self,
+                    bev_query,
+                    key,
+                    value,
+                    lidar2img,
+                    bev_h,
+                    bev_w,
+                    bev_pos,
+                    spatial_shapes,
+                    level_start_index,
+                    prev_bev,
+                    shift,
+                    image_shape,
+                    use_prev_bev):
+        """TRT-friendly forward.
+
+        Args:
+            bev_query (Tensor): (num_query, bs, embed_dims)
+            key/value (Tensor): (num_cam, num_value, bs, embed_dims)
+            lidar2img (Tensor): (bs, num_cam, 4, 4)
+            bev_h, bev_w (int)
+            bev_pos (Tensor): (num_query, bs, embed_dims)
+            spatial_shapes (Tensor): (num_levels, 2)
+            level_start_index (Tensor): (num_levels,)
+            prev_bev (Tensor): (num_query, bs, embed_dims)
+            shift (Tensor): (bs, 2)
+            image_shape (Tensor): (2,) [img_h, img_w]
+            use_prev_bev (Tensor): scalar, 1.0 or 0.0
+        """
+        output = bev_query
+
+        ref_3d = self.get_reference_points(
+            bev_h, bev_w, self.pc_range[5] - self.pc_range[2],
+            self.num_points_in_pillar, dim='3d',
+            bs=bev_query.size(1), device=bev_query.device, dtype=bev_query.dtype)
+        ref_2d = self.get_reference_points(
+            bev_h, bev_w, dim='2d',
+            bs=bev_query.size(1), device=bev_query.device, dtype=bev_query.dtype)
+
+        # ref_3d: (bs, D, num_query, 3) -> need (D, B, num_query, 3) for point_sampling_trt
+        ref_3d_perm = ref_3d.permute(1, 0, 2, 3)
+
+        reference_points_cam, bev_mask = self.point_sampling_trt(
+            ref_3d_perm, self.pc_range, lidar2img, image_shape)
+
+        shift_ref_2d = ref_2d + shift[:, None, None, :]
+
+        bev_query = bev_query.permute(1, 0, 2)  # (bs, num_query, embed_dims)
+        bev_pos = bev_pos.permute(1, 0, 2)
+        bs, len_bev, num_bev_level, _ = ref_2d.shape
+
+        # TRT-compatible prev_bev merging: multiply by use_prev_bev scalar
+        prev_bev_t = prev_bev.permute(1, 0, 2)  # (bs, num_query, embed_dims)
+        # When use_prev_bev=1, use prev; when 0, use current bev_query as placeholder
+        prev_bev_safe = prev_bev_t * use_prev_bev + bev_query * (1.0 - use_prev_bev)
+        prev_bev_stack = torch.stack(
+            [prev_bev_safe, bev_query], 1).reshape(bs * 2, len_bev, -1)
+
+        hybird_ref_2d = torch.stack(
+            [shift_ref_2d, ref_2d], 1).reshape(bs * 2, len_bev, num_bev_level, 2)
+
+        for layer in self.layers:
+            output = layer.forward_trt(
+                bev_query,
+                key,
+                value,
+                bev_pos=bev_pos,
+                ref_2d=hybird_ref_2d,
+                ref_3d=ref_3d,
+                bev_h=bev_h,
+                bev_w=bev_w,
+                spatial_shapes=spatial_shapes,
+                level_start_index=level_start_index,
+                reference_points_cam=reference_points_cam,
+                bev_mask=bev_mask,
+                prev_bev=prev_bev_stack,
+            )
+            bev_query = output
+
+        return output

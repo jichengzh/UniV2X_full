@@ -574,3 +574,139 @@ class OccHead(BaseModule):
         gt_instance = gt_instance[:, :self.n_future+1].long()
         gt_img_is_valid = gt_img_is_valid[:, :self.receptive_field + self.n_future]
         return gt_segmentation, gt_instance, gt_img_is_valid
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRT variants — adapted from uniad-trt
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _if_sum_greater_zero(query_index, attn_mask):
+    """Replace fully-masked queries with zeros instead of inf."""
+    mask = (query_index == 1)
+    attn_mask = torch.cat(
+        [attn_mask, torch.zeros(attn_mask.shape[0], attn_mask.shape[1], 1,
+                                device=attn_mask.device, dtype=attn_mask.dtype)], dim=2)
+    mask_f = mask[..., None].float()
+    attn_mask = mask_f * torch.zeros_like(attn_mask) + (1 - mask_f) * attn_mask
+    return attn_mask[..., :-1]
+
+
+def _if_no_query(pred_ins_sigmoid, fill_score):
+    """Handle empty-query case without Python if-branching."""
+    pad = torch.zeros(pred_ins_sigmoid.shape[0], 1,
+                      pred_ins_sigmoid.shape[2], pred_ins_sigmoid.shape[3],
+                      pred_ins_sigmoid.shape[4],
+                      device=pred_ins_sigmoid.device,
+                      dtype=pred_ins_sigmoid.dtype) + fill_score
+    return torch.cat([pred_ins_sigmoid, pad], dim=1).max(1)[0]
+
+
+@HEADS.register_module()
+class OccHeadTRT(OccHead):
+    """OccHead with tensor-only forward path for ONNX/TRT export."""
+
+    def get_attn_mask_trt(self, state, ins_query):
+        """Compute cross-attention mask; returns bool tensor + embed."""
+        ins_embed = self.temporal_mlp_for_mask(ins_query)
+        mask_pred = torch.einsum("bqc,bchw->bqhw", ins_embed, state)
+        attn_mask = (mask_pred.sigmoid() < self.attn_mask_thresh).float()
+        b, q, h, w = attn_mask.shape
+        attn_mask = (attn_mask.view(b, q, h * w).permute(0, 2, 1)[:, None, ...]
+                     .repeat(1, self.num_heads, 1, 1)
+                     .reshape(b * self.num_heads, h * w, q).detach())
+        query_index = (attn_mask.sum(-1) == attn_mask.shape[-1])
+        attn_mask = _if_sum_greater_zero(query_index, attn_mask)
+        return attn_mask.bool(), ins_embed
+
+    def merge_queries_trt(self, track_query, track_query_pos, ins_query):
+        """Fuse traj / track queries into ins_query for OccHead."""
+        track_query_pos = track_query_pos.detach()
+        ins_query = ins_query[-1]
+        ins_query = self.mode_fuser(ins_query).max(2)[0]
+        ins_query = self.multi_query_fuser(
+            torch.cat([ins_query, track_query, track_query_pos], dim=2))
+        return ins_query
+
+    def forward_trt(self, x, ins_query):
+        """
+        Args:
+            x         (H*W, 1, C)
+            ins_query (1, num_query, C)
+        Returns:
+            ins_occ_logits (1, num_query, T, H, W)
+        """
+        _, b, d = x.shape
+        base_state = x.permute(1, 2, 0).view(b, d, self.bev_size[0], self.bev_size[1])
+        if self.bev_sampler:
+            base_state = self.bev_sampler(base_state)
+        base_state = self.bev_light_proj(base_state)
+        base_state = self.base_downscale(base_state)
+
+        last_state = base_state
+        last_ins_query = ins_query
+        future_states = []
+        temporal_query = []
+        temporal_embed_for_mask_attn = []
+        n_trans_per_block = self.num_trans_layers // self.n_future_blocks
+
+        for i in range(self.n_future_blocks):
+            cur_state = self.downscale_convs[i](last_state)
+            cur_ins_query = self.temporal_mlps[i](last_ins_query)
+            temporal_query.append(cur_ins_query)
+
+            attn_mask, cur_ins_emb = self.get_attn_mask_trt(cur_state, cur_ins_query)
+            temporal_embed_for_mask_attn.append(cur_ins_emb)
+
+            b, c, h, w = cur_state.shape
+            cur_state = cur_state.view(b, c, h * w).permute(2, 0, 1)
+            cur_ins_query_t = cur_ins_query.permute(1, 0, 2)
+
+            for j in range(n_trans_per_block):
+                trans_layer = self.transformer_decoder.layers[i * n_trans_per_block + j]
+                cur_state = trans_layer(
+                    query=cur_state, key=cur_ins_query_t, value=cur_ins_query_t,
+                    query_pos=None, key_pos=None,
+                    attn_masks=[None, attn_mask],
+                    query_key_padding_mask=None, key_padding_mask=None,
+                )
+            cur_state = cur_state.permute(1, 2, 0).view(b, c, h, w)
+            cur_state = self.upsample_adds[i](cur_state, last_state)
+            future_states.append(cur_state)
+            last_state = cur_state
+
+        future_states = torch.stack(future_states, dim=1)
+        temporal_embed_for_mask_attn = torch.stack(temporal_embed_for_mask_attn, dim=1)
+
+        future_states = self.dense_decoder(future_states)
+        future_states = F.interpolate(
+            future_states,
+            (future_states.shape[2], self.bev_size[-2], self.bev_size[-1]),
+            mode='trilinear', align_corners=False,
+        )
+        ins_occ_query = self.query_to_occ_feat(temporal_embed_for_mask_attn)
+        ins_occ_logits = torch.einsum("btqc,btchw->bqthw", ins_occ_query, future_states)
+        return ins_occ_logits
+
+    def get_occ_labels_trt(self, gt_segmentation):
+        return gt_segmentation[:, :self.n_future + 1].long()[:, :, None, ...]
+
+    def forward_test_trt(self, bev_feat, track_query, track_query_pos,
+                         traj_query, gt_segmentation=None, track_scores=None):
+        """Tensor-only test forward for TRT export."""
+        gt_segmentation = self.get_occ_labels_trt(gt_segmentation)
+        seg_gt = gt_segmentation[:, :1 + self.n_future]
+        ins_query = self.merge_queries_trt(track_query, track_query_pos, traj_query)
+        pred_ins_logits = self.forward_trt(bev_feat, ins_query=ins_query)
+        pred_ins_logits = pred_ins_logits[:, :, :1 + self.n_future]
+        pred_ins_sigmoid = pred_ins_logits.sigmoid()
+        track_scores = track_scores.to(pred_ins_sigmoid)[:, :, None, None, None]
+        pred_ins_sigmoid = pred_ins_sigmoid * track_scores
+        pred_seg_scores2 = _if_no_query(pred_ins_sigmoid, self.test_seg_thresh - 1)
+        seg_out = (pred_seg_scores2 > self.test_seg_thresh).int()[:, :, None, ...]
+        return seg_gt, seg_out
+
+
+@HEADS.register_module()
+class OccHeadTRTP(OccHeadTRT):
+    """Registry alias."""
+    pass

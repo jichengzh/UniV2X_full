@@ -150,3 +150,13 @@ debug/
 projects/work_dirs_*
 val/
 datasets
+
+# TRT / ONNX large binary artifacts
+onnx/
+trt_engines/
+
+# Plugin compiled outputs (keep source, exclude build artifacts)
+plugins/build/
+
+# Stray weight files in root
+*.pth

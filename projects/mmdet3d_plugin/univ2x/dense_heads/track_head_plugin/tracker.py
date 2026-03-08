@@ -1,6 +1,11 @@
 from .track_instance import Instances
-from mmdet3d.core.bbox.iou_calculators.iou3d_calculator import (
-    bbox_overlaps_nearest_3d as iou_3d, )
+try:
+    from mmdet3d.core.bbox.iou_calculators.iou3d_calculator import (
+        bbox_overlaps_nearest_3d as iou_3d, )
+except ImportError:
+    from mmdet3d.models.task_modules.assigners.iou_calculators import (
+        BboxOverlapsNearest3D )
+    iou_3d = BboxOverlapsNearest3D()
 from projects.mmdet3d_plugin.core.bbox.util import denormalize_bbox
 
 class RuntimeTrackerBase(object):

@@ -1,5 +1,6 @@
-from .track_head import BEVFormerTrackHead
+from .track_head import BEVFormerTrackHead, BEVFormerTrackHeadTRT
 from .panseg_head import PansegformerHead
-from .motion_head import MotionHead
-from .occ_head import OccHead
-from .planning_head import PlanningHeadSingleMode
+from .motion_head import MotionHead, MotionHeadTRT, MotionHeadTRTP
+from .occ_head import OccHead, OccHeadTRT, OccHeadTRTP
+from .planning_head import (PlanningHeadSingleMode,
+                             PlanningHeadSingleModeTRT, PlanningHeadSingleModeTRTP)

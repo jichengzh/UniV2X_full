@@ -230,3 +230,121 @@ class PerceptionTransformer(BaseModule):
         inter_references_out = inter_references
 
         return inter_states, init_reference_out, inter_references_out
+
+    # ------------------------------------------------------------------
+    # TRT-compatible BEV feature extraction
+    # ------------------------------------------------------------------
+
+    def get_bev_features_trt(
+        self,
+        mlvl_feats,
+        bev_queries,
+        bev_h,
+        bev_w,
+        can_bus,
+        lidar2img,
+        grid_length=None,
+        bev_pos=None,
+        prev_bev=None,
+        image_shape=None,
+        use_prev_bev=None,
+    ):
+        """Tensor-only BEV feature extraction for TRT export.
+
+        Args:
+            mlvl_feats (list[Tensor]): multi-scale image features
+            bev_queries (Tensor): (num_query, embed_dims)
+            bev_h, bev_w (int)
+            can_bus (Tensor): (18,) can-bus signal vector
+            lidar2img (Tensor): (bs, num_cam, 4, 4)
+            grid_length (Tensor or None): (2,) [grid_h, grid_w]
+            bev_pos (Tensor): (bs, C, bev_h, bev_w)
+            prev_bev (Tensor): (num_query, bs, embed_dims)
+            image_shape (Tensor): (2,) [img_h, img_w]
+            use_prev_bev (Tensor): scalar 0.0 or 1.0
+        """
+        if grid_length is None:
+            grid_length_y = self.real_h / bev_h
+            grid_length_x = self.real_w / bev_w
+        else:
+            grid_length_y = grid_length[0].item()
+            grid_length_x = grid_length[1].item()
+
+        bs = mlvl_feats[0].size(0)
+        bev_queries = bev_queries.unsqueeze(1).repeat(1, bs, 1)
+        bev_pos = bev_pos.flatten(2).permute(2, 0, 1)
+
+        # TRT-compatible shift computation (no numpy)
+        delta_x = can_bus[0:1]
+        delta_y = can_bus[1:2]
+        ego_angle = can_bus[-2:-1] / np.pi * 180
+
+        translation_length = torch.sqrt(delta_x ** 2 + delta_y ** 2)
+        translation_angle = (
+            torch.atan(delta_y / (delta_x + 1e-8))
+            + ((1.0 - torch.sign(delta_x)) / 2.0) * torch.sign(delta_y)
+            * delta_x.new_tensor(np.pi)
+        ) / np.pi * 180
+        bev_angle = ego_angle - translation_angle
+        shift_y = (translation_length * torch.cos(bev_angle / 180 * np.pi)
+                   / grid_length_y / bev_h)
+        shift_x = (translation_length * torch.sin(bev_angle / 180 * np.pi)
+                   / grid_length_x / bev_w)
+        shift_y = shift_y * int(self.use_shift)
+        shift_x = shift_x * int(self.use_shift)
+        shift = torch.stack([shift_x, shift_y]).permute(1, 0)  # (bs, 2)
+
+        if self.rotate_prev_bev and prev_bev is not None:
+            from ..functions import rotate as rotate_trt
+            rotation_angle = can_bus[-1]
+            for i in range(bs):
+                tmp_prev_bev = prev_bev[:, i].reshape(bev_h, bev_w, -1).permute(2, 0, 1)
+                tmp_prev_bev = rotate_trt(tmp_prev_bev, rotation_angle,
+                                          center=self.rotate_center)
+                tmp_prev_bev = tmp_prev_bev.permute(1, 2, 0).reshape(bev_h * bev_w, 1, -1)
+                prev_bev[:, i] = tmp_prev_bev[:, 0]
+
+        # add can bus signals
+        can_bus_sig = can_bus[None, ...]
+        can_bus_sig = self.can_bus_mlp(can_bus_sig)[None, :, :]
+        bev_queries = bev_queries + can_bus_sig * int(self.use_can_bus)
+
+        feat_flatten = []
+        spatial_shapes = []
+        for lvl, feat in enumerate(mlvl_feats):
+            bs_f, num_cam, c, h, w = feat.shape
+            spatial_shape = (h, w)
+            feat = feat.flatten(3).permute(1, 0, 3, 2)
+            if self.use_cams_embeds:
+                feat = feat + self.cams_embeds[:, None, None, :].to(feat.dtype)
+            feat = feat + self.level_embeds[None, None, lvl:lvl + 1, :].to(feat.dtype)
+            spatial_shapes.append(spatial_shape)
+            feat_flatten.append(feat)
+
+        feat_flatten_cat = torch.cat(feat_flatten, 2)
+        spatial_shapes_t = torch.as_tensor(
+            spatial_shapes, dtype=torch.long, device=bev_pos.device)
+        level_start_index = torch.cat((
+            spatial_shapes_t.new_zeros((1,)),
+            spatial_shapes_t.prod(1).cumsum(0)[:-1]))
+
+        feat_flatten_cat = feat_flatten_cat.permute(0, 2, 1, 3)
+
+        bev_embed = self.encoder.forward_trt(
+            bev_queries,
+            feat_flatten_cat,
+            feat_flatten_cat,
+            lidar2img=lidar2img,
+            bev_h=bev_h,
+            bev_w=bev_w,
+            bev_pos=bev_pos,
+            spatial_shapes=spatial_shapes_t,
+            level_start_index=level_start_index,
+            prev_bev=prev_bev,
+            shift=shift,
+            image_shape=image_shape,
+            use_prev_bev=use_prev_bev,
+        )
+        return bev_embed
+
+        return inter_states, init_reference_out, inter_references_out
