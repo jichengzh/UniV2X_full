@@ -153,6 +153,13 @@ class SpatialCrossAttention(BaseModule):
 
         num_cams, l, bs, embed_dims = key.shape
 
+        # Pad key/value when actual camera count < self.num_cams
+        # (e.g. infra model has 1 physical camera but self.num_cams=6)
+        if num_cams < self.num_cams:
+            pad = key.new_zeros(self.num_cams - num_cams, l, bs, embed_dims)
+            key = torch.cat([key, pad], dim=0)
+            value = torch.cat([value, pad], dim=0)
+
         key = key.permute(2, 0, 1, 3).reshape(
             bs * self.num_cams, l, self.embed_dims)
         value = value.permute(2, 0, 1, 3).reshape(
@@ -525,15 +532,28 @@ class SpatialCrossAttentionTRT(SpatialCrossAttention):
 
         bs, num_query, _ = query.size()
 
-        # TRT-compatible: use mask instead of nonzero() indexing
-        # indexes: (num_cams, bs, num_query, 1)  — bool mask broadcast
-        indexes = (bev_mask.sum(-1) > 0).permute(1, 0, 2)[..., None]
-
-        # reference_points_cam: (num_cams, bs, num_query, D, 2)
-        # Expand query to all cameras and zero out invisible ones
-        # queries_rebatch: (bs*num_cams, num_query, embed_dims)
-        num_cams = bev_mask.shape[0]
+        # reference_points_cam: (num_cams_actual, bs, num_query, D, 2)
+        # bev_mask:             (num_cams_actual, bs, num_query, D)
+        # key / value:          (self.num_cams, l, bs, embed_dims)
+        # key.shape[0] may be larger than bev_mask.shape[0] when the model's
+        # cams_embeds broadcast expands features (e.g. infra model with 1
+        # physical camera but self.num_cams=6). Pad mask & ref_pts to match.
+        num_cams_actual = bev_mask.shape[0]
+        num_cams = self.num_cams
         D = reference_points_cam.size(3)
+
+        if num_cams_actual < num_cams:
+            pad_mask = bev_mask.new_zeros(
+                num_cams - num_cams_actual, *bev_mask.shape[1:])
+            bev_mask = torch.cat([bev_mask, pad_mask], dim=0)
+            pad_rpc = reference_points_cam.new_zeros(
+                num_cams - num_cams_actual, *reference_points_cam.shape[1:])
+            reference_points_cam = torch.cat(
+                [reference_points_cam, pad_rpc], dim=0)
+
+        # TRT-compatible: use mask instead of nonzero() indexing
+        # indexes: (bs, num_cams, num_query, 1)
+        indexes = (bev_mask.sum(-1) > 0).permute(1, 0, 2)[..., None]
 
         # (bs, num_cams, num_query, embed_dims)
         queries_rebatch = query.unsqueeze(1).expand(
@@ -542,22 +562,29 @@ class SpatialCrossAttentionTRT(SpatialCrossAttention):
         ref_rebatch = reference_points_cam.permute(1, 0, 2, 3, 4)
 
         num_cams_key, l, bs_key, embed_dims = key.shape
+
+        # Pad key/value when actual camera count < self.num_cams
+        # (e.g. dataset with 1 physical camera but self.num_cams=6)
+        if num_cams_key < num_cams:
+            pad = key.new_zeros(num_cams - num_cams_key, l, bs_key, embed_dims)
+            key = torch.cat([key, pad], dim=0)
+            value = torch.cat([value, pad], dim=0)
+
         key = key.permute(2, 0, 1, 3).reshape(
-            bs * self.num_cams, l, self.embed_dims)
+            bs * num_cams, l, self.embed_dims)
         value = value.permute(2, 0, 1, 3).reshape(
-            bs * self.num_cams, l, self.embed_dims)
+            bs * num_cams, l, self.embed_dims)
 
         queries = self.deformable_attention(
-            query=queries_rebatch.reshape(bs * self.num_cams, num_query, self.embed_dims),
+            query=queries_rebatch.reshape(bs * num_cams, num_query, self.embed_dims),
             key=key,
             value=value,
-            reference_points=ref_rebatch.reshape(bs * self.num_cams, num_query, D, 2),
+            reference_points=ref_rebatch.reshape(bs * num_cams, num_query, D, 2),
             spatial_shapes=spatial_shapes,
             level_start_index=level_start_index,
-        ).view(bs, self.num_cams, num_query, self.embed_dims)
+        ).view(bs, num_cams, num_query, self.embed_dims)
 
         # mask-multiply instead of scatter-add via dynamic indices
-        # indexes: (bs, num_cams, num_query, 1)
         idx = indexes.float()  # (bs, num_cams, num_query, 1)
         slots = (queries * idx).sum(1)  # (bs, num_query, embed_dims)
 

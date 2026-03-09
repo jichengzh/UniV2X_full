@@ -444,11 +444,14 @@ def make_dummy_inputs(model, bev_size, num_cam=6, img_h=256, img_w=416):
     num_query = bev_h * bev_w
     embed_dims = model.pts_bbox_head.embed_dims
 
-    # Determine number of cams from config or default
-    try:
-        nc = model.pts_bbox_head.transformer.encoder.num_cams
-    except AttributeError:
+    # num_cam argument takes precedence; use model's num_cams only as fallback
+    if num_cam and num_cam > 0:
         nc = num_cam
+    else:
+        try:
+            nc = model.pts_bbox_head.transformer.encoder.num_cams
+        except AttributeError:
+            nc = 6
 
     # Run backbone with a real image to get feature shapes
     with torch.no_grad():
@@ -492,6 +495,8 @@ def parse_args():
                         help='BEV grid size H=W (default: 50 for Step A)')
     parser.add_argument('--img-h', type=int, default=256, help='Input image height')
     parser.add_argument('--img-w', type=int, default=416, help='Input image width')
+    parser.add_argument('--num-cam', type=int, default=0,
+                        help='Number of cameras (0 = auto-detect from model config)')
     parser.add_argument('--out', default='onnx/univ2x_bev.onnx',
                         help='Output ONNX file path')
     parser.add_argument('--opset', type=int, default=16,
@@ -573,7 +578,8 @@ def _export_bev_encoder(model, bev_size, args):
     wrapper = BEVEncoderWrapper(model).cuda().eval()
 
     # Dummy inputs: (feat0..featN, can_bus, lidar2img, image_shape, prev_bev, use_prev_bev)
-    dummy = make_dummy_inputs(model, bev_size, img_h=args.img_h, img_w=args.img_w)
+    dummy = make_dummy_inputs(model, bev_size, num_cam=args.num_cam,
+                              img_h=args.img_h, img_w=args.img_w)
     num_feat_levels = len(dummy) - 5
     feats = dummy[:num_feat_levels]
     can_bus, lidar2img, image_shape, prev_bev, use_prev_bev = dummy[num_feat_levels:]
