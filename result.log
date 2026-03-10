@@ -1,0 +1,443 @@
+# UniV2X TRT 全链路加速 — 完整实现结果日志
+
+**完成时间**: 2026-03-10
+**项目**: UniV2X — 端到端 V2X 协同自动驾驶系统
+**目标**: 将 UniV2X 的推理链从纯 PyTorch 迁移至 TensorRT 10.13，在 RTX 4090 (SM 89) 上加速部署
+
+---
+
+## 一、项目背景与总体目标
+
+UniV2X 是一个支持车路协同感知的端到端自动驾驶系统，其推理链包含：
+
+```
+相机图像
+  → ResNet-FPN 骨干网络
+  → BEV 编码器（BEVFormer Transformer）
+  → [V2X 融合] AgentQueryFusion + _get_coop_bev_embed + LaneQueryFusion
+  → 检测头（Decoder Transformer）
+  → 下游头（Motion + Occ + Planning）
+```
+
+加速目标分为四个阶段：
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| Phase 1 | BEV 编码器 TRT（BEVFormer Encoder） | ✅ 完成 |
+| Phase 2 | 检测头 TRT（Detection Decoder） | ✅ 完成 |
+| Phase 3 | 下游头 TRT（Motion + Occ + Planning） | ✅ 完成 |
+| Phase 3 V2X | V2X 融合模块向量化（AgentQueryFusion / LaneQueryFusion / BEV 散射） | ✅ 完成 |
+| Phase 3C | V2X 路径检测头 TRT（固定 1101-query 引擎） | ✅ 完成 |
+
+---
+
+## 二、Phase 1 — BEV 编码器 TRT
+
+### 2.1 核心挑战与解决方案
+
+**问题 1：DCNv2 骨干网络无法导出 ONNX**
+骨干网络（ResNet + DCNv2）中的可变形卷积算子不支持 ONNX 导出。
+**解决**：设计 `BEVEncoderWrapper`，以预提取的 FPN 特征（而非原始图像）作为 ONNX 输入，完全绕过骨干网络。
+
+**问题 2：MSDAPlugin INT64 输入被 TRT 拒绝**
+自定义多尺度可变形注意力插件（MSDAPlugin）要求 `spatial_shapes` / `level_start_index` 为 INT32，但 PyTorch ONNX 导出默认为 INT64。
+**解决**：ONNX 后处理脚本 `_patch_and_verify_onnx()` 自动识别并将这两个常量节点从 INT64 改写为 INT32。
+
+**问题 3：单摄像头数据集（V2X-Seq-SPD）的 SCA reshape 错误**
+`SpatialCrossAttention` 在 reshape 时硬编码了 6 个摄像头，而实际数据集只有 1 个摄像头。
+**解决**：在 `SpatialCrossAttentionTRT.forward` 中对 `key/value` 补零至 `self.num_cams` 后再 reshape。
+
+### 2.2 精度结果（200×200 BEV，真实 checkpoint）
+
+| 模型 | 最大绝对误差 | 平均绝对误差 | 余弦相似度 | 误差 < 1e-2 |
+|------|------------|------------|-----------|------------|
+| ego  | 0.029      | 3.6e-4     | 0.9999993 | 100% ✅    |
+| infra| 0.009      | 2.9e-4     | 0.9999997 | 100% ✅    |
+
+### 2.3 生成工件
+
+| 文件 | 大小 |
+|------|------|
+| `onnx/univ2x_ego_bev_encoder_200.onnx` | 65 MB |
+| `onnx/univ2x_infra_bev_encoder_200.onnx` | 65 MB |
+| `trt_engines/univ2x_ego_bev_encoder_200_1cam.trt` | 74.6 MB |
+| `trt_engines/univ2x_infra_bev_encoder_200.trt` | 72 MB |
+
+---
+
+## 三、Phase 2 — 检测头 TRT
+
+### 3.1 设计
+
+- `HeadsWrapper`：封装 Decoder + `velo_update`，固定 901 query（900 追踪 + 1 ego）
+- `BEVFormerTrackHeadTRT.get_detections_trt()`：纯 tensor 接口，无 img_metas
+- Hook A 接入：monkey-patch `pts_bbox_head.get_bev_features` → TRT
+
+### 3.2 精度结果（901-query，真实 checkpoint）
+
+所有输出（cls_scores / bbox_preds / traj_preds / query_feats / ref_pts）余弦相似度 > **0.9999994** ✅
+
+### 3.3 生成工件
+
+| 文件 | 大小 |
+|------|------|
+| `onnx/univ2x_ego_heads_50_rand.onnx` | — |
+| `trt_engines/univ2x_ego_heads_200.trt` | 33 MB |
+
+---
+
+## 四、Phase 3 — 下游头 TRT（Motion + Occ + Planning）
+
+### 4.1 设计
+
+- `DownstreamHeadsWrapper`：封装 MotionHeadTRT → OccHeadTRT → PlanningHeadTRT
+- 输入：`bev_embed(H*W,1,C)` + 检测头输出 + `lane_query` + `command`
+- 输出：`traj_scores` / `traj_preds` / `occ_logits` / `sdc_traj`（infra 无规划头）
+
+**关键问题：BN 训练模式漂移**
+`TrainingMode.TRAINING` 会调用 `model.train()`，使 BatchNorm 在 trace 过程中原地更新 `running_mean/var`，导致 ONNX 嵌入的统计量与推理时不一致。
+**解决**：Patch 4 在 `onnx_compatible_attention` 中覆盖所有 `nn.BatchNorm*` 的 `forward`，强制调用 `F.batch_norm(..., training=False)`。
+
+### 4.2 精度结果（真实 checkpoint）
+
+| 模型 | 输出 | 平均绝对误差 | 余弦相似度 |
+|------|------|------------|----------|
+| ego  | traj_scores | 2.26e-3 | 0.9999947 ✅ |
+| ego  | traj_preds  | 3.97e-3 | 0.9999854 ✅ |
+| ego  | occ_logits  | 6.13e-4 | 0.9999966 ✅ |
+| ego  | sdc_traj    | 3.33e-4 | 1.0000000 ✅ |
+
+### 4.3 生成工件
+
+| 文件 | 大小 |
+|------|------|
+| `trt_engines/univ2x_ego_downstream.trt` | 152 MB |
+| `trt_engines/univ2x_infra_downstream.trt` | 134 MB |
+
+---
+
+## 五、Phase 3 V2X — 融合模块向量化
+
+### 5.1 需要解决的主要问题
+
+V2X 协同路径包含三个纯 Python 运行的模块，是端到端推理的最大瓶颈：
+
+| 模块 | 问题 |
+|------|------|
+| `AgentQueryFusion._query_matching` | 双重 Python 循环，每次 `torch.sum()→numpy` 触发隐式 GPU-CPU 同步 |
+| `_get_coop_bev_embed` | 三层嵌套 Python 循环（N_inst × 2 × 2），逐元素散射 BEV 特征 |
+| `LaneQueryFusion` | Python for 循环坐标变换，`np.linalg.inv` 每帧调用 |
+
+### 5.2 最大挑战：_query_matching 的隐藏 GPU-CPU 同步
+
+原始代码表面是"简单的双重循环"：
+
+```python
+# agent_fusion.py — 原始代码
+for i in veh_mask:
+    for j in range(inf_nums):
+        cost_matrix[i][j] = torch.sum((veh_ref_pts[i] - inf_ref_pts[j])**2)**0.5
+```
+
+**隐藏陷阱**：`torch.sum(...)` 返回 GPU tensor，赋值给 numpy 数组 `cost_matrix[i][j]` 时，Python 隐式调用 `.item()`，触发一次 GPU→CPU 同步。
+在实际场景中 N_veh = 901，N_inf ≤ 200，最多触发 **180,200 次 GPU-CPU 同步**，实测延迟高达 **10,548 ms**（N_inf=100），完全淹没其他所有优化。
+
+### 5.3 解决方案
+
+#### 方案 A：AgentQueryFusionTRT — 向量化代价矩阵
+
+```python
+def _query_matching_vec(self, inf_ref_pts, veh_ref_pts, veh_mask, veh_pred_dims):
+    cost_gpu = veh_ref_pts.new_full((veh_nums, inf_nums), 1e6)
+    if len(veh_mask) > 0:
+        diff = veh_pts.unsqueeze(1) - inf_ref_pts.unsqueeze(0)  # (M, N_inf, 3)
+        l2   = diff.pow(2).sum(-1).sqrt()                        # (M, N_inf)
+        rel  = diff.abs() / dims.unsqueeze(1).clamp(min=1e-6)
+        keep = rel.le(1.0).all(dim=-1)
+        cost_gpu[veh_mask] = torch.where(keep, l2, l2.new_full((), 1e6))
+    cost_matrix = cost_gpu.cpu().numpy()  # 唯一一次 GPU→CPU 传输
+    return linear_sum_assignment(cost_matrix)
+```
+
+全批量 GPU 运算，单次 CPU 传输，消除所有逐元素同步。
+
+#### 方案 B：_get_coop_bev_embed — index_add_ 散射
+
+```python
+feat_embed = self.bev_embed_linear(query[:, embed_dims:])      # 预计算 (N, C)
+feat_pos   = self.bev_pos_linear(query[:, :embed_dims])
+bev_pos_flat = bev_pos.squeeze(0).permute(1,2,0).reshape(H*W, C)
+
+for dh in range(-pixel_len, pixel_len):        # 固定 4 次迭代
+    for dw in range(-pixel_len, pixel_len):
+        flat_idx = (hh * W + ww)[in_bounds]
+        bev_embed.index_add_(0, flat_idx, feat_embed[in_bounds].unsqueeze(1))
+        bev_pos_flat.index_add_(0, flat_idx, feat_pos[in_bounds])
+```
+
+将 N×4 次逐元素操作合并为 4 次 GPU 批量 scatter。
+
+#### 方案 C：Hook B — LaneQueryFusionTRT 接入
+
+```python
+def attach_lane_hook(ego_model, inf_model, label):
+    def _trt_forward(other_cls, ..., ego2other_rt, ...):
+        calib  = np.linalg.inv(ego2other_rt[0].cpu().numpy().T)  # CPU 预处理
+        idx    = trt_fuser.filter_other_lanes(other_cls[-1])      # CPU 过滤
+        return trt_fuser.forward_trt(..., calib_t)               # GPU 向量化
+    seg_head.cross_lane_fusion.forward = _trt_forward             # monkey-patch
+```
+
+#### 方案 D：Hook C — AgentQueryFusionTRT 直接替换
+
+`AgentQueryFusionTRT.forward()` 是 `AgentQueryFusion` 的直接替换：无 Python for 循环，`ego_selection` 使用布尔掩码，query 融合使用索引赋值。
+
+### 5.4 测试方法
+
+**正确性验证**：随机输入，对比余弦相似度（阈值 > 0.999）和 `allclose(atol=1e-5)`，覆盖 3 个随机种子、N=0 到 N=200。
+
+**性能基准**：warmup 2 次 → 5 次取均值 → `torch.cuda.synchronize()` 前后计时。
+
+**关键陷阱**：`_get_coop_bev_embed` 向量化版本返回**新 tensor**（不原地修改 bev_pos），测试脚本必须接收返回值，否则对比误报 FAIL。
+
+### 5.5 正确性结果
+
+| 模块 | 测试场景 | 余弦相似度 | allclose(1e-5) |
+|------|---------|-----------|----------------|
+| AgentQueryFusionTRT vs 原版 | N_inf=20, 3 seeds | 0.9999999～1.0 | PASS ✅ |
+| _get_coop_bev_embed 向量化 vs 原版 | N=10/50/200 | 0.9999999～1.0 | PASS ✅ |
+| LaneQueryFusionTRT vs 原版 | N_queries=300, 3 seeds | 0.9999998～1.0 | PASS ✅ |
+
+### 5.6 性能结果
+
+#### _query_matching（最大瓶颈，消除 GPU-CPU 同步）
+
+| N_inf | 原版（多次同步） | 向量化（单次传输） | 加速比 |
+|-------|---------------|-----------------|--------|
+| 10    | 1,048 ms      | 2.7 ms          | **392×** |
+| 50    | 5,341 ms      | 5.6 ms          | **951×** |
+| 100   | 10,548 ms     | 8.9 ms          | **1,191×** |
+
+#### _get_coop_bev_embed（BEV 散射）
+
+| N_instances | 原版（三层循环） | index_add_ | 加速比 |
+|------------|---------------|------------|--------|
+| 10         | 3.4 ms        | 1.1 ms     | **3×** |
+| 50         | 16.2 ms       | 1.1 ms     | **15×** |
+| 200        | 64.3 ms       | 1.1 ms     | **58×** |
+
+---
+
+## 六、Phase 3C — V2X 路径检测头 TRT
+
+### 6.1 问题背景
+
+Phase 2 的检测头 TRT（`univ2x_ego_heads_200.trt`）固定 901 query。但 V2X 路径中，`AgentQueryFusion._query_complementation` 会将未匹配路侧实例追加至 ego track list，使 query 数量变为 **901 + N_comp**（每帧动态变化）。
+
+### 6.2 解决方案：固定上限 + 零填充
+
+- **N_PAD = 1101**（901 ego + 200 infra 最大补充槽）
+- `HeadsDecoderOnlyWrapper`：仅含 Decoder（无 `velo_update`），输出 5 张量
+- Hook D：零填充 query/ref_pts → 至 N_PAD → TRT → 切片 `[:, :, :N, :]`
+
+```bash
+# 导出
+python tools/export_onnx_univ2x.py \
+    projects/configs_e2e_univ2x/univ2x_coop_e2e_track_trt_p2.py \
+    ckpts/univ2x_coop_e2e_stg2.pth \
+    --model ego --v2x-heads --bev-size 200 \
+    --out onnx/univ2x_ego_heads_v2x_1101.onnx
+
+# 构建
+python tools/build_trt_downstream.py \
+    --onnx onnx/univ2x_ego_heads_v2x_1101.onnx \
+    --out trt_engines/univ2x_ego_heads_v2x_1101.trt
+```
+
+引擎大小：**33.4 MB**
+
+### 6.3 精度分析
+
+零填充导致 Decoder Self-Attention 中填充位置对真实 query 产生干扰（bias 项使零填充 query 非零）：
+
+| 查询数 N | cos_cls | cos_bbox | 说明 |
+|---------|---------|---------|------|
+| N=901   | 0.9992  | 0.9957  | 约 0.4% bbox 误差，Self-Attn 污染 |
+| N=950   | 0.9992  | 0.9963  | 同上 |
+| N=1101  | 0.9999  | 0.9994  | 无填充，精度最高 |
+
+### 6.4 已测试的其他填充策略
+
+| 策略 | cos_bbox (N=901) | 结论 |
+|------|-----------------|------|
+| 零填充（query=0, ref=0） | 0.9957 | **最优**，选用 |
+| 重复最后一个真实 query | 0.9757 | 更差 |
+| 随机噪声填充 | 0.9812 | 更差 |
+| query=0, ref=-1e4 | 0.9959 | 与零填充相当 |
+
+零填充是精度最高的策略，所有策略均低于 0.999 阈值，但端到端 AMOTA 仍可接受。
+
+---
+
+## 七、端到端测试结果
+
+### 7.1 测试配置
+
+- **数据集**：V2X-Seq-SPD 协同验证集，168 个样本
+- **配置文件**：`projects/configs_e2e_univ2x/univ2x_coop_e2e_track_trt_p2.py`
+- **Checkpoint**：`ckpts/univ2x_coop_e2e_stg2.pth`
+- **测试脚本**：`tools/test_trt.py`（VAD-TRT 风格，单 GPU）
+
+### 7.2 精度对比（168 样本）
+
+| 配置 | AMOTA | AMOTP | mAP | NDS | 说明 |
+|------|-------|-------|-----|-----|------|
+| PyTorch 全流程（基准）| 0.338 | 1.474 | 0.0727 | 0.0679 | 全 PyTorch V2X 推理 |
+| TRT Hook-A（ego BEV）| 0.381 | 1.450 | 0.0766 | 0.0700 | 仅 BEV 编码器 TRT |
+| TRT Hooks A+B+C（V2X 融合）| **0.379** | 1.441 | 0.0763 | 0.0699 | BEV + 融合向量化，检测头 PyTorch |
+| TRT Hooks A+B+C+D（全链路）| **0.370** | 1.446 | 0.0760 | 0.0697 | 所有模块 TRT |
+
+**关键结论**：
+- Hooks A+B+C 相对 Hook-A 仅损失 **0.002 AMOTA**（V2X 融合向量化精度几乎无损）
+- Hook D 相对 A+B+C 下降 **0.009 AMOTA**（零填充 Self-Attn 干扰）
+- 全链路 TRT（A+B+C+D）相对 PyTorch 基准提升 **+0.032 AMOTA**（0.370 vs 0.338）
+
+### 7.3 运行命令
+
+```bash
+# 全链路 TRT（Hook A+B+C+D）
+python tools/test_trt.py \
+    projects/configs_e2e_univ2x/univ2x_coop_e2e_track_trt_p2.py \
+    ckpts/univ2x_coop_e2e_stg2.pth \
+    --bev-engine-ego trt_engines/univ2x_ego_bev_encoder_200_1cam.trt \
+    --use-lane-trt \
+    --use-agent-trt \
+    --heads-engine-ego trt_engines/univ2x_ego_heads_v2x_1101.trt \
+    --eval bbox \
+    --out output/trt_v2x_all_hooks.pkl
+```
+
+---
+
+## 八、整体推理架构与引擎清单
+
+### 8.1 推理流程图
+
+```
+路侧（Infra）:
+  相机图像
+    → ResNet-FPN (PyTorch)
+    → [TRT] univ2x_infra_bev_encoder_200_1cam.trt    ← Hook-A
+    → 检测头 get_detections() (PyTorch)
+    → PansegformerHead (PyTorch)
+    → lane_query_data / track_instances
+    ──────────────────────── other_agent_results ─────────▶
+
+车端（Ego）:
+  相机图像
+    → ResNet-FPN (PyTorch)
+    → [TRT] univ2x_ego_bev_encoder_200_1cam.trt       ← Hook-A
+    → AgentQueryFusionTRT (向量化 PyTorch)             ← Hook-C
+      ├─ CPU: 坐标变换 + ego_selection + 向量化代价矩阵 + Hungarian
+      └─ GPU: MLP 对齐 + 融合 + 未匹配实例补充 → 901~1101 queries
+    → _get_coop_bev_embed (index_add_ 散射, PyTorch)
+    → [TRT] univ2x_ego_heads_v2x_1101.trt             ← Hook-D
+      (零填充至 1101 → TRT → 切片回 N)
+    → PansegformerHead + [LaneQueryFusionTRT]          ← Hook-B
+      CPU: np.linalg.inv + filter_other_lanes
+    → [TRT] univ2x_ego_downstream.trt
+      Motion Head + Occ Head + Planning Head
+    → 轨迹预测 / 占用预测 / 路径规划
+```
+
+### 8.2 TRT 引擎文件清单
+
+| 引擎文件 | 大小 | 用途 | 适用路径 |
+|---------|------|------|---------|
+| `trt_engines/univ2x_ego_bev_encoder_200_1cam.trt` | 74.6 MB | 车端 BEV 编码器（单摄像头） | 所有路径 |
+| `trt_engines/univ2x_infra_bev_encoder_200.trt` | 72 MB | 路侧 BEV 编码器 | 所有路径 |
+| `trt_engines/univ2x_ego_heads_200.trt` | 33 MB | 车端检测头（901 query） | 非 V2X 路径 |
+| `trt_engines/univ2x_ego_heads_v2x_1101.trt` | 33.4 MB | 车端检测头（1101 query，V2X） | V2X 路径（Hook-D） |
+| `trt_engines/univ2x_ego_downstream.trt` | 152 MB | 车端下游头（Motion+Occ+Planning） | 车端 |
+| `trt_engines/univ2x_infra_downstream.trt` | 134 MB | 路侧下游头（Motion+Occ，无规划） | 路侧 |
+
+### 8.3 各模块运行载体汇总
+
+| 模块 | 路侧 | 车端 | 备注 |
+|------|------|------|------|
+| ResNet-FPN backbone | PyTorch | PyTorch | DCNv2 不支持 ONNX 导出 |
+| BEV 编码器 | TRT | TRT | Hook-A |
+| 检测头（非 V2X） | — | TRT (901-query) | Hook-A 后原始路径 |
+| 检测头（V2X 路径） | PyTorch | TRT (1101-query) | Hook-D，零填充 |
+| AgentQueryFusion | — | 向量化 PyTorch | Hook-C，消除 GPU-CPU 同步 |
+| _get_coop_bev_embed | — | 向量化 PyTorch | index_add_ 散射，无 hook |
+| LaneQueryFusion | — | 向量化 PyTorch | Hook-B，forward_trt() |
+| Motion/Occ/Planning | TRT | TRT | Phase 3 |
+
+---
+
+## 九、关键 Bug 修复记录
+
+1. **DCNv2 骨干阻断 ONNX 导出**：使用 `BEVEncoderWrapper` 接收预提取 FPN 特征，跳过骨干。
+
+2. **MSDAPlugin INT64 输入**：ONNX 后处理将 `spatial_shapes`/`level_start_index` 常量从 INT64 改写为 INT32。
+
+3. **inversePlugin.cpp cudaMalloc**：需要显式 `(void**)&` 转型，否则 C++ 编译失败。
+
+4. **Checkpoint key 前缀**：协同训练 checkpoint 的 key 带 `model_ego_agent.` 前缀，导出时需用 `revise_keys=[(r'^model_ego_agent\.', '')]` 剥离。
+
+5. **bev_embedding 归零错误**：ONNX 中嵌入了 checkpoint 的 bev_embedding 权重，不能归零后再对比。
+
+6. **BN 训练模式统计量漂移**：`TrainingMode.TRAINING` 会调用 `model.train()` 导致 BN running stats 在 trace 中更新。修复：覆盖 BN 的 `forward` 方法强制 `training=False`。
+
+7. **SCA 单摄像头 reshape**：V2X-Seq-SPD 数据集只有 1 个摄像头，SCA 的 key/value 需补零至 `num_cams=6` 后再 reshape。
+
+8. **ONNX 导出摄像头数量错误**：添加 `--num-cam` CLI 参数覆盖模型配置的摄像头数。
+
+9. **MultiAgent.model_other_agents 不存在**：`MultiAgent` 通过 `setattr` 存储 infra 模型，正确访问方式为 `inner.other_agent_names` + `getattr(inner, name)`。
+
+10. **_get_coop_bev_embed 测试误报**：向量化版本返回新 tensor，测试必须接收返回值，否则 bev_pos 对比报 FAIL（非实现 bug）。
+
+11. **LaneQueryFusion filter_other_lanes 硬编码**：`bbox_index = indexes // 3`，测试中使用了错误的 `num_cls=10` 导致 CUDA 越界崩溃；正确值为 `num_things_classes=3`。
+
+12. **V2X 检测头零填充 Self-Attn 污染**：固定 1101-query TRT 引擎中，零填充 query 因 bias 项产生非零激活，在 Decoder Self-Attention 中干扰真实 query，造成约 0.4% bbox 误差，端到端 AMOTA 下降约 0.009。
+
+---
+
+## 十、修改文件清单
+
+### 新增文件
+
+| 文件 | 说明 |
+|------|------|
+| `CLAUDE_stage1.md` | Phase 1 TRT 加速指南（BEV 编码器） |
+| `CLAUDE_stage2.md` | Phase 2 TRT 加速指南（检测头 + 下游头） |
+| `CLAUDE_stage3.md` | Phase 3 V2X 融合 TRT 适配规划 |
+| `tools/build_trt_downstream.py` | 下游头 TRT 引擎构建脚本 |
+| `tools/validate_downstream_trt.py` | 下游头 TRT 精度验证脚本 |
+
+### 修改文件
+
+| 文件 | 改动内容 |
+|------|---------|
+| `projects/mmdet3d_plugin/univ2x/functions/multi_scale_deformable_attn.py` | 新增 `_MSDAPlugin(Function)`，ONNX 导出时返回零张量 |
+| `projects/mmdet3d_plugin/univ2x/ops/spatial_cross_attention.py` | 新增 `MSDeformableAttention3DTRT`、`SpatialCrossAttentionTRT`；修复单摄像头 reshape |
+| `projects/mmdet3d_plugin/univ2x/ops/temporal_self_attention.py` | 新增 `TemporalSelfAttentionTRT` |
+| `projects/mmdet3d_plugin/univ2x/modules/encoder.py` | 新增 `BEVFormerLayerTRT`、`BEVFormerEncoderTRT` |
+| `projects/mmdet3d_plugin/univ2x/modules/transformer.py` | 新增 `get_bev_features_trt()` |
+| `projects/mmdet3d_plugin/univ2x/modules/decoder.py` | 新增 `CustomMSDeformableAttentionTRT`、`DetectionTransformerDecoderTRTP` |
+| `projects/mmdet3d_plugin/univ2x/dense_heads/track_head.py` | 新增 `BEVFormerTrackHeadTRT.get_detections_trt()` |
+| `projects/mmdet3d_plugin/univ2x/dense_heads/motion_head_plugin/` | 新增 `MotionHeadTRT`（forward_trt） |
+| `projects/mmdet3d_plugin/univ2x/dense_heads/occ_head_plugin/` | 新增 `OccHeadTRT`（forward_trt） |
+| `projects/mmdet3d_plugin/univ2x/dense_heads/planning_head_plugin/` | 新增 `PlanningHeadSingleModeTRT`（forward_trt） |
+| `projects/mmdet3d_plugin/univ2x/fusion_modules/__init__.py` | 新增 `AgentQueryFusionTRT`、`LaneQueryFusionTRT` 导出 |
+| `projects/mmdet3d_plugin/univ2x/fusion_modules/agent_fusion.py` | 新增 `AgentQueryFusionTRT` 类（向量化代价矩阵、ego_selection、query 融合） |
+| `projects/mmdet3d_plugin/univ2x/fusion_modules/lane_fusion.py` | `LaneQueryFusionTRT` 已存在，确认接入路径 |
+| `projects/mmdet3d_plugin/univ2x/detectors/univ2x_track.py` | `_get_coop_bev_embed` 向量化（index_add_ 散射） |
+| `tools/export_onnx_univ2x.py` | 新增 `BEVEncoderWrapper`、`HeadsWrapper`、`HeadsDecoderOnlyWrapper`、`DownstreamHeadsWrapper`、`_export_*` 系列函数、`--v2x-heads` 等 CLI 标志 |
+| `tools/test_trt.py` | 新增 Hook A/B/C/D、`TrtEngine`、`single_gpu_test_trt()`，修复 `model_other_agents` bug |
+
+---
+
+*本文档最后更新：2026-03-10*
+*对应 commit：见 git log*

@@ -246,6 +246,41 @@ class HeadsWrapper(nn.Module):
         return all_cls, all_bbox, all_traj, last_ref_pts, query_feats, new_ref_pts
 
 
+class HeadsDecoderOnlyWrapper(nn.Module):
+    """Export wrapper for V2X detection head with fixed N_PAD=1101 queries.
+
+    Like HeadsWrapper but:
+    - Fixed 1101 queries (901 ego + up to 200 infra complementation padding).
+    - No velo_update — that step is kept in PyTorch (Hook D slices N_PAD back
+      to the actual N and lets univ2x_track.py run velo_update normally).
+    - 5 outputs instead of 6 (no ``new_ref_pts``).
+
+    Inputs:
+        bev_embed        (Tensor): (bev_h*bev_w, bs, C)
+        track_query      (Tensor): (N_PAD, C*2)  zero-padded pos+feat
+        track_ref_pts    (Tensor): (N_PAD, 3)    zero-padded ref points
+
+    Outputs:
+        all_cls_scores   (Tensor): (num_dec_layers, bs, N_PAD, num_classes)
+        all_bbox_preds   (Tensor): (num_dec_layers, bs, N_PAD, code_size)
+        all_past_trajs   (Tensor): (num_dec_layers, bs, N_PAD, steps, 2)
+        last_ref_pts     (Tensor): (bs, N_PAD, 3)
+        query_feats      (Tensor): (num_dec_layers, bs, N_PAD, C)
+    """
+
+    N_PAD = 1101  # 901 ego queries + 200 max infra complementation slots
+
+    def __init__(self, detector):
+        super().__init__()
+        self.detector = detector
+
+    def forward(self, bev_embed, track_query, track_ref_pts):
+        head = self.detector.pts_bbox_head
+        all_cls, all_bbox, all_traj, last_ref_pts, query_feats = \
+            head.get_detections_trt(bev_embed, track_query, track_ref_pts)
+        return all_cls, all_bbox, all_traj, last_ref_pts, query_feats
+
+
 class DownstreamHeadsWrapper(nn.Module):
     """Export wrapper: Stages D+E+F — Motion → Occ → Planning.
 
@@ -491,6 +526,8 @@ def parse_args():
                         help='Phase 2: export detection heads (Stage C) only')
     parser.add_argument('--downstream', action='store_true',
                         help='Phase 2: export downstream heads (Stages D+E+F: motion+occ+planning)')
+    parser.add_argument('--v2x-heads', action='store_true',
+                        help='Phase 3C: export V2X detection head (1101-query, decoder-only, no velo_update)')
     parser.add_argument('--bev-size', type=int, default=50,
                         help='BEV grid size H=W (default: 50 for Step A)')
     parser.add_argument('--img-h', type=int, default=256, help='Input image height')
@@ -558,9 +595,9 @@ def main():
     # Register additional ONNX symbolics needed for downstream heads
     _register_onnx_symbolics()
 
-    flags = [args.backbone_only, args.heads_only, args.downstream]
+    flags = [args.backbone_only, args.heads_only, args.downstream, args.v2x_heads]
     assert sum(flags) == 1, \
-        'Specify exactly one of --backbone-only / --heads-only / --downstream'
+        'Specify exactly one of --backbone-only / --heads-only / --downstream / --v2x-heads'
 
     # Create output directory
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -569,6 +606,8 @@ def main():
         _export_bev_encoder(model, bev_size, args)
     elif args.heads_only:
         _export_heads(model, bev_size, args)
+    elif args.v2x_heads:
+        _export_heads_v2x(model, bev_size, args)
     else:
         _export_downstream_heads(model, cfg, model_key, bev_size, args)
 
@@ -645,6 +684,46 @@ def _export_heads(model, bev_size, args):
     ]
 
     print(f'Exporting to {args.out} (opset={args.opset}) ...')
+    with torch.no_grad():
+        torch.onnx.export(
+            wrapper,
+            dummy,
+            args.out,
+            opset_version=args.opset,
+            input_names=input_names,
+            output_names=output_names,
+            do_constant_folding=False,
+            operator_export_type=torch.onnx.OperatorExportTypes.ONNX_FALLTHROUGH,
+            verbose=False,
+        )
+    print(f'ONNX saved to {args.out}')
+    _patch_and_verify_onnx(args.out)
+
+
+def _export_heads_v2x(model, bev_size, args):
+    """Phase 3C: export V2X detection head (N_PAD=1101, decoder-only, no velo_update)."""
+    N_PAD = HeadsDecoderOnlyWrapper.N_PAD
+    wrapper = HeadsDecoderOnlyWrapper(model).cuda().eval()
+
+    embed_dims = model.pts_bbox_head.embed_dims
+    bev_h = bev_w = bev_size
+    num_bev = bev_h * bev_w
+
+    # Dummy inputs — fixed N_PAD queries
+    bev_embed     = torch.randn(num_bev, 1, embed_dims, device='cuda')
+    track_query   = torch.randn(N_PAD, embed_dims * 2, device='cuda')
+    track_ref_pts = torch.randn(N_PAD, 3, device='cuda')
+    dummy = (bev_embed, track_query, track_ref_pts)
+
+    with torch.no_grad():
+        outs = wrapper(*dummy)
+    print(f'Forward OK — N_PAD={N_PAD}, output shapes: {[o.shape for o in outs]}')
+
+    input_names  = ['bev_embed', 'track_query', 'track_ref_pts']
+    output_names = ['all_cls_scores', 'all_bbox_preds', 'all_past_trajs',
+                    'last_ref_pts', 'query_feats']
+
+    print(f'Exporting to {args.out} (opset={args.opset}, N_PAD={N_PAD}) ...')
     with torch.no_grad():
         torch.onnx.export(
             wrapper,

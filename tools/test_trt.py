@@ -218,6 +218,153 @@ def attach_bev_hook(model_agent, bev_engine: TrtEngine, label: str):
 
 
 # ---------------------------------------------------------------------------
+# Hook B — LaneQueryFusion → LaneQueryFusionTRT
+# ---------------------------------------------------------------------------
+
+def attach_lane_hook(ego_model, inf_model, label: str):
+    """Replace ego seg_head.cross_lane_fusion with LaneQueryFusionTRT.
+
+    CPU preprocessing (np.linalg.inv, filter_other_lanes) is done inside the
+    replacement forward closure; the vectorised forward_trt() is then called.
+    The infra model's pc_range is read automatically.
+    """
+    from projects.mmdet3d_plugin.univ2x.fusion_modules import LaneQueryFusionTRT
+
+    seg_head = getattr(ego_model, 'seg_head', None)
+    if seg_head is None or not hasattr(seg_head, 'cross_lane_fusion'):
+        print(f'[Hook-B/{label}] No seg_head.cross_lane_fusion found — skipping')
+        return
+
+    orig = seg_head.cross_lane_fusion
+    # Get infra model pc_range (stored as self.pc_range on the head/detector)
+    other_pc_range = (getattr(inf_model, 'pc_range', None) or
+                      getattr(getattr(inf_model, 'pts_bbox_head', None),
+                              'pc_range', None))
+    if other_pc_range is None:
+        print(f'[Hook-B/{label}] Cannot determine infra pc_range — skipping')
+        return
+
+    trt_fuser = LaneQueryFusionTRT(
+        pc_range=orig.pc_range,
+        other_pc_range=other_pc_range,
+        embed_dims=orig.embed_dims,
+    )
+    trt_fuser.load_state_dict(orig.state_dict(), strict=False)
+    trt_fuser = trt_fuser.to(next(orig.parameters()).device)
+
+    def _trt_forward(other_cls, other_coords, other_q, other_qp, other_ref,
+                     veh_cls, veh_coords, veh_q, veh_qp, veh_ref,
+                     ego2other_rt, other_agent_pc_range, threshold=0.05):
+        calib = np.linalg.inv(ego2other_rt[0].cpu().numpy().T)
+        calib_t = other_q.new_tensor(calib)
+
+        bbox_idx = trt_fuser.filter_other_lanes(other_cls[-1],
+                                                threshold=threshold)
+        return trt_fuser.forward_trt(
+            other_q[:, bbox_idx, :],
+            other_qp[:, bbox_idx, :],
+            other_ref[:, bbox_idx, :],
+            veh_q, veh_qp, veh_ref,
+            veh_cls, veh_coords,
+            other_cls[:, :, bbox_idx, :],
+            other_coords[:, :, bbox_idx, :],
+            calib_t,
+        )
+
+    seg_head.cross_lane_fusion.forward = _trt_forward
+    print(f'[Hook-B/{label}] seg_head.cross_lane_fusion.forward → LaneQueryFusionTRT')
+
+
+# ---------------------------------------------------------------------------
+# Hook C — AgentQueryFusion → AgentQueryFusionTRT
+# ---------------------------------------------------------------------------
+
+def attach_agent_hook(model_agent, label: str):
+    """Replace cross_agent_query_interaction with AgentQueryFusionTRT.
+
+    AgentQueryFusionTRT.forward() is a drop-in replacement with vectorised
+    ego_selection and query fusion MLPs (no Python for-loops on GPU ops).
+    CPU preprocessing (scipy Hungarian) is unchanged.
+    """
+    from projects.mmdet3d_plugin.univ2x.fusion_modules import AgentQueryFusionTRT
+
+    if not hasattr(model_agent, 'cross_agent_query_interaction'):
+        print(f'[Hook-C/{label}] No cross_agent_query_interaction — skipping')
+        return
+
+    orig = model_agent.cross_agent_query_interaction
+    trt_fuser = AgentQueryFusionTRT(
+        pc_range=orig.pc_range,
+        embed_dims=orig.embed_dims,
+    )
+    trt_fuser.load_state_dict(orig.state_dict())
+    trt_fuser = trt_fuser.to(next(orig.parameters()).device)
+    model_agent.cross_agent_query_interaction = trt_fuser
+    print(f'[Hook-C/{label}] cross_agent_query_interaction → AgentQueryFusionTRT')
+
+
+# ---------------------------------------------------------------------------
+# Hook D — Detection head (V2X path, N_PAD=1101 queries)
+# ---------------------------------------------------------------------------
+
+def attach_heads_v2x_hook(model_agent, heads_engine: TrtEngine, label: str):
+    """Hook D: replace pts_bbox_head.get_detections with TRT V2X decoder.
+
+    The TRT engine accepts N_PAD=1101 fixed queries.  At inference the actual
+    query count N may be anywhere from 901 (no infra match) up to 1101
+    (all 200 infra instances complemented).  We zero-pad to 1101, run TRT,
+    then slice all outputs back to [:, :, :N, ...].
+    """
+    N_PAD = 1101
+    head = model_agent.pts_bbox_head
+
+    def _trt_get_detections(bev_embed, object_query_embeds=None,
+                            ref_points=None, img_metas=None):
+        N      = object_query_embeds.shape[0]
+        C2     = object_query_embeds.shape[1]
+        device = bev_embed.device
+        dtype  = bev_embed.dtype
+
+        assert N <= N_PAD, f'[Hook-D] query count {N} > N_PAD={N_PAD}'
+
+        if N < N_PAD:
+            pad_q = torch.zeros(N_PAD - N, C2, device=device, dtype=dtype)
+            track_query = torch.cat([object_query_embeds, pad_q], dim=0)
+            pad_r = torch.zeros(N_PAD - N, 3, device=device, dtype=dtype)
+            track_ref_pts = torch.cat([ref_points, pad_r], dim=0)
+        else:
+            track_query   = object_query_embeds
+            track_ref_pts = ref_points
+
+        trt_inputs = {
+            'bev_embed':     bev_embed.float().contiguous(),
+            'track_query':   track_query.float().contiguous(),
+            'track_ref_pts': track_ref_pts.float().contiguous(),
+        }
+        trt_out = heads_engine.infer(trt_inputs)
+
+        # Slice padded outputs back to actual query count N
+        all_cls    = trt_out['all_cls_scores'][:, :, :N, :]
+        all_bbox   = trt_out['all_bbox_preds'][:, :, :N, :]
+        all_traj   = trt_out['all_past_trajs'][:, :, :N, :, :]
+        last_ref   = trt_out['last_ref_pts'][:, :N, :]
+        query_feat = trt_out['query_feats'][:, :, :N, :]
+
+        return {
+            'all_cls_scores':      all_cls,
+            'all_bbox_preds':      all_bbox,
+            'all_past_traj_preds': all_traj,
+            'enc_cls_scores':      None,
+            'enc_bbox_preds':      None,
+            'last_ref_points':     last_ref,
+            'query_feats':         query_feat,
+        }
+
+    head.get_detections = _trt_get_detections
+    print(f'[Hook-D/{label}] pts_bbox_head.get_detections → TRT (N_PAD={N_PAD})')
+
+
+# ---------------------------------------------------------------------------
 # Single-GPU evaluation loop
 # (mirrors custom_multi_gpu_test without distributed communication)
 # ---------------------------------------------------------------------------
@@ -350,6 +497,16 @@ def parse_args():
     p.add_argument('--plugin', default='plugins/build/libuniv2x_plugins.so',
                    help='Custom TRT plugin shared library (.so)')
 
+    # V2X fusion hooks (Hook B / Hook C)
+    p.add_argument('--use-lane-trt', action='store_true',
+                   help='Hook B: replace LaneQueryFusion with LaneQueryFusionTRT')
+    p.add_argument('--use-agent-trt', action='store_true',
+                   help='Hook C: replace AgentQueryFusion with AgentQueryFusionTRT')
+
+    # V2X detection head TRT (Hook D)
+    p.add_argument('--heads-engine-ego', default=None,
+                   help='Hook D: V2X detection head TRT engine (1101-query, ego only)')
+
     # Output / evaluation
     p.add_argument('--out', default='output/trt_results.pkl',
                    help='Output result pkl file')
@@ -478,10 +635,36 @@ def main():
         print('[Hook-A/ego] No BEV engine specified — running full PyTorch')
 
     if args.bev_engine_inf:
-        for inf_name, inf_model in inner.model_other_agents.items():
+        for inf_name in inner.other_agent_names:
+            inf_model = getattr(inner, inf_name)
             print(f'\nLoading infra BEV TRT engine: {args.bev_engine_inf}')
             inf_trt = TrtEngine(args.bev_engine_inf, args.plugin)
             attach_bev_hook(inf_model, inf_trt, inf_name)
+
+    # ── Hook B — LaneQueryFusionTRT ───────────────────────────────────────
+    if args.use_lane_trt:
+        for inf_name in inner.other_agent_names:
+            inf_model = getattr(inner, inf_name)
+            print(f'\nAttaching Hook-B (LaneQueryFusionTRT) for ego ← {inf_name}')
+            attach_lane_hook(inner.model_ego_agent, inf_model, 'ego')
+            break  # only first infra agent needed for single-infra setup
+    else:
+        print('[Hook-B] --use-lane-trt not set — LaneQueryFusion runs in PyTorch')
+
+    # ── Hook C — AgentQueryFusionTRT ──────────────────────────────────────
+    if args.use_agent_trt:
+        print('\nAttaching Hook-C (AgentQueryFusionTRT) for ego')
+        attach_agent_hook(inner.model_ego_agent, 'ego')
+    else:
+        print('[Hook-C] --use-agent-trt not set — AgentQueryFusion runs in PyTorch')
+
+    # ── Hook D — V2X detection head TRT (1101 queries) ────────────────────
+    if args.heads_engine_ego:
+        print(f'\nLoading ego V2X heads TRT engine: {args.heads_engine_ego}')
+        heads_trt = TrtEngine(args.heads_engine_ego, args.plugin)
+        attach_heads_v2x_hook(inner.model_ego_agent, heads_trt, 'ego')
+    else:
+        print('[Hook-D] --heads-engine-ego not set — detection head runs in PyTorch')
 
     # ── Run evaluation loop ───────────────────────────────────────────────
     print('\nRunning TRT evaluation loop...')

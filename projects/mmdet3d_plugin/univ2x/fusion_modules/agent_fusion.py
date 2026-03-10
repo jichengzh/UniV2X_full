@@ -197,3 +197,169 @@ class AgentQueryFusion(nn.Module):
         veh = self._query_complementation(inf, veh, inf_accept_idx)
 
         return veh
+
+
+class AgentQueryFusionTRT(AgentQueryFusion):
+    """TRT-compatible variant of AgentQueryFusion.
+
+    Key changes vs the original:
+    1. ego_selection: vectorised boolean mask (removes first ego instance)
+       instead of Python for-loop + del_tensor_ele.
+    2. _query_fusion: vectorised index_add on query tensor instead of
+       Python for-loop over matched pairs.
+    3. CPU preprocessing (scipy Hungarian) remains on CPU — identical to
+       original.
+
+    Usage (drop-in replacement for forward())::
+
+        veh = fusion_trt.forward_trt(inf, veh, ego2other_rt, other_pc_range)
+    """
+
+    N_EGO = 901
+    N_INF_MAX = 200
+    N_TOTAL = 1101  # N_EGO + N_INF_MAX
+
+    def _query_matching_vec(self, inf_ref_pts, veh_ref_pts, veh_mask, veh_pred_dims):
+        """Vectorised cost-matrix build (GPU) + scipy Hungarian (CPU).
+
+        Replaces the O(N_veh × N_inf) Python for-loop in ``_query_matching``
+        with a single batched GPU operation followed by one GPU→CPU transfer.
+
+        Args:
+            inf_ref_pts:   (N_inf, 3) absolute xyz in veh frame.
+            veh_ref_pts:   (N_veh, 3)
+            veh_mask:      1-D LongTensor of active veh indices (scores≥0.05).
+            veh_pred_dims: (N_veh, 3) predicted dx/dy/dz.
+
+        Returns:
+            idx_veh, idx_inf, cost_matrix  (same as _query_matching)
+        """
+        veh_nums = veh_ref_pts.shape[0]
+        inf_nums = inf_ref_pts.shape[0]
+
+        # Start with all-1e6 cost matrix
+        cost_gpu = veh_ref_pts.new_full((veh_nums, inf_nums), 1e6)
+
+        if len(veh_mask) > 0:
+            # Active veh pts: (M, 3), inf pts: (N_inf, 3)
+            veh_pts = veh_ref_pts[veh_mask]              # (M, 3)
+            dims    = veh_pred_dims[veh_mask]             # (M, 3)
+
+            # Pairwise differences: (M, N_inf, 3)
+            diff = veh_pts.unsqueeze(1) - inf_ref_pts.unsqueeze(0)
+
+            # L2 distance: (M, N_inf)
+            l2 = diff.pow(2).sum(-1).sqrt()
+
+            # dis_filt: |diff| / veh_dims <= 1 for all 3 axes
+            rel = diff.abs() / dims.unsqueeze(1).clamp(min=1e-6)   # (M, N_inf, 3)
+            keep = rel.le(1.0).all(dim=-1)                           # (M, N_inf) bool
+
+            cost_active = torch.where(keep, l2,
+                                      l2.new_full((), 1e6))          # (M, N_inf)
+            cost_gpu[veh_mask] = cost_active
+
+        cost_matrix = cost_gpu.cpu().numpy()
+        idx_veh, idx_inf = linear_sum_assignment(cost_matrix)
+        return idx_veh, idx_inf, cost_matrix
+
+    def forward(self, inf, veh, ego2other_rt, other_agent_pc_range,
+                threshold=0.3):
+        """Override forward to call forward_trt (drop-in replacement)."""
+        return self.forward_trt(inf, veh, ego2other_rt, other_agent_pc_range,
+                                threshold)
+
+    def forward_trt(self, inf, veh, ego2other_rt, other_agent_pc_range,
+                    threshold=0.3):
+        """TRT-friendly forward: CPU matching + vectorised GPU MLPs.
+
+        Semantics identical to AgentQueryFusion.forward().
+        """
+        inf_mask = torch.where(inf.obj_idxes >= 0)
+        inf = inf[inf_mask]
+        if len(inf) == 0:
+            return veh
+
+        inf.obj_idxes = torch.ones_like(inf.obj_idxes) * -1
+
+        # ref_pts norm → absolute
+        inf_ref_pts = self._loc_denorm(inf.ref_pts, other_agent_pc_range)
+        veh_ref_pts = self._loc_denorm(veh.ref_pts, self.pc_range)
+
+        # inf → veh coordinate transform
+        calib_inf2veh = np.linalg.inv(ego2other_rt[0].cpu().numpy().T)
+        calib_inf2veh_t = inf_ref_pts.new_tensor(calib_inf2veh)
+        inf_ref_pts_h = torch.cat(
+            (inf_ref_pts, torch.ones_like(inf_ref_pts[..., :1])), -1
+        ).unsqueeze(-1)
+        inf_ref_pts = torch.matmul(calib_inf2veh_t,
+                                   inf_ref_pts_h).squeeze(-1)[..., :3]
+
+        # ego_selection: vectorised — remove first infra instance inside
+        # the ego vehicle bounding box (matches original loop + break logic)
+        H_B, H_F, W_L, W_R = -2.04, 2.04, -0.92, 0.92
+        in_ego = (
+            (inf_ref_pts[:, 0] >= H_B) & (inf_ref_pts[:, 0] <= H_F) &
+            (inf_ref_pts[:, 1] >= W_L) & (inf_ref_pts[:, 1] <= W_R)
+        )
+        first_ego = in_ego.nonzero(as_tuple=False)
+        if len(first_ego) > 0:
+            keep = torch.ones(len(inf), dtype=torch.bool,
+                              device=inf_ref_pts.device)
+            keep[first_ego[0, 0]] = False
+            inf = inf[keep]
+            inf_ref_pts = inf_ref_pts[keep]
+
+        if len(inf) == 0:
+            return veh
+
+        # matching: vectorised GPU cost matrix + CPU scipy Hungarian
+        veh_mask = torch.where(veh.scores >= 0.05)[0]
+        veh_idx, inf_idx, cost_matrix = self._query_matching_vec(
+            inf_ref_pts, veh_ref_pts, veh_mask,
+            veh.pred_boxes[..., [2, 3, 5]])
+
+        # ref_pts absolute → norm
+        inf_ref_pts = self._loc_norm(inf_ref_pts, self.pc_range)
+        veh_ref_pts = self._loc_norm(veh_ref_pts, self.pc_range)
+        inf.ref_pts = inf_ref_pts
+        veh.ref_pts = veh_ref_pts
+
+        # cross-agent feature alignment (vectorised)
+        N_inf = inf.query.shape[0]
+        inf2veh_r = calib_inf2veh_t[:3, :3].reshape(1, 9).expand(N_inf, 9)
+        inf_q = inf.query.clone()
+        inf_q[..., :self.embed_dims] = self.cross_agent_align_pos(
+            torch.cat([inf_q[..., :self.embed_dims], inf2veh_r], -1))
+        inf_q[..., self.embed_dims:] = self.cross_agent_align(
+            torch.cat([inf_q[..., self.embed_dims:], inf2veh_r], -1))
+        inf.query = inf_q
+
+        # cross-agent query fusion (vectorised index_add — no Python loop)
+        accept_mask = np.array(
+            [cost_matrix[veh_idx[k]][inf_idx[k]] < 1e5
+             for k in range(len(veh_idx))])
+        inf_accept_idx = []
+        if accept_mask.any():
+            veh_acc = veh_idx[accept_mask]
+            inf_acc = inf_idx[accept_mask]
+            inf_accept_idx = inf_acc.tolist()
+
+            veh_acc_t = torch.tensor(veh_acc, dtype=torch.long,
+                                     device=inf.query.device)
+            inf_acc_t = torch.tensor(inf_acc, dtype=torch.long,
+                                     device=inf.query.device)
+            fused = self.cross_agent_fusion(
+                inf.query[inf_acc_t, self.embed_dims:])
+            veh_q = veh.query.clone()
+            veh_q[veh_acc_t, self.embed_dims:] = (
+                veh_q[veh_acc_t, self.embed_dims:] + fused)
+            veh.query = veh_q
+
+        # cross-agent query complementation (dynamic Instances.cat)
+        inf_accept_set = set(inf_accept_idx)
+        for i in range(inf.ref_pts.shape[0]):
+            if i not in inf_accept_set:
+                veh = Instances.cat([veh, inf[i]])
+
+        return veh

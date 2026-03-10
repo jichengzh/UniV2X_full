@@ -391,27 +391,59 @@ class UniV2XTrack(MVXTwoStageDetector):
     def _get_coop_bev_embed(self, bev_embed_src, bev_pos_src, track_instances, start_idx):
         bev_embed = bev_embed_src
         bev_pos = bev_pos_src
-        act_track_instances = track_instances[start_idx:]  
+        act_track_instances = track_instances[start_idx:]
 
-        # print('act_track_instances len:',len(act_track_instances))
+        N = act_track_instances.ref_pts.shape[0]
+        if N == 0:
+            return bev_embed, bev_pos
 
         locs = act_track_instances.ref_pts.sigmoid().clone()
-        locs[:, 0:1] = locs[:, 0:1] * self.bev_w # w
-        locs[:, 1:2] = locs[:, 1:2] * self.bev_h # h
+        locs[:, 0:1] = locs[:, 0:1] * self.bev_w  # w
+        locs[:, 1:2] = locs[:, 1:2] * self.bev_h  # h
 
-        pixel_len = 1 # 2
+        pixel_len = 1
 
-        for idx in range(act_track_instances.ref_pts.shape[0]):
-            w = int(locs[idx, 0])
-            h = int(locs[idx, 1])
-            if w >= self.bev_w or w < 0 or h >= self.bev_h or h < 0:
-                continue
+        w_i = locs[:, 0].long()
+        h_i = locs[:, 1].long()
+        valid = (w_i >= 0) & (w_i < self.bev_w) & (h_i >= 0) & (h_i < self.bev_h)
 
-            for hh in range(max(0, h - pixel_len), min(self.bev_h - 1, h + pixel_len)):
-                for ww in range(max(0, w - pixel_len), min(self.bev_w - 1, w + pixel_len)):
-                    bev_embed[hh * self.bev_w + ww, :, :] =  bev_embed[hh * self.bev_w + ww, :, :] + self.bev_embed_linear(act_track_instances.query[idx, self.embed_dims:])
-                    bev_pos[:, :, hh, ww] = bev_pos[:, :, hh, ww] + self.bev_pos_linear(act_track_instances.query[idx, :self.embed_dims])
- 
+        # Precompute MLP outputs for all instances: (N, C)
+        feat_embed = self.bev_embed_linear(
+            act_track_instances.query[:, self.embed_dims:])
+        feat_pos = self.bev_pos_linear(
+            act_track_instances.query[:, :self.embed_dims])
+
+        C_pos = bev_pos.shape[1]
+        # Flatten bev_pos to (H*W, C) for vectorised scatter
+        bev_pos_flat = (bev_pos.squeeze(0)           # (C, H, W)
+                        .permute(1, 2, 0)             # (H, W, C)
+                        .contiguous()
+                        .reshape(self.bev_h * self.bev_w, C_pos))
+
+        # Neighbourhood offsets matching original:
+        # range(-pixel_len, pixel_len) == [-1, 0]
+        for dh in range(-pixel_len, pixel_len):
+            for dw in range(-pixel_len, pixel_len):
+                hh = h_i + dh
+                ww = w_i + dw
+                in_bounds = (valid &
+                             (hh >= 0) & (hh < self.bev_h) &
+                             (ww >= 0) & (ww < self.bev_w))
+                if not in_bounds.any():
+                    continue
+                flat_idx = (hh * self.bev_w + ww)[in_bounds]
+                # bev_embed: (H*W, 1, C)
+                bev_embed.index_add_(
+                    0, flat_idx,
+                    feat_embed[in_bounds].unsqueeze(1))
+                bev_pos_flat.index_add_(
+                    0, flat_idx,
+                    feat_pos[in_bounds])
+
+        bev_pos = (bev_pos_flat
+                   .reshape(self.bev_h, self.bev_w, C_pos)
+                   .permute(2, 0, 1)
+                   .unsqueeze(0))  # (1, C, H, W)
         return bev_embed, bev_pos
           
     @auto_fp16(apply_to=("img", "prev_bev"))
