@@ -20,6 +20,7 @@
     - [Installation](docs/INSTALL.md)
     - [Prepare Dataset](docs/DATA_PREP.md)
     - [Train/Eval](docs/TRAIN_EVAL.md)
+    - [TRT Acceleration & Evaluation](docs/TRT_EVAL.md)
 4. [TODO List](#todos)
 5. [License](#license)
 6. [Citation](#citation)
@@ -41,6 +42,7 @@
 - [Prepare Dataset](docs/DATA_PREP.md)
 - [Evaluation Example](docs/TRAIN_EVAL.md)
 - [Train/Eval](docs/TRAIN_EVAL.md)
+- [TRT Acceleration & Evaluation](docs/TRT_EVAL.md)
 
 
 ## TODO List <a name="todos"></a>
