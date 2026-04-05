@@ -366,7 +366,125 @@ TRT INT8 引擎构建
 
 ---
 
-## 十三、当前最优配置对比
+## 十三、AdaRound Q/DQ 实施全过程问题复盘（2026-04-05）
+
+> 本节记录 2026-04-05 实施 AdaRound + Q/DQ ONNX 方案时遇到的所有技术问题、排查过程及反思。
+
+### 13.1 问题一：ONNX 节点模式识别错误（24 vs 36 不匹配）
+
+**现象**：
+```
+RuntimeError: Count mismatch: 24 ONNX quant MatMuls vs 36 QuantModules.
+```
+
+**根因**：
+原始脚本 `find_quant_matmul_nodes()` 查找的是 `Initializer → Transpose → MatMul` 模式（即 `nn.Parameter` 权重），而 QuantModule 的 `org_weight` 是普通 `torch.Tensor`（非 Parameter），ONNX tracer 将其内嵌为 `Constant` 节点，实际模式为 `Constant(W_fq) → Transpose → MatMul`。
+
+24 个 Initializer 模式对应的是**未被量化的 24 个 nn.Linear**，而非 QuantModule。
+
+**排查过程**：
+1. 通过图分析脚本统计 `MatMul_transpose_init`（24 个）和 `MatMul_transpose_non_init`（36 个）
+2. 追踪 non-init 的上游节点发现全部是 `Constant` 类型
+3. 对比模型中 Linear 层总数（60 层）= QuantModule（36）+ 普通 Linear（24）完全吻合
+
+**修复**：将 `find_quant_matmul_nodes()` 改为识别 `Constant → Transpose → MatMul` 模式；`build_weight_value_map()` 改为从 Constant 节点提取权重值用于匹配。
+
+**反思**：ONNX tracer 对 `nn.Parameter`（→ Initializer）和普通 `torch.Tensor`（→ Constant）的处理有本质差异，量化框架中 `org_weight` 的存储方式直接影响图结构，分析 ONNX 图前必须先确认权重的存储类型。
+
+---
+
+### 13.2 问题二：ONNX 拓扑排序警告
+
+**现象**：
+```
+onnx.checker raised: Nodes in a graph must be topologically sorted,
+however input 'onnx::Transpose_3640' of node QL is not output of any previous nodes.
+```
+
+**根因**：
+最初将所有新 Q/DQ 节点统一前置（`graph.node.insert(0, node)`），导致 Q/DQ 节点出现在其依赖的 Constant 节点之前，违反 ONNX 拓扑顺序要求。
+
+**修复**：改为在遍历 `graph.node` 时，将每对 Q/DQ 节点紧随对应 Constant 节点之后插入（`new_node_list.append(ql); new_node_list.append(dql)` 在 Constant 节点处理后立即追加），最后整体替换 `graph.node`。
+
+**反思**：ONNX 图编辑时插入节点必须维护拓扑顺序，依赖动态输出（Constant 节点输出）的新节点不能统一前置，需要在图遍历中就地插入。
+
+---
+
+### 13.3 问题三：TRT 不支持非零 zero_point
+
+**现象**：
+```
+[TRT] [E] Assertion failed: shiftIsAllZeros(zeroPoint):
+Non-zero zero point is not supported.
+```
+
+**根因**：
+`UniformAffineQuantizer` 使用**非对称 UINT8 量化**（zero_point ∈ [0, 255]，通常 ≠ 0），TRT GPU 路径要求 Q/DQ 节点必须使用**对称 INT8 量化**（zero_point = 0），非零偏移仅 DLA 支持。
+
+**修复**：放弃使用 AdaRound 原始的非对称 scale/zero_point，改为从 W_fq 重新计算对称 scale：
+```python
+scale_sym[i] = max(|W_fq[i, :]|) / 127.0   # per output channel
+zp = 0  # int8
+```
+
+**反思**：AdaRound 中 `UniformAffineQuantizer` 的非对称量化设计与 TRT GPU 的对称 INT8 要求存在根本性不兼容。在设计量化框架时，如果目标部署平台是 TRT GPU，应从一开始使用对称量化（`sym=True`），避免后期适配成本。
+
+---
+
+### 13.4 问题四（核心）：权重-only Q/DQ 使 TRT 进入显式量化模式
+
+**现象**：
+```
+[TRT] Calibrator won't be used in explicit quantization mode.
+```
+端到端 AMOTA = **0.137**，远低于 Vanilla INT8 PTQ（0.353）。
+
+**根因**：
+TRT 10.x 的量化模式是二元对立的：
+- **隐式量化模式**（implicit）：依赖 Calibrator 为所有层提供激活 scale，全局 INT8
+- **显式量化模式**（explicit）：图中任意 Q/DQ 节点存在即触发此模式，Calibrator 完全失效
+
+只插入权重 Q/DQ 时：
+- 有 Q/DQ 的权重层：对称 INT8（但 W_fq 被 QL 再次量化，引入额外噪声）
+- 无 Q/DQ 的激活层：**退化为 FP16**（Calibrator 被完全忽略）
+- 净效果：更多量化噪声 + 更少 INT8 覆盖 → AMOTA 0.137
+
+正确做法是**权重和激活同时插入 Q/DQ**，才能使 TRT 正确 fuse 为 INT8 MatMul kernel：
+```
+激活 → QL(scale_act) → DQL(scale_act) ─┐
+                                        ├→ INT8 MatMul kernel (TRT fused)
+W_fq → QL(scale_w)  → DQL(scale_w)  ──┘
+```
+
+**反思**：
+1. TRT 的"显式 Q/DQ 模式"是全局生效的，不支持"仅对部分层指定 scale"的混合模式。
+2. 任何 Q/DQ 节点的插入都是全局承诺：你接管了全部量化控制，Calibrator 不再有效。
+3. 在引入 Q/DQ 之前必须先评估：是否准备好为所有量化层（包括激活）提供显式 scale？
+4. 权重-only Q/DQ 方案是常见的误区，在 TRT 文档中已有明确警告，但容易被忽略。
+
+---
+
+### 13.5 根本性反思：AdaRound 在当前框架下的适用性
+
+**问题本质**：
+本项目中 AdaRound 的实现路径是：
+```
+PyTorch（非对称 UINT8 AdaRound）→ W_fq 内嵌 ONNX → TRT INT8（对称 INT8）
+```
+三个环节的量化语义不一致，导致每次转换都引入额外误差。
+
+**与 Vanilla INT8 PTQ 对比**：
+Vanilla PTQ 直接用 FP32/FP16 原始权重 + Calibrator（entropy scale），TRT 做一次对称量化，误差最小（AMOTA 0.353）。AdaRound 本意是通过优化舍入减少误差，但非对称→对称的转换使优化收益完全抵消甚至负收益。
+
+**正确的 AdaRound for TRT 方案**（后续参考）：
+1. 改 `UniformAffineQuantizer` 使用对称 INT8（`sym=True`，range [-127, 127]，zp=0）
+2. AdaRound 优化在对称 INT8 网格上进行
+3. 导出 ONNX 时插入权重 Q/DQ（scale=scale_ada_sym，zp=0）**和**激活 Q/DQ（scale 来自 Calibration entropy）
+4. TRT 显式量化模式下正确 fuse
+
+---
+
+## 十五、当前最优配置对比
 
 | 配置 | AMOTA | 引擎大小 | 适用场景 |
 |------|:-----:|:--------:|---------|
@@ -379,7 +497,7 @@ TRT INT8 引擎构建
 
 ---
 
-## 十四、后续优化方向
+## 十六、后续优化方向
 
 | 优先级 | 方向 | 预期收益 | 难度 |
 |:------:|------|---------|:----:|
@@ -391,7 +509,7 @@ TRT INT8 引擎构建
 
 ---
 
-## 十五、关键决策与经验教训
+## 十七、关键决策与经验教训
 
 | 决策 | 原则 | 教训 |
 |------|------|------|
@@ -404,4 +522,4 @@ TRT INT8 引擎构建
 
 ---
 
-*文档生成：2026-04-04，最后更新：2026-04-05 | 对应项目目录：`/home/jichengzhi/UniV2X`*
+*文档生成：2026-04-04，最后更新：2026-04-05（第十三节：Q/DQ 全过程复盘） | 对应项目目录：`/home/jichengzhi/UniV2X`*
