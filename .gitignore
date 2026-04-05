@@ -160,3 +160,8 @@ plugins/build/
 
 # Stray weight files in root
 *.pth
+
+# Calibration large binary data
+calibration/*.pkl
+calibration/*.cache
+docs/quant/outputs/
