@@ -126,8 +126,14 @@ class TrtEngine:
             out[name] = torch.zeros(*shape, dtype=torch.float32, device='cuda')
             self.ctx.set_tensor_address(name, out[name].data_ptr())
 
+        torch.cuda.synchronize()
+        _t0 = time.perf_counter()
         self.ctx.execute_async_v3(torch.cuda.current_stream().cuda_stream)
         torch.cuda.synchronize()
+        elapsed_ms = (time.perf_counter() - _t0) * 1000.0
+        self._last_infer_ms = elapsed_ms
+        self._total_infer_ms = getattr(self, '_total_infer_ms', 0.0) + elapsed_ms
+        self._infer_count    = getattr(self, '_infer_count', 0) + 1
         return out
 
 
@@ -480,6 +486,170 @@ def single_gpu_test_trt(model, data_loader):
 
 
 # ---------------------------------------------------------------------------
+# Hook E — Downstream heads INT8 TRT (motion + occ + planning)
+# ---------------------------------------------------------------------------
+
+def attach_downstream_int8_hook(model_agent, engine: TrtEngine, label: str):
+    """Hook E: Override downstream heads (motion+occ+planning) with INT8 TRT engine.
+
+    Strategy
+    --------
+    1. Hooks ``pts_bbox_head.get_detections`` to capture bev_embed,
+       query_feats, all_bbox_preds, all_cls_scores in a per-frame buffer.
+    2. Hooks ``seg_head.forward_test`` to capture lane_query / lane_query_pos.
+    3. Wraps ``forward_test`` so that *after* the normal PyTorch inference (which
+       provides ground-truth occ labels for evaluation), the TRT engine is called
+       and its outputs override the PyTorch seg_out / sdc_traj in the result dict.
+
+    AMOTA is unaffected (it comes from the detection head, not downstream).
+    OCC IoU and planning L2 use TRT predictions vs. PyTorch-computed GT.
+
+    Note: num_query+1 = 901 (ego) — all_bbox_preds / query_feats are sliced to
+    the first 901 queries to match the ONNX export shape.
+    """
+    num_query = model_agent.num_query + 1 if hasattr(model_agent, 'num_query') else 901
+
+    _buf = {}   # per-frame capture buffer (reset at each forward_test call)
+
+    # ── Hook 1: pts_bbox_head.get_detections ──────────────────────────────
+    orig_get_det = model_agent.pts_bbox_head.get_detections
+
+    def _hook_get_det(bev_embed, object_query_embeds=None,
+                      ref_points=None, img_metas=None):
+        result = orig_get_det(bev_embed,
+                              object_query_embeds=object_query_embeds,
+                              ref_points=ref_points,
+                              img_metas=img_metas)
+        _buf['bev_embed']      = bev_embed.detach()
+        _buf['query_feats']    = result['query_feats'].detach()
+        _buf['all_bbox_preds'] = result['all_bbox_preds'].detach()
+        _buf['all_cls_scores'] = result['all_cls_scores'].detach()
+        return result
+
+    model_agent.pts_bbox_head.get_detections = _hook_get_det
+
+    # ── Hook 2: seg_head.forward_test → lane queries ──────────────────────
+    if hasattr(model_agent, 'seg_head'):
+        orig_seg = model_agent.seg_head.forward_test
+
+        def _hook_seg(*args, **kwargs):
+            ret = orig_seg(*args, **kwargs)
+            result_seg = ret[0] if isinstance(ret, (list, tuple)) else ret
+            seg_dict = (result_seg[0]
+                        if isinstance(result_seg, (list, tuple))
+                        else result_seg)
+            args_tuple = (seg_dict.get('args_tuple')
+                          if isinstance(seg_dict, dict) else None)
+            if args_tuple is not None:
+                _buf['lane_query']     = args_tuple[3].detach()
+                _buf['lane_query_pos'] = args_tuple[5].detach()
+            return ret
+
+        model_agent.seg_head.forward_test = _hook_seg
+
+    # ── Hook 3: forward_test wrapper ──────────────────────────────────────
+    orig_ft = model_agent.forward_test
+
+    def _hook_ft(*args, **kwargs):
+        _buf.clear()
+
+        # Run full PyTorch inference (fills _buf and produces seg_gt / ins_seg_gt
+        # inside result[0]['occ'] via the normal occ_head.forward_test).
+        result = orig_ft(*args, **kwargs)
+
+        if 'bev_embed' not in _buf:
+            return result   # hooks not triggered (non-E2E frame)
+
+        # ── Extract command ───────────────────────────────────────────────
+        cmd = kwargs.get('command', None)
+        if cmd is not None:
+            if isinstance(cmd, (list, tuple)) and len(cmd) > 0:
+                cmd = cmd[0]
+            cmd = (cmd.to(torch.int64).cuda()
+                   if isinstance(cmd, torch.Tensor)
+                   else torch.tensor(int(cmd), dtype=torch.int64, device='cuda'))
+        else:
+            cmd = torch.tensor(0, dtype=torch.int64, device='cuda')
+
+        # ── Assemble TRT inputs ───────────────────────────────────────────
+        bev_embed      = _buf['bev_embed'].float().contiguous()
+        query_feats    = _buf['query_feats'][:, :, :num_query, :].float().contiguous()
+        all_bbox_preds = _buf['all_bbox_preds'][:, :, :num_query, :].float().contiguous()
+        all_cls_scores = _buf['all_cls_scores'][:, :, :num_query, :].float().contiguous()
+
+        C = query_feats.shape[-1]
+        if _buf.get('lane_query') is not None:
+            lane_q  = _buf['lane_query'].float()
+            lane_qp = _buf['lane_query_pos'].float()
+            # ONNX fixed at 300 lanes — slice if seg head returned more
+            if lane_q.shape[1] > 300:
+                lane_q  = lane_q[:, :300, :]
+                lane_qp = lane_qp[:, :300, :]
+            lane_q  = lane_q.contiguous()
+            lane_qp = lane_qp.contiguous()
+        else:
+            lane_q  = torch.zeros(1, 300, C, device='cuda')
+            lane_qp = torch.zeros(1, 300, C, device='cuda')
+
+        trt_inputs = {
+            'bev_embed':      bev_embed,
+            'query_feats':    query_feats,
+            'all_bbox_preds': all_bbox_preds,
+            'all_cls_scores': all_cls_scores,
+            'lane_query':     lane_q,
+            'lane_query_pos': lane_qp,
+            'command':        cmd,
+        }
+
+        trt_out = engine.infer(trt_inputs)
+
+        # ── Override occ seg_out with TRT occ_logits ──────────────────────
+        if 'occ' in result[0] and 'occ_logits' in trt_out:
+            occ_head = model_agent.occ_head
+            thresh   = getattr(occ_head, 'test_seg_thresh', 0.25)
+            n_future = getattr(occ_head, 'n_future', 4)
+
+            occ_logits = trt_out['occ_logits']          # (1, A, T_raw, H, W)
+            # Slice to n_future+1 time steps (matches forward_test_trt)
+            occ_logits = occ_logits[:, :, :1 + n_future]  # (1, A, T, H, W)
+
+            # Compute per-agent scores from last-layer class scores
+            last_cls     = all_cls_scores[-1, 0]           # (A, num_cls)
+            track_scores = last_cls.softmax(-1).max(-1)[0] # (A,)
+            ts_w = track_scores[None, :, None, None, None] # (1, A, 1, 1, 1)
+
+            pred_ins_sigmoid = occ_logits.sigmoid() * ts_w.to(occ_logits)
+            # _if_no_query equivalent: append fill-pad, take max over agents
+            b, _, T, H, W = pred_ins_sigmoid.shape
+            pad = torch.full((b, 1, T, H, W), thresh - 1,
+                              device=pred_ins_sigmoid.device,
+                              dtype=pred_ins_sigmoid.dtype)
+            pred_seg_scores = torch.cat([pred_ins_sigmoid, pad], dim=1).max(1)[0]
+            seg_out = (pred_seg_scores > thresh).long().unsqueeze(2)  # (1, T, 1, H, W)
+            result[0]['occ']['seg_out'] = seg_out
+
+            # ins_seg_out: zeros (panoptic quality not measured in this hook)
+            bev_h = getattr(occ_head, 'bev_size', (200, 200))[0]
+            bev_w = getattr(occ_head, 'bev_size', (200, 200))[1]
+            result[0]['occ']['ins_seg_out'] = torch.zeros(
+                1, 5, bev_h, bev_w, dtype=torch.long, device='cuda')
+
+        # ── Override planning sdc_traj with TRT output ────────────────────
+        if 'sdc_traj' in trt_out and 'planning' in result[0]:
+            sdc_traj = trt_out['sdc_traj']
+            rp = result[0]['planning'].get('result_planning', {})
+            if isinstance(rp, dict):
+                rp['sdc_traj'] = sdc_traj
+            result[0]['planning_traj'] = sdc_traj
+
+        return result
+
+    model_agent.forward_test = _hook_ft
+    print(f'[Hook-E/{label}] downstream heads → INT8 TRT '
+          f'({len(engine.output_names)} outputs, num_query={num_query})')
+
+
+# ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
 
@@ -506,6 +676,10 @@ def parse_args():
     # V2X detection head TRT (Hook D)
     p.add_argument('--heads-engine-ego', default=None,
                    help='Hook D: V2X detection head TRT engine (1101-query, ego only)')
+
+    # Downstream heads INT8 TRT (Hook E)
+    p.add_argument('--downstream-int8-ego', default=None,
+                   help='Hook E: downstream heads INT8 TRT engine (ego)')
 
     # Output / evaluation
     p.add_argument('--out', default='output/trt_results.pkl',
@@ -631,6 +805,7 @@ def main():
         print(f'\nLoading ego BEV TRT engine: {args.bev_engine_ego}')
         ego_trt = TrtEngine(args.bev_engine_ego, args.plugin)
         attach_bev_hook(inner.model_ego_agent, ego_trt, 'ego')
+        args._bev_engine_ego_obj = ego_trt
     else:
         print('[Hook-A/ego] No BEV engine specified — running full PyTorch')
 
@@ -640,6 +815,7 @@ def main():
             print(f'\nLoading infra BEV TRT engine: {args.bev_engine_inf}')
             inf_trt = TrtEngine(args.bev_engine_inf, args.plugin)
             attach_bev_hook(inf_model, inf_trt, inf_name)
+            args._bev_engine_inf_obj = inf_trt
 
     # ── Hook B — LaneQueryFusionTRT ───────────────────────────────────────
     if args.use_lane_trt:
@@ -663,12 +839,25 @@ def main():
         print(f'\nLoading ego V2X heads TRT engine: {args.heads_engine_ego}')
         heads_trt = TrtEngine(args.heads_engine_ego, args.plugin)
         attach_heads_v2x_hook(inner.model_ego_agent, heads_trt, 'ego')
+        args._heads_engine_obj = heads_trt
     else:
         print('[Hook-D] --heads-engine-ego not set — detection head runs in PyTorch')
 
+    # ── Hook E — Downstream heads INT8 TRT (motion + occ + planning) ─────
+    if args.downstream_int8_ego:
+        print(f'\nLoading ego downstream INT8 TRT engine: {args.downstream_int8_ego}')
+        ds_trt_ego = TrtEngine(args.downstream_int8_ego, args.plugin)
+        attach_downstream_int8_hook(inner.model_ego_agent, ds_trt_ego, 'ego')
+        args._downstream_engine_obj = ds_trt_ego
+    else:
+        print('[Hook-E] --downstream-int8-ego not set — downstream heads run in PyTorch')
+
     # ── Run evaluation loop ───────────────────────────────────────────────
     print('\nRunning TRT evaluation loop...')
+    t_eval_start = time.perf_counter()
     outputs = single_gpu_test_trt(model_multi, data_loader)
+    t_eval_total = time.perf_counter() - t_eval_start
+    n_frames = len(data_loader.dataset)
 
     # ── Save & evaluate ───────────────────────────────────────────────────
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -684,6 +873,22 @@ def main():
 
     if args.format_only:
         dataset.format_results(outputs['bbox_results'], **kwargs)
+
+    # ── Latency summary ───────────────────────────────────────────────────
+    print('\n' + '=' * 60)
+    print('LATENCY SUMMARY')
+    print('=' * 60)
+    print(f'  Total eval time  : {t_eval_total:.1f}s  ({n_frames} frames)')
+    print(f'  End-to-end       : {t_eval_total / n_frames * 1000:.1f} ms/frame'
+          f'  ({n_frames / t_eval_total:.2f} fps)')
+    for tag, eng in [('bev_ego', getattr(args, '_bev_engine_ego_obj', None)),
+                     ('bev_inf', getattr(args, '_bev_engine_inf_obj', None)),
+                     ('heads',   getattr(args, '_heads_engine_obj', None)),
+                     ('downstream_int8', getattr(args, '_downstream_engine_obj', None))]:
+        if eng is not None and getattr(eng, '_infer_count', 0) > 0:
+            avg = eng._total_infer_ms / eng._infer_count
+            print(f'  TRT {tag:<20s}: {avg:.2f} ms/frame avg'
+                  f'  ({eng._infer_count} calls)')
 
     if args.eval:
         eval_kwargs = cfg.get('evaluation', {}).copy()

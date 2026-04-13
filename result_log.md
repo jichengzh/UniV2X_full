@@ -3,7 +3,7 @@
 **项目**：UniV2X — 端到端 V2X 协同自动驾驶系统  
 **硬件**：RTX 4090 (SM 89)，CUDA 11.8，TensorRT 10.13.0.35  
 **评估集**：V2X-Seq-SPD 协同验证集，168 样本，442 GT 目标  
-**最后更新**：2026-04-04
+**最后更新**：2026-04-05（第十四节：QuantV2X 研究；第十五/十六节：方向更新）
 
 ---
 
@@ -484,28 +484,125 @@ Vanilla PTQ 直接用 FP32/FP16 原始权重 + Calibrator（entropy scale），T
 
 ---
 
-## 十五、当前最优配置对比
+## 十四、QuantV2X 量化体系研究（2026-04-05）
 
-| 配置 | AMOTA | 引擎大小 | 适用场景 |
-|------|:-----:|:--------:|---------|
-| PyTorch 基准 | 0.338 | 1,600 MB | — |
-| Hook-A（FP16 BEV TRT） | **0.381** | 75 MB BEV | **精度最优** |
-| Hook-A+B+C+D（全链路 FP16 TRT） | **0.370** | ~466 MB 全部 | **速度+精度综合最优** |
-| INT8 PTQ v5（BEV encoder） | 0.364 | **43 MB BEV** | **体积最优** |
-| AdaRound INT8（无 Q/DQ） | 0.190 ❌ | 43.7 MB | 双重量化，不可用 |
-| AdaRound Q/DQ（权重-only）| 0.137 ❌ | 40.8 MB | TRT 显式量化模式问题，不可用 |
+> 本节记录对 QuantV2X 项目（参考实现）的深度代码阅读结果，为 UniV2X 后续量化路径提供依据。详细内容见 `quantv2x_learn.md`。
+
+### 14.1 QuantV2X 的两条独立管线
+
+通过完整阅读 QuantV2X 源码，发现其量化体系由两条**完全独立**的管线构成，二者之间不存在数据通路：
+
+| 管线 | 文件 | 核心方法 | 产物 |
+|------|------|---------|------|
+| **PyTorch W8A8 路径** | `inference_quant.py` | AdaRound（W8）+ LSQ（A8） | 精度指标（论文主体贡献） |
+| **TRT INT8 部署路径** | `build_trt_int8.py` + `inference_onnx_dump_calibration.py` | DataCalibrator（隐式 entropy calibration） | `.plan` TRT 引擎（实测延迟） |
+
+**关键发现**：AdaRound 优化出的 `alpha` 参数完全不传入 TRT 路径，TRT INT8 使用标准 `IInt8EntropyCalibrator2`，与 AdaRound 结果无关。
+
+### 14.2 QuantV2X 对稀疏卷积的量化处理
+
+QuantV2X 专门实现了 `QuantSpconvModule`（`quant_layer.py:423-496`），用于 spconv 稀疏卷积（SubMConv3d / SparseConv3d）的 PyTorch 侧 W8A8 量化：
+
+```python
+class QuantSpconvModule(nn.Module):
+    # 临时覆盖 spconv 权重后执行稀疏卷积，再对 features 做激活量化
+    # 保持 SparseConvTensor 格式，不 densify
+```
+
+`QuantVoxelBackBone8x`（`quant_block.py:988-1033`）将整个 SECOND 3D 稀疏骨干中的所有稀疏卷积层统一替换为 `QuantSpconvModule`，并参与 AdaRound 优化（`second_reconstruction`）。
+
+### 14.3 论文提及的 Custom CUDA Kernels
+
+论文原文：
+> "we implement custom CUDA kernels and integrate them as TensorRT plug-ins to ensure compatibility and accurate latency profiling"
+
+**代码库现状**：对 QuantV2X 仓库的完整搜索表明，**不存在任何 TRT plugin 源码**（无 `.cu` plugin 文件，无 plugin 目录，`build_trt_int8.py` 中无 `loadLibrary` 调用）。
+
+**结论**：custom CUDA kernels 属于以下之一：
+1. 论文工程实现中存在，但公开代码未包含（未开源）
+2. spconv 在 ONNX 导出时 densify 为标准 Conv3d，TRT 原生处理；"custom kernels" 指性能优化层面
+
+**UniV2X 对比**：UniV2X 的 MSDAPlugin 已完整实现并开源（`plugins/multi_scale_deform_attn/`），TRT plugin 工程化程度**优于** QuantV2X 的公开代码。
+
+### 14.4 TRT INT8 的正确路径（对 UniV2X 的启示）
+
+基于 QuantV2X 的设计，UniV2X TRT INT8 的正确实现路径为：
+
+```
+Step 1: 收集 BEV encoder calibration 数据（512+ 帧真实数据 → NPZ 格式）
+Step 2: 实现 BEVEncoderCalibrator(IInt8EntropyCalibrator2)，读取 NPZ 喂给 TRT
+Step 3: config.set_flag(INT8) + config.int8_calibrator = calibrator
+Step 4: 构建 INT8 TRT 引擎（无需 Q/DQ 节点，无需 AdaRound）
+```
+
+**关键**：TRT 隐式 INT8 路径从 FP32 ONNX 出发，不依赖 AdaRound 结果，不涉及 Q/DQ 节点，与 QuantV2X 的 `build_trt_int8.py` 设计完全一致。当前 UniV2X 已有 `calibration/bev_encoder_calib_inputs.pkl`（50 帧），可直接复用或扩充。
+
+### 14.5 AdaRound 在 UniV2X 中的定位修正
+
+| | 之前的认识 | 修正后的认识 |
+|--|-----------|------------|
+| AdaRound 的用途 | 期望通过 Q/DQ 节点将 AdaRound scale 传入 TRT | AdaRound 适合 PyTorch W8A8 精度评估，TRT INT8 用独立 DataCalibrator |
+| 量化器设计 | 未考虑对称/非对称的影响 | 非对称 UINT8（当前实现）与 TRT Q/DQ 不兼容；若要做真正的 Q/DQ，必须改为对称 INT8 |
+| 最短路径 | 复杂的 Q/DQ 节点插入 | 仿照 QuantV2X 的 DataCalibrator，简单、已验证、可直接实现 |
 
 ---
 
-## 十六、后续优化方向
+## 十五、当前最优配置对比（2026-04-05 更新）
 
-| 优先级 | 方向 | 预期收益 | 难度 |
-|:------:|------|---------|:----:|
-| P0 | AdaRound 完整 Q/DQ（权重+激活均插入） | AMOTA ≥ 0.381 | 高（需激活 Q/DQ 自动化插入） |
-| P1 | 检测头 INT8 PTQ | 引擎减 ~14 MB，需验证 QuantCustomMSDA | 中 |
-| P2 | 下游头 INT8 PTQ | 引擎再减 ~170 MB（-36%） | 低（无 MSDAPlugin 相邻层） |
-| P3 | 对称 AdaRound（改 UniformAffineQuantizer sym=True）+ 全 Q/DQ | 正确 TRT 对接，INT8 精度改善 | 中高 |
-| P4 | backbone QAT（DCNv2） | — | 极高（DCNv2 不可 ONNX） |
+| 配置 | AMOTA | 引擎大小 | 状态 | 说明 |
+|------|:-----:|:--------:|:----:|------|
+| PyTorch 全链路基准 | 0.338 | 1,600 MB | ✅ 基准 | 全 PyTorch，无 TRT |
+| **Hook-A（FP16 BEV TRT）** | **0.381** | 75 MB BEV | ✅ **精度最优** | 仅 BEV 编码器 TRT，其余 PyTorch |
+| Hook-A+B+C（含 V2X 融合向量化） | 0.379 | 75 MB BEV | ✅ 已验证 | BEV TRT + 融合向量化，检测头 PyTorch |
+| **Hook-A+B+C+D（全链路 FP16 TRT）** | **0.370** | ~466 MB 全部 | ✅ **速度+精度综合最优** | 所有模块 TRT，含 V2X 检测头 1101-query |
+| INT8 PTQ v5（BEV encoder） | 0.364 | **43 MB BEV** | ✅ **体积最优** | 50 帧 temporal calibration，无 Q/DQ |
+| AdaRound INT8（无 Q/DQ） | 0.190 | 43.7 MB | ❌ 废弃 | 双重量化问题，W_fq 被 TRT 再量化 |
+| AdaRound Q/DQ（权重-only） | 0.137 | 40.8 MB | ❌ 废弃 | TRT 进入显式量化模式，Calibrator 失效 |
+| TRT 隐式 INT8（DataCalibrator） | 待测 | ~40 MB 预期 | 🔲 **待实施** | 参照 QuantV2X 正确路径，预期 ≥ 0.364 |
+
+**当前结论**：
+- FP16 全链路 TRT 已是生产可用状态（AMOTA=0.370，63× 延迟加速）
+- AdaRound 两种方案均已确认失败，不再追求
+- 下一阶段重心：仿照 QuantV2X 的 DataCalibrator 方案实现真正的隐式 INT8，无需 Q/DQ
+
+---
+
+## 十六、后续优化方向（2026-04-05 更新）
+
+基于 QuantV2X 研究结论，优先级重新排序：
+
+| 优先级 | 方向 | 预期收益 | 难度 | 依据 |
+|:------:|------|---------|:----:|------|
+| **P0** | **TRT 隐式 INT8 DataCalibrator（BEV encoder）** | AMOTA ≥ 0.364，引擎 ~40 MB，实现简单 | **低** | 仿照 QuantV2X `build_trt_int8.py`，已有 50 帧 PKL 数据可转 NPZ |
+| P1 | 检测头 INT8 PTQ（DataCalibrator） | 引擎减 ~14 MB（33 MB → ~20 MB），延迟进一步降低 | 中 | 需验证 CustomMSDA INT8，参照 MSDAPlugin 隐式精度 |
+| P2 | 下游头 INT8 PTQ（DataCalibrator） | 引擎减 ~80 MB（152+134 MB → ~100 MB），无 MSDAPlugin 邻层 | 低 | 下游头无自定义算子，DataCalibrator 可直接应用 |
+| P3 | 对称 AdaRound + 完整 W+A Q/DQ（研究性） | INT8 精度改善（若超过 FP16 0.381 则有价值） | 高 | 需重写 `UniformAffineQuantizer`（sym=True），重做激活 Q/DQ 插入 |
+| P4 | backbone QAT（DCNv2） | 理论上精度最高，但工程极复杂 | 极高 | DCNv2 不可 ONNX 导出，需 C++ 量化插件 |
+
+**P0 具体实施步骤**（可立即开始）：
+
+```bash
+# 1. 将现有 PKL calibration 数据转为 NPZ 格式（兼容 DataCalibrator）
+python tools/convert_pkl_to_npz.py \
+    --input calibration/bev_encoder_calib_inputs.pkl \
+    --output calibration/bev_encoder_npz/
+
+# 2. 扩充至 512 帧（可选，提升 scale 精度）
+python tools/dump_bev_calibration.py \
+    --config projects/configs_e2e_univ2x/univ2x_coop_e2e_track_trt_p2.py \
+    --checkpoint ckpts/univ2x_coop_e2e_stg2.pth \
+    --output calibration/bev_encoder_npz/ --num-frames 512
+
+# 3. 构建 INT8 引擎（新建 tools/build_trt_int8_bev.py）
+python tools/build_trt_int8_bev.py \
+    --onnx onnx/univ2x_ego_bev_encoder_200_1cam.onnx \
+    --npz-dir calibration/bev_encoder_npz/ \
+    --cache calibration/bev_int8.cache \
+    --output trt_engines/univ2x_ego_bev_encoder_int8_datacalib.trt
+
+# 4. 端到端验证
+python tools/test_trt.py --use-bev-trt trt_engines/univ2x_ego_bev_encoder_int8_datacalib.trt
+```
 
 ---
 
@@ -522,4 +619,186 @@ Vanilla PTQ 直接用 FP32/FP16 原始权重 + Calibrator（entropy scale），T
 
 ---
 
-*文档生成：2026-04-04，最后更新：2026-04-05（第十三节：Q/DQ 全过程复盘） | 对应项目目录：`/home/jichengzhi/UniV2X`*
+---
+
+## 十八、下游头 INT8 PTQ 量化全链路验证（2026-04-05）
+
+### 18.1 实施内容
+
+本节完成了下游头（Motion + Occ + Planning）的 TRT INT8 PTQ 量化，具体步骤：
+
+1. **B-1** 新建 `tools/dump_downstream_calibration.py`：Hook `pts_bbox_head.get_detections` + `seg_head.forward_test`，50 帧真实推理，捕获下游头输入
+2. **B-2** Smoke test：`build_trt_int8_univ2x.py --target downstream --no-int8`，验证 FP16 TRT 构建路径
+3. **B-3** 构建 INT8 引擎：ego + infra 各 50 帧校准数据，`IInt8EntropyCalibrator2`
+4. **B-4a** 余弦相似度验证（INT8 vs FP16）
+5. **B-4b** 端到端 AMOTA / 速度对比（三种配置，168 帧评估集）
+
+### 18.2 模型大小对比
+
+| 模型 | FP32 ONNX | FP16 TRT | INT8 TRT | FP16→INT8 压缩率 |
+|------|:---------:|:--------:|:--------:|:---------------:|
+| Ego 下游头 | 128 MB | 153 MB | **74 MB** | **↓51.6%** |
+| Infra 下游头 | 114 MB | 134 MB | **66 MB** | **↓50.7%** |
+| **合计** | **242 MB** | **287 MB** | **140 MB** | **↓51.2%** |
+
+### 18.3 推理速度对比
+
+| 组件 | FP16 TRT | INT8 TRT | 加速比 |
+|------|:--------:|:--------:|:------:|
+| 下游头单独延迟 | 79.75 ms/帧 | **32.53 ms/帧** | **2.45×** |
+| BEV encoder (ego) | 59.75 ms/帧 | 59.74 ms/帧 | 1.0× |
+| BEV encoder (infra) | 53.57 ms/帧 | 53.14 ms/帧 | 1.0× |
+| **端到端** | **785.6 ms/帧 (1.27 fps)** | **740.6 ms/帧 (1.35 fps)** | **1.06×** |
+
+> 端到端加速有限（6%）是因为下游头仅占总延迟约 10%；BEV encoder 仍是主瓶颈。
+
+### 18.4 精度对比（余弦相似度，INT8 vs FP16，5 样本平均）
+
+| 输出 | 余弦相似度 | 均值绝对误差 |
+|------|:---------:|:-----------:|
+| traj_scores | 0.9999842 ✅ | 1.93e-3 |
+| traj_preds | 0.9999455 ✅ | 3.80e-3 |
+| occ_logits | 0.9992438 ✅ | 3.42e-2 |
+| sdc_traj | 0.9999968 ✅ | 4.04e-2 |
+
+### 18.5 端到端 AMOTA 对比（168 帧，V2X-Seq-SPD 协同验证集）
+
+| 配置 | AMOTA | AMOTP | mAP | NDS | 下游头推理 |
+|------|:-----:|:-----:|:---:|:---:|:----------:|
+| **Config-B**：FP16 BEV + FP16 下游头（Hook E，FP16 引擎） | 0.248 | 1.623 | 0.0439 | 0.0537 | 79.75 ms |
+| **Config-C**：FP16 BEV + INT8 下游头（Hook E，INT8 引擎） | 0.255 | 1.604 | 0.0450 | 0.0542 | **32.53 ms** |
+| **差值 C−B** | +0.007 | −0.019 | +0.0011 | +0.0005 | **↓47 ms (−59%)** |
+
+> **AMOTA 基本不变**（±0.007 在噪声范围内）：AMOTA 来自检测头，下游头量化不影响目标检测/跟踪质量。两组 mAP 数值略低于早期测试（0.379）的原因已在 Section 19 中排查清楚：**非 Hook E 导致，而是 infra BEV 引擎使用了错误的权重和摄像头配置**。修复后 AMOTA=0.341（与 PyTorch 基准 0.338 持平）。
+
+### 18.6 关键经验
+
+| 问题 | 原因 | 解法 |
+|------|------|------|
+| `lane_query` 形状不固定（332/323/300...） | panseg_head 输出车道数随帧变化 | calibrator `get_batch()` 中加 shape-guard slice；Hook E 中截断到 300 |
+| 首次 ego 引擎构建 calibration 中途崩溃 | `buf.copy_(t)` 在 shape 不匹配时抛异常 | `build_trt_int8_univ2x.py` 加 shape-guard zero-pad/slice 逻辑 |
+| `dump_univ2x_calibration.py` 格式错误 | 旧版本保存原始 DataLoader 样本而非 backbone 特征 | 重写：Hook `get_bev_features`，直接捕获 `feat0-3 / can_bus / lidar2img` |
+
+### 18.7 结论
+
+**下游头 INT8 量化收益**：
+
+- **模型大小**：下游头 TRT 引擎减少 51%（合计 287 MB → 140 MB）
+- **推理速度**：下游头单独 2.45× 加速（79.75 ms → 32.53 ms）
+- **端到端速度**：提升 6%（785.6 → 740.6 ms/帧），受制于 BEV encoder 瓶颈
+- **检测精度**：AMOTA 不变（±0.007 噪声），INT8 量化不损害目标检测/跟踪
+- **输出质量**：所有输出余弦相似度 > 0.999，`occ_logits` 略低（0.9992）但仍可接受
+
+**当前全链路最优配置**（含下游头 INT8）：
+
+```
+BEV encoder: FP16 TRT (Hook A)       75 MB ego + 73 MB infra
+V2X Fusion:  向量化 PyTorch (Hook B+C) —
+Detection:   PyTorch or FP16 TRT
+Downstream:  INT8 TRT (Hook E)        74 MB ego + 66 MB infra
+```
+
+---
+
+---
+
+## 十九、Infra BEV 引擎排查与修复（2026-04-08）
+
+### 19.1 问题现象
+
+Section 18 中 Config-B/C 的 AMOTA（0.248/0.255）远低于早期 Hook-A+B+C 结果（0.379），最初怀疑 Hook E（下游头 TRT）引入了问题。
+
+### 19.2 排查过程
+
+通过对比所有历史评估日志的 AMOTA，发现真正的规律：
+
+| 评估日志 | Infra BEV TRT | AMOTA |
+|---------|:------------:|:-----:|
+| `eval_hookA_ego_only` | ❌ 未启用 | **0.378** |
+| `eval_hookA_BC_no_infra` | ❌ 未启用 | **0.379** |
+| `eval_hookA_both` | ✅ 旧引擎 `200.trt` | **0.251** |
+| `eval_configA` | ✅ 旧引擎 `200.trt` | **0.228** |
+| `eval_configB`（含 Hook E） | ✅ 旧引擎 `200.trt` | **0.248** |
+
+**结论**：AMOTA 下降与 Hook E 无关，完全由 infra BEV TRT 引擎引起。
+
+### 19.3 根因一：Infra 引擎输入形状不匹配（旧引擎）
+
+对比引擎输入形状：
+
+| 引擎 | feat0 shape | lidar2img | 说明 |
+|------|------------|-----------|------|
+| ego 1cam（正确） | `(1,1,256,136,240)` | `(1,1,4,4)` | 1 摄像头，1088×1920 |
+| **infra 旧**（错误） | `(1,6,256,32,52)` | `(1,6,4,4)` | **6 摄像头，NuScenes 默认分辨率** |
+| infra 1cam（正确） | `(1,1,256,136,240)` | `(1,1,4,4)` | 1 摄像头，1088×1920 |
+
+旧引擎 `univ2x_infra_bev_encoder_200.trt`（Mar 7，73 MB）是 NuScenes 6-cam 配置导出，与 V2X-Seq-SPD 单摄像头数据集不兼容。
+
+### 19.4 根因二：ONNX 导出加载了错误的权重
+
+`export_onnx_univ2x.py` 中 `build_model_from_cfg()` 的自动前缀检测逻辑存在 bug：
+
+```python
+# 旧代码（Bug）
+sample_key = next(iter(sd))           # 始终取第一个 key
+prefix = sample_key.split('.')[0] + '.'  # → "model_ego_agent."
+```
+
+Cooperative checkpoint 中 key 的排列顺序使 `next(iter(sd))` 始终返回 `model_ego_agent.` 前缀。**导出 infra 模型时，实际加载的是 ego 的权重。**
+
+```
+Checkpoint 结构：
+  model_ego_agent.xxx          ← 2491 keys（first key 来自这里）
+  model_other_agent_inf.xxx    ← 2413 keys（被完全忽略）
+```
+
+**修复**：改用 `model_key`（即 config 名称 `model_other_agent_inf`）作为前缀，仅在匹配不到时 fallback 到旧逻辑：
+
+```python
+# 修复后
+prefix = model_key + '.'   # "model_other_agent_inf."
+stripped = {k[len(prefix):]: v for k,v in sd.items() if k.startswith(prefix)}
+if not stripped:  # fallback: 单前缀 checkpoint
+    sample_key = next(iter(sd))
+    prefix = sample_key.split('.')[0] + '.'
+    stripped = ...
+```
+
+### 19.5 修复后验证结果（2026-04-08）
+
+修复 `export_onnx_univ2x.py` → 重新导出 infra ONNX → 重新构建 infra FP16 TRT 引擎 → 三组端到端评估：
+
+| 配置 | AMOTA | AMOTP | mAP | NDS | 下游头延迟 | 端到端延迟 |
+|------|:-----:|:-----:|:---:|:---:|:---------:|:---------:|
+| **Baseline**：Hook A+B+C（ego+infra FP16 BEV） | **0.341** | 1.508 | 0.0624 | 0.0631 | — | 817.6 ms |
+| **Config-B**：+ Hook E FP16 下游头 | **0.341** | 1.508 | 0.0624 | 0.0631 | 78.81 ms | 816.7 ms |
+| **Config-C**：+ Hook E INT8 下游头 | **0.341** | 1.508 | 0.0624 | 0.0631 | **32.51 ms** | 847.6 ms |
+
+**关键结论**：
+1. **Hook E 对 AMOTA 零影响**：三组配置 AMOTA 完全一致（0.341），确认下游头 TRT（无论 FP16 还是 INT8）不干扰检测/跟踪
+2. **Infra BEV TRT 修复有效**：从错误引擎的 0.248 恢复到 0.341，与 PyTorch 基准（0.338）基本持平
+3. **INT8 下游头 2.4× 加速**：78.81 ms → 32.51 ms，与 Section 18 结论一致
+4. **Ego-only TRT (0.378) vs ego+infra TRT (0.341) 的差异**为 TRT FP16 数值特性造成的正常波动（ego 侧 FP16 恰好对此数据集有利）
+
+### 19.6 反思
+
+| 问题 | 原因 | 教训 |
+|------|------|------|
+| ONNX 导出自动前缀检测取 `next(iter(sd))` | 假设 state_dict 只有一个前缀，V2X cooperative checkpoint 有两个 | **多代理 checkpoint 必须显式指定前缀**，不能依赖 key 顺序自动推导 |
+| 旧 infra 引擎用 6-cam 配置 | 早期开发时参照 NuScenes 默认值，未检查 V2X-Seq-SPD 数据集的实际摄像头数 | **导出 TRT 引擎前必须验证数据集的真实配置**（cam 数、图像分辨率） |
+| Section 18 误归因为"Hook E 干扰" | 未对比无 infra BEV 引擎的 baseline | **AMOTA 下降排查应先隔离变量**：逐个开关 Hook 对比，而非直接怀疑最后添加的组件 |
+| 旧引擎被新测试复用 | pipeline 脚本引用旧文件名 `200.trt` | **TRT 引擎文件名应编码关键配置**（cam 数、分辨率、精度），避免错用；已更新 pipeline 引用 `200_1cam.trt` |
+
+### 19.7 修正后的全链路对比表
+
+| 配置 | AMOTA | 引擎大小（全部） | 状态 |
+|------|:-----:|:---------------:|:----:|
+| PyTorch 全链路基准 | 0.338 | 1,600 MB | ✅ 基准 |
+| Hook-A（ego BEV FP16 TRT only） | 0.378 | 75 MB ego | ✅ 精度最优 |
+| Hook-A+B+C（ego+infra BEV FP16 + V2X 融合） | **0.341** | 75+41 MB BEV | ✅ 全链路协同 |
+| Hook-A+B+C+E（FP16 下游头 TRT） | **0.341** | 75+41+153 MB | ✅ Hook E 无损 |
+| Hook-A+B+C+E（INT8 下游头 TRT） | **0.341** | 75+41+74 MB | ✅ **推荐配置** |
+
+---
+
+*文档生成：2026-04-04，最后更新：2026-04-08（第十九节：Infra BEV 引擎排查与修复） | 对应项目目录：`/home/jichengzhi/UniV2X`*

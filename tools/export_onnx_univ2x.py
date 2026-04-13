@@ -450,10 +450,16 @@ def build_model_from_cfg(cfg, model_key, ckpt_path=None, random_weights=False):
         import torch as _torch
         raw = _torch.load(ckpt_path, map_location='cpu')
         sd = raw.get('state_dict', raw)
-        # Detect prefix: find the common leading component(s) before the first "."
-        sample_key = next(iter(sd))
-        prefix = sample_key.split('.')[0] + '.'  # e.g. "model_ego_agent."
+        # Use model_key (e.g. "model_ego_agent" or "model_other_agent_inf")
+        # as the prefix to strip.  Fallback to first-key detection only if
+        # model_key prefix yields no matches (e.g. single-agent checkpoint).
+        prefix = model_key + '.'
         stripped = {k[len(prefix):]: v for k, v in sd.items() if k.startswith(prefix)}
+        if not stripped:
+            # Fallback: single-prefix checkpoint — use first key's prefix
+            sample_key = next(iter(sd))
+            prefix = sample_key.split('.')[0] + '.'
+            stripped = {k[len(prefix):]: v for k, v in sd.items() if k.startswith(prefix)}
         if stripped:
             missing, unexpected = model.load_state_dict(stripped, strict=False)
             if missing:
