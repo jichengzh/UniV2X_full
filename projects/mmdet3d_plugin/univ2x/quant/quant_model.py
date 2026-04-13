@@ -9,8 +9,13 @@ Changes:
 """
 
 import torch.nn as nn
-from .quant_layer import QuantModule, StraightThrough, UniformAffineQuantizer
-from .fold_bn import search_fold_and_remove_bn
+
+try:
+    from .quant_layer import QuantModule, StraightThrough, UniformAffineQuantizer
+    from .fold_bn import search_fold_and_remove_bn
+except ImportError:
+    from quant_layer import QuantModule, StraightThrough, UniformAffineQuantizer
+    from fold_bn import search_fold_and_remove_bn
 
 
 class BaseQuantBlock(nn.Module):

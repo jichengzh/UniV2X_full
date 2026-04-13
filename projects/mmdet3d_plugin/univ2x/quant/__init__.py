@@ -55,6 +55,7 @@ from .quant_bevformer import (
 )
 from .quant_fusion import register_fusion_specials, FUSION_SKIP_NAMES
 from .quant_downstream import register_downstream_specials, DOWNSTREAM_SKIP_NAMES
+from .comm_quant import CommQuantizer
 
 __all__ = [
     # quant_layer
@@ -79,4 +80,6 @@ __all__ = [
     'register_fusion_specials', 'FUSION_SKIP_NAMES',
     # quant_downstream
     'register_downstream_specials', 'DOWNSTREAM_SKIP_NAMES',
+    # comm_quant
+    'CommQuantizer',
 ]

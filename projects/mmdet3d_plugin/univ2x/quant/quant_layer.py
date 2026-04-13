@@ -54,14 +54,19 @@ class UniformAffineQuantizer(nn.Module):
 
     def __init__(self, n_bits: int = 8, symmetric: bool = False, channel_wise: bool = False,
                  scale_method: str = 'mse',
-                 leaf_param: bool = False, prob: float = 1.0):
+                 leaf_param: bool = False, prob: float = 1.0,
+                 group_size: int = -1):
         super(UniformAffineQuantizer, self).__init__()
         self.sym = symmetric
-        if self.sym:
-            raise NotImplementedError
         assert 2 <= n_bits <= 8, 'bitwidth not supported'
         self.n_bits = n_bits
         self.n_levels = 2 ** self.n_bits
+        if self.sym:
+            self.qmin = -(2 ** (self.n_bits - 1) - 1)
+            self.qmax = 2 ** (self.n_bits - 1) - 1
+        else:
+            self.qmin = 0
+            self.qmax = self.n_levels - 1
         self.delta = 1.0
         self.zero_point = 0.0
         self.inited = True
@@ -70,6 +75,10 @@ class UniformAffineQuantizer(nn.Module):
         self.leaf_param = leaf_param
         self.channel_wise = channel_wise
         self.eps = torch.tensor(1e-8, dtype=torch.float32)
+
+        '''per-group quantization'''
+        self.group_size = group_size
+        self.use_group_quant = (group_size > 0)
 
         '''mse params'''
         self.scale_method = scale_method
@@ -95,7 +104,52 @@ class UniformAffineQuantizer(nn.Module):
         self.running_max = 0.1 * x_max + 0.9 * self.running_max
         return self.running_min, self.running_max
 
+    def _quantize_per_group(self, x: torch.Tensor) -> torch.Tensor:
+        """Quantize with per-group granularity by reshaping to 2D and applying
+        independent scale/zero_point to each group of ``group_size`` elements."""
+        orig_shape = x.shape
+        gs = self.group_size
+        assert x.shape[-1] % gs == 0, (
+            f"group_size {gs} does not divide last dim {x.shape[-1]}"
+        )
+
+        # Reshape to 2D: (total_groups, group_size)
+        x_2d = x.reshape(-1, gs)
+
+        if self.sym:
+            abs_max = x_2d.abs().amax(dim=1, keepdim=True)  # (total_groups, 1)
+            scale = abs_max / self.qmax
+            scale = torch.max(scale, self.eps.to(scale.device))
+            x_int = (x_2d / scale).round()
+            x_q = x_int.clamp(self.qmin, self.qmax)
+            x_dq = x_q * scale
+        else:
+            x_min = x_2d.amin(dim=1, keepdim=True)
+            x_max = x_2d.amax(dim=1, keepdim=True)
+            scale = (x_max - x_min) / (self.qmax - self.qmin)
+            scale = torch.max(scale, self.eps.to(scale.device))
+            zp = self.qmin - (x_min / scale).round()
+            zp = zp.clamp(self.qmin, self.qmax)
+            x_int = (x_2d / scale).round() + zp
+            x_q = x_int.clamp(self.qmin, self.qmax)
+            x_dq = (x_q - zp) * scale
+
+        # Store scale for later export
+        self.delta = scale.squeeze(-1)  # (total_groups,)
+        self.zero_point = (
+            torch.zeros_like(self.delta) if self.sym else zp.squeeze(-1)
+        )
+
+        return x_dq.reshape(orig_shape)
+
     def forward(self, x: torch.Tensor):
+        # Per-group quantization shortcut
+        if self.use_group_quant and self.group_size > 0:
+            x_dq = self._quantize_per_group(x)
+            if self.is_training and self.prob < 1.0:
+                x_dq = torch.where(torch.rand_like(x) < self.prob, x_dq, x)
+            return x_dq
+
         if self.inited is False:
             if self.leaf_param:
                 self.delta, self.zero_point = self.init_quantization_scale(x.clone().detach(), self.channel_wise)
@@ -103,9 +157,14 @@ class UniformAffineQuantizer(nn.Module):
                 self.delta, self.zero_point = self.init_quantization_scale(x.clone().detach(), self.channel_wise)
 
         # start quantization
-        x_int = round_ste(x / self.delta) + self.zero_point
-        x_quant = torch.clamp(x_int, 0, self.n_levels - 1)
-        x_dequant = (x_quant - self.zero_point) * self.delta
+        if self.sym:
+            x_int = round_ste(x / self.delta)
+            x_quant = torch.clamp(x_int, self.qmin, self.qmax)
+            x_dequant = x_quant * self.delta
+        else:
+            x_int = round_ste(x / self.delta) + self.zero_point
+            x_quant = torch.clamp(x_int, 0, self.n_levels - 1)
+            x_dequant = (x_quant - self.zero_point) * self.delta
 
         if self.is_training and self.prob < 1.0:
             x_ans = torch.where(torch.rand_like(x) < self.prob, x_dequant, x)
@@ -122,6 +181,12 @@ class UniformAffineQuantizer(nn.Module):
             return y.mean(1)
 
     def calculate_qparams(self, min_val, max_val):
+        if self.sym:
+            abs_max = torch.max(min_val.abs(), max_val.abs())
+            scale = abs_max / self.qmax
+            scale = torch.max(scale, self.eps)
+            zero_point = torch.zeros_like(scale)
+            return scale, zero_point
         # one_dim or one element
         quant_min, quant_max = 0, self.n_levels - 1
         min_val_neg = torch.min(min_val, torch.zeros_like(min_val))
@@ -134,6 +199,18 @@ class UniformAffineQuantizer(nn.Module):
         return scale, zero_point
 
     def quantize(self, x: torch.Tensor, x_max, x_min):
+        if self.sym:
+            abs_max = torch.max(x_min.abs(), x_max.abs())
+            delta = abs_max / self.qmax
+            delta = torch.max(delta, self.eps)
+            if self.channel_wise:
+                new_shape = [1] * len(x.shape)
+                new_shape[0] = x.shape[0]
+                delta = delta.reshape(new_shape)
+            x_int = torch.round(x / delta)
+            x_quant = torch.clamp(x_int, self.qmin, self.qmax)
+            x_float_q = x_quant * delta
+            return x_float_q
         delta, zero_point = self.calculate_qparams(x_min, x_max)
         if self.channel_wise:
             new_shape = [1] * len(x.shape)
@@ -146,6 +223,8 @@ class UniformAffineQuantizer(nn.Module):
         return x_float_q
 
     def perform_2D_search(self, x):
+        if self.sym:
+            return self.perform_1D_search(x)
         if self.channel_wise:
             y = torch.flatten(x, 1)
             x_min, x_max = torch._aminmax(y, 1)
@@ -201,10 +280,12 @@ class UniformAffineQuantizer(nn.Module):
         return best_min, best_max
 
     def get_x_min_x_max(self, x):
-        if self.scale_method not in ['mse', 'minmax', 'entropy']:
+        if self.scale_method not in ['mse', 'minmax', 'entropy', 'percentile']:
             raise NotImplementedError
         if self.scale_method == 'entropy':
             best_min, best_max = self.perform_entropy_search(x)
+        elif self.scale_method == 'percentile':
+            best_min, best_max = self.perform_percentile_search(x)
         elif self.one_side_dist is None:
             self.one_side_dist = 'pos' if x.min() >= 0.0 else 'neg' if x.max() <= 0.0 else 'no'
             if self.one_side_dist != 'no' or self.sym:
@@ -217,16 +298,13 @@ class UniformAffineQuantizer(nn.Module):
             return self.update_quantize_range(best_min, best_max)
         return best_min, best_max
 
-    def perform_entropy_search(self, x, num_bins=2048, num_quant_bins=None):
-        if num_quant_bins is None:
-            num_quant_bins = self.n_levels
+    def _entropy_search_1d(self, x_flat, num_bins, num_quant_bins):
+        """Core entropy calibration on a single 1-D tensor.
 
-        x = x.detach().float()
-        if self.channel_wise:
-            raise NotImplementedError("Channel-wise entropy search is not yet supported.")
-
-        x_min, x_max = x.min(), x.max()
-        hist = torch.histc(x, bins=num_bins, min=x_min.item(), max=x_max.item())
+        Returns (best_min, best_max) as scalar tensors.
+        """
+        x_min, x_max = x_flat.min(), x_flat.max()
+        hist = torch.histc(x_flat, bins=num_bins, min=x_min.item(), max=x_max.item())
         bin_width = (x_max - x_min) / num_bins
 
         best_kl = float('inf')
@@ -266,6 +344,36 @@ class UniformAffineQuantizer(nn.Module):
 
         return best_min, best_max
 
+    def perform_entropy_search(self, x, num_bins=2048, num_quant_bins=None):
+        if num_quant_bins is None:
+            num_quant_bins = self.n_levels
+
+        x = x.detach().float()
+        if self.channel_wise:
+            y = torch.flatten(x, 1)  # shape: [out_channels, -1]
+            mins = []
+            maxs = []
+            for c in range(y.shape[0]):
+                c_min, c_max = self._entropy_search_1d(y[c], num_bins, num_quant_bins)
+                mins.append(c_min)
+                maxs.append(c_max)
+            best_min = torch.stack(mins)
+            best_max = torch.stack(maxs)
+            return best_min, best_max
+
+        return self._entropy_search_1d(x, num_bins, num_quant_bins)
+
+    def perform_percentile_search(self, x, percentile=99.99):
+        """Clip to percentile range to reduce outlier impact on scale."""
+        if self.channel_wise:
+            y = torch.flatten(x, 1)
+            x_min = torch.quantile(y, (100.0 - percentile) / 100.0, dim=1)
+            x_max = torch.quantile(y, percentile / 100.0, dim=1)
+        else:
+            x_min = torch.quantile(x.flatten(), (100.0 - percentile) / 100.0)
+            x_max = torch.quantile(x.flatten(), percentile / 100.0)
+        return x_min, x_max
+
     def init_quantization_scale_channel(self, x: torch.Tensor):
         x_min, x_max = self.get_x_min_x_max(x)
         return self.calculate_qparams(x_min, x_max)
@@ -286,12 +394,21 @@ class UniformAffineQuantizer(nn.Module):
         assert 2 <= refactored_bit <= 8, 'bitwidth not supported'
         self.n_bits = refactored_bit
         self.n_levels = 2 ** self.n_bits
+        if self.sym:
+            self.qmin = -(2 ** (self.n_bits - 1) - 1)
+            self.qmax = 2 ** (self.n_bits - 1) - 1
+        else:
+            self.qmin = 0
+            self.qmax = self.n_levels - 1
 
     @torch.jit.export
     def extra_repr(self):
-        return 'bit={}, is_training={}, inited={}'.format(
+        s = 'bit={}, is_training={}, inited={}'.format(
             self.n_bits, self.is_training, self.inited
         )
+        if self.use_group_quant:
+            s += ', group_size={}'.format(self.group_size)
+        return s
 
 
 class QuantModule(nn.Module):
