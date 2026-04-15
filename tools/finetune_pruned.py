@@ -96,6 +96,11 @@ def parse_args() -> argparse.Namespace:
                         "(显著省激活内存, 适合 P1/P3/P9 剪枝 track-only 微调). "
                         "不影响 state_dict, 权重依然保存. "
                         "联合剪枝涉及 seg_head 时不应开启.")
+    p.add_argument("--queue-length", type=int, default=None,
+                   help="覆盖配置的 queue_length (时序帧数). 默认继承 cfg. "
+                        "设为 1 可大幅省激活内存 (去除 temporal context). "
+                        "注意: queue=1 与原训练目标略有差异 (无时序监督), "
+                        "但对短期微调 (3 epoch) 影响有限.")
     p.add_argument("--work-dir", default=None,
                    help="工作目录 (默认 work_dirs/finetune_<prune_config名>)")
     p.add_argument("--save-pruned-ckpt", default=None,
@@ -269,6 +274,25 @@ def apply_train_modules(
 
 def adjust_training_cfg(cfg, args: argparse.Namespace) -> None:
     """根据 CLI 参数修改 cfg 的训练超参。"""
+    # queue_length 覆盖 (在 lr/epochs 之前, 因为它会影响 dataset 构建)
+    if args.queue_length is not None:
+        orig_ql = None
+        # ego_agent
+        if "model_ego_agent" in cfg and "queue_length" in cfg.model_ego_agent:
+            orig_ql = cfg.model_ego_agent.queue_length
+            cfg.model_ego_agent.queue_length = args.queue_length
+        # other_agent_*
+        for key in list(cfg.keys()):
+            if key.startswith("model_other_agent") and \
+                    "queue_length" in cfg[key]:
+                cfg[key].queue_length = args.queue_length
+        # data.train
+        if "data" in cfg and "train" in cfg.data and \
+                "queue_length" in cfg.data.train:
+            cfg.data.train.queue_length = args.queue_length
+        print(f"[cfg] queue_length: {orig_ql} -> {args.queue_length} "
+              f"(时序帧数减少, 激活内存大降)")
+
     # lr 缩放
     orig_lr = cfg.optimizer["lr"]
     new_lr = orig_lr * args.lr_scale
