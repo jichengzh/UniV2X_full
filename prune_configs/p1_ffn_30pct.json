@@ -1,0 +1,37 @@
+{
+  "version": "1.2",
+  "_description": "P1 验证实验: 仅 FFN 剪枝 30% (保留 70% 中间维度), 其他维度不动",
+  "_purpose": "第一个真实 AMOTA 数据点, 对标 DCN baseline 0.330",
+
+  "locked": {
+    "importance_criterion": "l1_norm",
+    "pruning_granularity": "local",
+    "iterative_steps": 5,
+    "round_to": 8
+  },
+
+  "encoder": {
+    "ffn_mid_ratio": 0.7,
+    "attn_proj_ratio": 0.0,
+    "head_pruning_ratio": 0.0
+  },
+  "decoder": {
+    "ffn_mid_ratio": 0.7,
+    "attn_proj_ratio": 0.0,
+    "head_pruning_ratio": 0.0,
+    "num_layers": 6
+  },
+  "heads": {
+    "head_mid_ratio": 1.0
+  },
+
+  "finetune": {
+    "epochs": 0,
+    "_note": "零微调, 直接评估剪枝后精度损失"
+  },
+  "constraints": {
+    "skip_layers": ["sampling_offsets", "attention_weights"],
+    "min_channels": 64,
+    "channel_alignment": 8
+  }
+}
