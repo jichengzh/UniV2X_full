@@ -276,22 +276,21 @@ class HungarianAssigner_filter(BaseAssigner):
                               'to install scipy first.')
         result=None
         for i in range(min(self.max_pos, 300//num_gts)):
-            matched_row_inds, matched_col_inds = linear_sum_assignment(cost)
-            
-            matched_row_inds = torch.from_numpy(matched_row_inds).to(
-                bbox_pred.device)
-            matched_col_inds = torch.from_numpy(matched_col_inds).to(
-                bbox_pred.device)     
-            #print(matched_row_inds)
-                
-            cost[matched_row_inds,:] = INF   
-            #index_set.(matched_row_inds)
-            #print('this mathed row inds ', len(matched_row_inds), i)
+            matched_row_inds_np, matched_col_inds_np = linear_sum_assignment(cost)
+
+            # CPU tensors for indexing the CPU `cost` tensor
+            matched_row_inds_cpu = torch.from_numpy(matched_row_inds_np)
+            matched_col_inds_cpu = torch.from_numpy(matched_col_inds_np)
+            # GPU copies for indexing assigned_gt_inds / assigned_labels / gt_labels
+            matched_row_inds = matched_row_inds_cpu.to(bbox_pred.device)
+            matched_col_inds = matched_col_inds_cpu.to(bbox_pred.device)
+
+            cost[matched_row_inds_cpu, :] = INF
             assigned_gt_inds[matched_row_inds] = matched_col_inds + 1
             assigned_labels[matched_row_inds] = gt_labels[matched_col_inds]
             if i == 0:
                 result = AssignResult(num_gts, assigned_gt_inds.clone(), None, labels=assigned_labels.clone())
-            if cost[matched_row_inds,matched_col_inds].max()>=INF:
+            if cost[matched_row_inds_cpu, matched_col_inds_cpu].max() >= INF:
                 break
         pos_ind = assigned_gt_inds.gt(0).nonzero().squeeze(1)
         neg_ind = assigned_gt_inds.eq(0).nonzero().squeeze(1)
