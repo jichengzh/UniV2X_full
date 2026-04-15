@@ -7,15 +7,28 @@
     - 新增: CLI 控制 lr 缩放、epochs、warmup、是否冻结 backbone
 
 用法:
-    # B.0.1 冒烟: P1 FFN 30% + 3 epoch 微调
+    # B.0.1 冒烟: P1 FFN 30% + 3 epoch 微调（只训 pts_bbox_head）
     PYTHONPATH=/home/jichengzhi/UniV2X python tools/finetune_pruned.py \
         projects/configs_e2e_univ2x/univ2x_coop_e2e_track.py \
         ckpts/univ2x_coop_e2e_stg2.pth \
         --prune-config prune_configs/p1_ffn_30pct.json \
-        --epochs 3 \
-        --lr-scale 0.1 \
-        --freeze-backbone \
-        --work-dir work_dirs/finetune_smoke_p1_30
+        --epochs 3 --lr-scale 0.1 \
+        --train-modules pts_bbox_head \
+        --work-dir work_dirs/ft_p1_30
+
+    # seg_head 剪枝微调（只训 seg_head, 内存最省）
+    PYTHONPATH=/home/jichengzhi/UniV2X python tools/finetune_pruned.py \
+        ... --prune-config prune_configs/p1_with_seg_mlp_30pct.json \
+        --train-modules seg_head
+
+    # 联合剪枝微调
+    PYTHONPATH=/home/jichengzhi/UniV2X python tools/finetune_pruned.py \
+        ... --train-modules pts_bbox_head,seg_head
+
+通用冻结规则:
+    - 被剪模块 + 其下游: 必训 (通过 --train-modules 指定)
+    - 未剪上游: 可冻 (上游未变, 下游自适应)
+    - other_agent_*: 永久冻结 (V2X 对端不在本工作剪枝范围)
 
 成功标准:
     - loss 从初始 > 2.0 下降到 < 1.5 (3 epoch)
@@ -72,10 +85,17 @@ def parse_args() -> argparse.Namespace:
                    help="lr 缩放系数, 乘以 cfg 原 lr (默认 0.1)")
     p.add_argument("--warmup-iters", type=int, default=None,
                    help="warmup 步数 (默认继承 cfg)")
-    p.add_argument("--freeze-backbone", action="store_true",
-                   help="冻结 img_backbone (减少变化, 加速收敛)")
-    p.add_argument("--freeze-other-agents", action="store_true", default=True,
-                   help="冻结 other_agent (默认开启)")
+    p.add_argument("--train-modules", type=str, default="pts_bbox_head",
+                   help="可训模块 (逗号分隔, 名字匹配 ego_agent 的直接子模块); "
+                        "'all' 表示训全部 ego_agent. "
+                        "规则: 被剪模块 + 其下游必训, 上游可冻结. "
+                        "例: 'pts_bbox_head' (P1/P3/P9), 'seg_head' (seg_mlp 剪枝), "
+                        "'pts_bbox_head,seg_head' (联合剪枝)")
+    p.add_argument("--skip-aux-heads", action="store_true",
+                   help="训练时跳过 seg/motion/occ/planning head 的 forward "
+                        "(显著省激活内存, 适合 P1/P3/P9 剪枝 track-only 微调). "
+                        "不影响 state_dict, 权重依然保存. "
+                        "联合剪枝涉及 seg_head 时不应开启.")
     p.add_argument("--work-dir", default=None,
                    help="工作目录 (默认 work_dirs/finetune_<prune_config名>)")
     p.add_argument("--save-pruned-ckpt", default=None,
@@ -163,39 +183,84 @@ def apply_pruning(
 
 
 # ---------------------------------------------------------------------------
-# 冻结策略
+# 冻结策略: 基于 --train-modules 白名单
 # ---------------------------------------------------------------------------
 
-def freeze_backbone(model_multi_agents: MultiAgent) -> int:
-    """冻结 img_backbone 参数。返回冻结的参数数。"""
-    n_frozen = 0
-    ego = model_multi_agents.model_ego_agent
-    if hasattr(ego, "img_backbone"):
-        for p in ego.img_backbone.parameters():
-            p.requires_grad = False
-            n_frozen += p.numel()
-        print(f"[freeze] 冻结 img_backbone: {n_frozen/1e6:.2f}M 参数")
-    return n_frozen
+def apply_train_modules(
+    model_multi_agents: MultiAgent,
+    train_modules_str: str,
+) -> dict:
+    """根据 --train-modules 白名单设置 requires_grad。
 
+    规则:
+        - 全模型默认冻结
+        - other_agent (V2X 对端): **永远冻结** (V2X peers 不在本工作剪枝)
+        - ego_agent 的直接子模块: 名字在 train_modules 白名单里才解冻
+        - 'all' 关键字: 解冻整个 ego_agent (内存允许时, 最保守不过度冻结)
 
-def freeze_other_agents(model_multi_agents: MultiAgent) -> int:
-    """冻结 other_agent (协同感知对端)。
+    Args:
+        model_multi_agents: MultiAgent 包装的顶层模型
+        train_modules_str: 逗号分隔的模块名, 或 'all'
 
-    MultiAgent 不用 dict 存 other agents, 而是用 setattr(self, name, model)
-    并在 self.other_agent_names 里记名字。
+    Returns:
+        dict: {"allowed": list[str], "trainable_params": int, "frozen_params": int}
     """
-    n_frozen = 0
-    names = getattr(model_multi_agents, "other_agent_names", [])
-    for name in names:
+    allowed = [m.strip() for m in train_modules_str.split(",") if m.strip()]
+
+    # Step 1: 全冻
+    for p in model_multi_agents.parameters():
+        p.requires_grad = False
+
+    # Step 2: other_agents 永久冻结 (再次确认, 不碰)
+    other_names = getattr(model_multi_agents, "other_agent_names", [])
+    other_n = 0
+    for name in other_names:
         mod = getattr(model_multi_agents, name, None)
         if mod is None:
             continue
         for p in mod.parameters():
             p.requires_grad = False
-            n_frozen += p.numel()
-    if n_frozen:
-        print(f"[freeze] 冻结 {len(names)} 个 other_agents: {n_frozen/1e6:.2f}M 参数")
-    return n_frozen
+            other_n += p.numel()
+
+    # Step 3: 按白名单解冻 ego_agent 的子模块
+    ego = model_multi_agents.model_ego_agent
+    trainable_n = 0
+
+    if "all" in allowed:
+        for p in ego.parameters():
+            p.requires_grad = True
+            trainable_n += p.numel()
+        unfrozen_modules = ["<ego_agent:*>"]
+    else:
+        unfrozen_modules = []
+        for mod_name in allowed:
+            # 名字匹配 ego_agent 的直接子属性
+            if not hasattr(ego, mod_name):
+                print(f"[train-modules] ⚠ ego_agent 没有子模块 '{mod_name}', 跳过")
+                continue
+            sub_mod = getattr(ego, mod_name)
+            for p in sub_mod.parameters():
+                p.requires_grad = True
+                trainable_n += p.numel()
+            unfrozen_modules.append(mod_name)
+
+    total_n = sum(p.numel() for p in model_multi_agents.parameters())
+    frozen_n = total_n - trainable_n
+
+    print(f"[train-modules] allowed={allowed}")
+    print(f"[train-modules] 解冻: {unfrozen_modules}")
+    print(f"[train-modules] 可训: {trainable_n/1e6:.2f}M / {total_n/1e6:.2f}M "
+          f"({100*trainable_n/max(total_n,1):.1f}%)")
+    print(f"[train-modules]   - other_agents 冻结: {other_n/1e6:.2f}M")
+    print(f"[train-modules]   - ego_agent 被冻结部分: "
+          f"{(frozen_n-other_n)/1e6:.2f}M")
+
+    return {
+        "allowed": allowed,
+        "unfrozen_modules": unfrozen_modules,
+        "trainable_params": trainable_n,
+        "frozen_params": frozen_n,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -370,11 +435,12 @@ def main() -> None:
         }, args.save_pruned_ckpt)
         mm_logger.info("剪枝前 checkpoint 保存到: %s", args.save_pruned_ckpt)
 
-    # 冻结策略
-    if args.freeze_backbone:
-        freeze_backbone(model_multi_agents)
-    if args.freeze_other_agents:
-        freeze_other_agents(model_multi_agents)
+    # 冻结策略: 基于 --train-modules 白名单
+    mm_logger.info("=" * 60)
+    mm_logger.info("冻结策略: --train-modules=%s", args.train_modules)
+    mm_logger.info("=" * 60)
+    freeze_info = apply_train_modules(model_multi_agents, args.train_modules)
+    meta["train_modules"] = freeze_info
 
     # 统计可训练参数
     n_trainable = sum(p.numel() for p in model_multi_agents.parameters()
@@ -407,6 +473,13 @@ def main() -> None:
             prune_config=prune_config,
         )
     model_multi_agents.model_ego_agent.CLASSES = datasets[0].CLASSES
+
+    # 应用 skip_aux_heads (省激活内存)
+    if args.skip_aux_heads:
+        model_multi_agents.model_ego_agent._skip_aux_heads_during_train = True
+        mm_logger.info("[skip-aux-heads] 训练时将跳过 seg/motion/occ/planning "
+                       "head forward, 只算 track loss")
+        meta["skip_aux_heads"] = True
 
     if args.dry_run:
         mm_logger.info("=" * 60)

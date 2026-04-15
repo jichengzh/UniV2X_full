@@ -202,21 +202,26 @@ class UniV2X(UniV2XTrack):
 
         img_metas = [each[len_queue-1] for each in img_metas]
 
+        # Pruning finetune 可以设置 _skip_aux_heads_during_train=True
+        # 跳过 seg/motion/occ/planning head 的 forward, 省激活内存.
+        # 这些 head 的权重仍在 state_dict, 只是本次不训练, 不消耗 activation.
+        skip_aux = getattr(self, "_skip_aux_heads_during_train", False)
+
         outs_seg = dict()
-        if self.with_seg_head:          
+        if self.with_seg_head and not skip_aux:
             losses_seg, outs_seg = self.seg_head.forward_train(bev_embed, img_metas,
                                                           gt_lane_labels, gt_lane_bboxes, gt_lane_masks, other_agent_results=other_agent_results)
-            
+
             losses_seg = self.loss_weighted_and_prefixed(losses_seg, prefix='map')
             losses.update(losses_seg)
 
         outs_motion = dict()
         # Forward Motion Head
-        if self.with_motion_head:
+        if self.with_motion_head and not skip_aux:
             ret_dict_motion = self.motion_head.forward_train(bev_embed,
-                                                        gt_bboxes_3d, gt_labels_3d, 
-                                                        gt_fut_traj, gt_fut_traj_mask, 
-                                                        gt_sdc_fut_traj, gt_sdc_fut_traj_mask, 
+                                                        gt_bboxes_3d, gt_labels_3d,
+                                                        gt_fut_traj, gt_fut_traj_mask,
+                                                        gt_sdc_fut_traj, gt_sdc_fut_traj_mask,
                                                         outs_track=outs_track, outs_seg=outs_seg
                                                     )
             losses_motion = ret_dict_motion["losses"]
@@ -226,7 +231,7 @@ class UniV2X(UniV2XTrack):
             losses.update(losses_motion)
 
         # Forward Occ Head
-        if self.with_occ_head:
+        if self.with_occ_head and not skip_aux:
             if outs_motion['track_query'].shape[1] == 0:
                 # TODO: rm hard code
                 outs_motion['track_query'] = torch.zeros((1, 1, 256)).to(bev_embed)
@@ -234,8 +239,8 @@ class UniV2X(UniV2XTrack):
                 outs_motion['traj_query'] = torch.zeros((3, 1, 1, 6, 256)).to(bev_embed)
                 outs_motion['all_matched_idxes'] = [[-1]]
             losses_occ = self.occ_head.forward_train(
-                            bev_embed, 
-                            outs_motion, 
+                            bev_embed,
+                            outs_motion,
                             gt_inds_list=gt_inds,
                             gt_segmentation=gt_segmentation,
                             gt_instance=gt_instance,
@@ -243,9 +248,9 @@ class UniV2X(UniV2XTrack):
                         )
             losses_occ = self.loss_weighted_and_prefixed(losses_occ, prefix='occ')
             losses.update(losses_occ)
-        
+
         # Forward Plan Head
-        if self.with_planning_head:
+        if self.with_planning_head and not skip_aux:
             outs_planning = self.planning_head.forward_train(bev_embed, outs_motion, sdc_planning, sdc_planning_mask, command, gt_future_boxes)
             losses_planning = outs_planning['losses']
             losses_planning = self.loss_weighted_and_prefixed(losses_planning, prefix='planning')
