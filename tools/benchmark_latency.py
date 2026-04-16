@@ -40,6 +40,8 @@ def parse_args():
     p.add_argument("config")
     p.add_argument("checkpoint")
     p.add_argument("--prune-config", default=None, help="可选: 剪枝配置")
+    p.add_argument("--finetuned-ckpt", default=None,
+                   help="可选: 剪枝+微调后的 checkpoint (在 apply_prune_config 后加载, 覆盖权重)")
     p.add_argument("--n-warmup", type=int, default=3, help="预热迭代数 (不计入统计)")
     p.add_argument("--n-runs", type=int, default=20, help="实际统计的迭代数")
     p.add_argument("--output", default="output/latency_results.json", help="结果保存路径")
@@ -161,11 +163,30 @@ def main():
         print(f"\nApplying pruning: {args.prune_config}")
         with open(args.prune_config) as f:
             prune_cfg = json.load(f)
+        # 填充 locked/constraints 默认值，和其他工具保持一致
+        _locked = prune_cfg.setdefault("locked", {})
+        _locked.setdefault("importance_criterion", "l1_norm")
+        _locked.setdefault("pruning_granularity", "local")
+        _locked.setdefault("iterative_steps", 5)
+        _locked.setdefault("round_to", 8)
+        prune_cfg.setdefault("encoder", {})
+        prune_cfg.setdefault("decoder", {})
+        prune_cfg.setdefault("heads", {})
+        prune_cfg.setdefault("constraints", {
+            "skip_layers": ["sampling_offsets", "attention_weights"],
+            "min_channels": 64, "channel_alignment": 8,
+        })
         from projects.mmdet3d_plugin.univ2x.pruning.prune_univ2x import apply_prune_config
         apply_prune_config(get_prune_target(model), prune_cfg, dataloader=None)
         pruned = True
     params_after = sum(p.numel() for p in get_prune_target(model).parameters())
     print(f"\nModel params: {params_before:,d} -> {params_after:,d} (reduction {(1-params_after/params_before)*100:.2f}%)")
+
+    # 2.5 可选: 加载微调后的 checkpoint (覆盖剪枝后的随机初始化)
+    if args.finetuned_ckpt:
+        from mmcv.runner import load_checkpoint
+        print(f"\nLoading finetuned checkpoint: {args.finetuned_ckpt}")
+        load_checkpoint(model, args.finetuned_ckpt, map_location="cpu")
 
     # 3. 构建测试数据 (只需要 1 个 sample)
     cfg.data.test.test_mode = True
