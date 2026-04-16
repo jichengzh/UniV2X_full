@@ -693,6 +693,9 @@ def parse_args():
     p.add_argument('--fuse-conv-bn', action='store_true')
     p.add_argument('--cfg-options', nargs='+', action=DictAction)
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--prune-config', default=None,
+                   help='Optional: apply prune_config JSON before loading checkpoint '
+                        '(required when evaluating a pruned+finetuned model)')
     p.add_argument('--deterministic', action='store_true')
     p.add_argument('--local_rank', type=int, default=0)
 
@@ -780,6 +783,31 @@ def main():
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model_multi)
+
+    # ---- 剪枝预处理 (在加载 stg2 checkpoint 之前, 使 state_dict shape 对齐)
+    if args.prune_config:
+        import json as _json
+        from projects.mmdet3d_plugin.univ2x.pruning.prune_univ2x import apply_prune_config
+        with open(args.prune_config) as _f:
+            _pcfg = _json.load(_f)
+        _locked = _pcfg.setdefault('locked', {})
+        _locked.setdefault('importance_criterion', 'l1_norm')
+        _locked.setdefault('pruning_granularity', 'local')
+        _locked.setdefault('iterative_steps', 5)
+        _locked.setdefault('round_to', 8)
+        _pcfg.setdefault('encoder', {})
+        _pcfg.setdefault('decoder', {})
+        _pcfg.setdefault('heads', {})
+        _pcfg.setdefault('constraints', {
+            'skip_layers': ['sampling_offsets', 'attention_weights'],
+            'min_channels': 64, 'channel_alignment': 8,
+        })
+        model_multi.cuda()
+        _before = sum(p.numel() for p in model_multi.model_ego_agent.parameters())
+        apply_prune_config(model_multi.model_ego_agent, _pcfg, dataloader=None)
+        _after = sum(p.numel() for p in model_multi.model_ego_agent.parameters())
+        print(f'[prune] applied {args.prune_config}: '
+              f'{_before:,} -> {_after:,} (-{(1-_after/_before)*100:.2f}%)')
 
     checkpoint = load_checkpoint(model_multi, args.checkpoint,
                                   map_location='cpu')

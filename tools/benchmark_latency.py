@@ -99,8 +99,18 @@ class ModuleTimer:
 
 
 def get_target_modules(model_ego):
-    """定义要测的模块 (按李星峰周报格式)"""
+    """定义要测的模块 (按李星峰周报格式)
+
+    包含:
+      - ego_agent 整体 (纯 ego 推理时间, 不含 data loading / other_agent / tracker)
+      - 各 head / encoder / decoder 子模块
+    """
     targets = {}
+
+    # *** 新增: ego_agent 整体 (C.0.1 --ego-only 模式的核心指标) ***
+    # 这个 hook 捕获 model_ego_agent.forward() 的纯前向时间,
+    # 不含 data loading、不含 other_agent_inf forward、不含 tracker update
+    targets["ego_agent_forward"] = model_ego
 
     # backbone + neck
     if hasattr(model_ego, "img_backbone"):
@@ -230,13 +240,17 @@ def main():
     print(f"{'-'*65}")
     module_stats = timer.summary()
     for name in ["backbone", "neck", "bev_encoder", "track_head_decoder", "track_head",
-                 "seg_transformer", "seg_stuff_mask_head", "seg_things_mask_head", "seg_head"]:
+                 "seg_transformer", "seg_stuff_mask_head", "seg_things_mask_head", "seg_head",
+                 "ego_agent_forward"]:
         if name in module_stats:
             s = module_stats[name]
             print(f"{name:<28} {s['mean']:>10.3f} {s['std']:>8.3f} {s['p50']:>8.3f} {s['p90']:>8.3f} {s['n']:>5}")
 
     print(f"{'-'*65}")
-    print(f"{'e2e (all)':<28} {e2e_mean:>10.3f} {e2e_std:>8.3f} {'-':>8} {'-':>8} {len(e2e_times):>5}")
+    print(f"{'e2e (MultiAgent+post)':<28} {e2e_mean:>10.3f} {e2e_std:>8.3f} {'-':>8} {'-':>8} {len(e2e_times):>5}")
+    if "ego_agent_forward" in module_stats:
+        ego = module_stats["ego_agent_forward"]
+        print(f"{'--> pure ego forward':<28} {ego['mean']:>10.3f} {ego['std']:>8.3f} {ego['p50']:>8.3f} {ego['p90']:>8.3f} {ego['n']:>5}")
 
     # 7. 保存
     out = {

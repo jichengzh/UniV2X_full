@@ -437,11 +437,43 @@ def load_plugin(cfg):
         importlib.import_module(module_path)
 
 
-def build_model_from_cfg(cfg, model_key, ckpt_path=None, random_weights=False):
-    """Build a single sub-model (ego or infra) from cfg and optionally load ckpt."""
+def build_model_from_cfg(cfg, model_key, ckpt_path=None, random_weights=False,
+                         prune_config_path=None):
+    """Build a single sub-model (ego or infra) from cfg and optionally load ckpt.
+
+    If ``prune_config_path`` is given, the prune configuration is applied to
+    the freshly built model BEFORE the checkpoint is loaded, so that the
+    state_dict shapes match the pruned architecture.
+    """
     model_cfg = getattr(cfg, model_key)
     model_cfg.train_cfg = None
     model = build_model(model_cfg, test_cfg=cfg.get('test_cfg'))
+
+    # ---- 剪枝预处理 (在加载 checkpoint 之前，以便 state_dict shape 对齐)
+    if prune_config_path is not None:
+        import json as _json
+        from projects.mmdet3d_plugin.univ2x.pruning.prune_univ2x import apply_prune_config
+        with open(prune_config_path) as _f:
+            _prune_cfg = _json.load(_f)
+        _locked = _prune_cfg.setdefault('locked', {})
+        _locked.setdefault('importance_criterion', 'l1_norm')
+        _locked.setdefault('pruning_granularity', 'local')
+        _locked.setdefault('iterative_steps', 5)
+        _locked.setdefault('round_to', 8)
+        _prune_cfg.setdefault('encoder', {})
+        _prune_cfg.setdefault('decoder', {})
+        _prune_cfg.setdefault('heads', {})
+        _prune_cfg.setdefault('constraints', {
+            'skip_layers': ['sampling_offsets', 'attention_weights'],
+            'min_channels': 64,
+            'channel_alignment': 8,
+        })
+        model.cuda()
+        n_params_before = sum(p.numel() for p in model.parameters())
+        apply_prune_config(model, _prune_cfg, dataloader=None)
+        n_params_after = sum(p.numel() for p in model.parameters())
+        print(f'[prune] applied {prune_config_path}: {n_params_before:,} -> {n_params_after:,} '
+              f'(-{(1-n_params_after/n_params_before)*100:.2f}%)')
 
     if not random_weights and ckpt_path is not None:
         # The cooperative checkpoint stores sub-model weights under prefixed keys
@@ -546,6 +578,9 @@ def parse_args():
                         help='ONNX opset version (default: 16)')
     parser.add_argument('--cfg-options', nargs='+', action=DictAction,
                         help='Override config keys (key=value)')
+    parser.add_argument('--prune-config', default=None,
+                        help='Optional: apply prune_config JSON before loading checkpoint '
+                             '(used for exporting pruned + finetuned models)')
     return parser.parse_args()
 
 
@@ -578,6 +613,7 @@ def main():
         cfg, model_key,
         ckpt_path=args.checkpoint,
         random_weights=args.random_weights,
+        prune_config_path=args.prune_config,
     )
 
     # Patch bev_h / bev_w in the head so the model uses the requested size
