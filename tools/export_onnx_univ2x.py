@@ -441,18 +441,49 @@ def build_model_from_cfg(cfg, model_key, ckpt_path=None, random_weights=False,
                          prune_config_path=None):
     """Build a single sub-model (ego or infra) from cfg and optionally load ckpt.
 
-    If ``prune_config_path`` is given, the prune configuration is applied to
-    the freshly built model BEFORE the checkpoint is loaded, so that the
-    state_dict shapes match the pruned architecture.
+    If ``prune_config_path`` is given:
+      1. Load baseline checkpoint FIRST (so weights match training state)
+      2. Apply prune_config (L1 importance selects same channels as training)
+      3. Load finetuned checkpoint to overwrite pruned weights
+
+    This order is critical because L1-based channel selection depends on
+    weight values. If we prune on random-init weights, the selected channels
+    differ from those selected during finetune_pruned.py training (which
+    prunes on the stg2 checkpoint weights). The resulting ONNX graph would
+    have correct shapes but completely wrong channel assignments, producing
+    garbage BEV features in TRT.
     """
     model_cfg = getattr(cfg, model_key)
     model_cfg.train_cfg = None
     model = build_model(model_cfg, test_cfg=cfg.get('test_cfg'))
 
-    # ---- 剪枝预处理 (在加载 checkpoint 之前，以便 state_dict shape 对齐)
+    # ---- 剪枝预处理: 必须先加载 baseline ckpt, 再剪枝, 再加载微调 ckpt
     if prune_config_path is not None:
         import json as _json
         from projects.mmdet3d_plugin.univ2x.pruning.prune_univ2x import apply_prune_config
+
+        # Step 1: 加载 baseline checkpoint (stg2) 使 L1 importance 与训练时一致
+        # 使用 model_key 对应的 load_from 或者 ckpt_path 本身
+        _baseline_ckpt = getattr(model_cfg, 'load_from', None)
+        if _baseline_ckpt:
+            print(f'[prune] step 1: loading baseline ckpt for L1 importance: {_baseline_ckpt}')
+            load_checkpoint(model, _baseline_ckpt, map_location='cpu',
+                            revise_keys=[(r'^model_ego_agent\.', '')])
+        elif ckpt_path and not random_weights:
+            # 如果 load_from 没设但给了 ckpt_path, 用它作为 baseline
+            import torch as _torch
+            _raw = _torch.load(ckpt_path, map_location='cpu')
+            _sd = _raw.get('state_dict', _raw)
+            _prefix = model_key + '.'
+            _stripped = {k[len(_prefix):]: v for k, v in _sd.items() if k.startswith(_prefix)}
+            if _stripped:
+                model.load_state_dict(_stripped, strict=False)
+                print(f'[prune] step 1: loaded baseline weights from {ckpt_path} (prefix={_prefix})')
+            else:
+                load_checkpoint(model, ckpt_path, map_location='cpu')
+                print(f'[prune] step 1: loaded baseline weights from {ckpt_path}')
+
+        # Step 2: 剪枝 (基于刚加载的 baseline 权重做 L1 选通道)
         with open(prune_config_path) as _f:
             _prune_cfg = _json.load(_f)
         _locked = _prune_cfg.setdefault('locked', {})
@@ -465,15 +496,17 @@ def build_model_from_cfg(cfg, model_key, ckpt_path=None, random_weights=False,
         _prune_cfg.setdefault('heads', {})
         _prune_cfg.setdefault('constraints', {
             'skip_layers': ['sampling_offsets', 'attention_weights'],
-            'min_channels': 64,
-            'channel_alignment': 8,
+            'min_channels': 64, 'channel_alignment': 8,
         })
         model.cuda()
         n_params_before = sum(p.numel() for p in model.parameters())
         apply_prune_config(model, _prune_cfg, dataloader=None)
         n_params_after = sum(p.numel() for p in model.parameters())
-        print(f'[prune] applied {prune_config_path}: {n_params_before:,} -> {n_params_after:,} '
+        print(f'[prune] step 2: pruned {n_params_before:,} -> {n_params_after:,} '
               f'(-{(1-n_params_after/n_params_before)*100:.2f}%)')
+
+        # Step 3: 加载微调 checkpoint 覆盖剪枝后的权重 (ckpt_path 应该是微调后的)
+        # 这里不 return, 让后面的 ckpt loading 逻辑继续执行
 
     if not random_weights and ckpt_path is not None:
         # The cooperative checkpoint stores sub-model weights under prefixed keys
