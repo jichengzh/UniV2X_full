@@ -518,6 +518,9 @@ def main():
     with torch.no_grad():
         outputs = single_gpu_test(model_parallel, data_loader)
 
+    # 如果 eval_samples < 全量，跳过 AMOTA（需要完整序列），只输出 mAP
+    n_eval = len(outputs)
+
     # Evaluate
     eval_prefix = f'output/quant_eval_{os.path.basename(args.quant_config).replace(".json","")}'
     if args.prune_config:
