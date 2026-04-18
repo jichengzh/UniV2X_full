@@ -374,6 +374,10 @@ def parse_args():
                    help='Output path for exported scales (default: <quant-config>.scales.json)')
     p.add_argument('--model', choices=['ego', 'infra'], default='ego',
                    help='Which agent model to quantize')
+    p.add_argument('--prune-config', default=None,
+                   help='Optional: apply pruning before quantization (剪枝×量化联合)')
+    p.add_argument('--finetuned-ckpt', default=None,
+                   help='Optional: load finetuned checkpoint after pruning')
     p.add_argument('--cfg-options', nargs='+', action='append',
                    help='Override config options')
     return p.parse_args()
@@ -418,6 +422,39 @@ def main():
     model_multi, agent, encoder = _load_model(cfg, args.checkpoint)
     print(f'  BEV encoder: {encoder.__class__.__name__}')
 
+    # ── 可选: 剪枝 (在量化之前) ─────────────────────────────────────────
+    if args.prune_config:
+        print(f'\n[prune] Applying pruning: {args.prune_config}')
+        from projects.mmdet3d_plugin.univ2x.pruning.prune_univ2x import apply_prune_config
+        import json as _json
+        with open(args.prune_config) as _f:
+            _pcfg = _json.load(_f)
+        _locked = _pcfg.setdefault('locked', {})
+        _locked.setdefault('importance_criterion', 'l1_norm')
+        _locked.setdefault('pruning_granularity', 'local')
+        _locked.setdefault('iterative_steps', 5)
+        _locked.setdefault('round_to', 8)
+        _pcfg.setdefault('encoder', {})
+        _pcfg.setdefault('decoder', {})
+        _pcfg.setdefault('heads', {})
+        _pcfg.setdefault('constraints', {
+            'skip_layers': ['sampling_offsets', 'attention_weights'],
+            'min_channels': 64, 'channel_alignment': 8,
+        })
+        n_before = sum(p.numel() for p in agent.parameters())
+        apply_prune_config(agent, _pcfg, dataloader=None)
+        n_after = sum(p.numel() for p in agent.parameters())
+        print(f'[prune] {n_before:,} -> {n_after:,} (-{(1-n_after/n_before)*100:.2f}%)')
+
+        if args.finetuned_ckpt:
+            print(f'[prune] Loading finetuned ckpt: {args.finetuned_ckpt}')
+            from mmcv.runner import load_checkpoint as _lc
+            _lc(model_multi, args.finetuned_ckpt, map_location='cpu')
+            print('[prune] Finetuned weights loaded.')
+
+        # 重新获取 encoder 引用（剪枝可能改变了内部结构）
+        encoder = agent.pts_bbox_head.transformer.encoder
+
     # ── Apply quant config ───────────────────────────────────────────────
     print('Applying quantization config ...')
     qmodel = apply_quant_config(encoder, quant_config, is_fusing=True)
@@ -450,12 +487,75 @@ def main():
         print(f'\nCalibration data not found at {args.cali_data}, '
               f'skipping activation calibration.')
 
-    # ── Evaluate ─────────────────────────────────────────────────────────
+    # ── Evaluate AMOTA ────────────────────────────────────────────────────
     print(f'\n--- Evaluation ({args.eval_samples} samples) ---')
-    print('Evaluation requires the full mmdet3d validation pipeline.')
-    print('This is a placeholder -- integrate with the dataset/evaluator')
-    print('from the test config to compute AMOTA.')
-    print('--- End evaluation placeholder ---')
+
+    # 把量化后的 encoder 放回 agent (QuantModel wraps encoder)
+    agent.pts_bbox_head.transformer.encoder = qmodel
+
+    from mmcv.parallel import MMDataParallel
+    from mmdet3d.apis import single_gpu_test
+    from mmdet3d.datasets import build_dataset
+    from projects.mmdet3d_plugin.datasets.builder import build_dataloader
+    from mmdet.datasets import replace_ImageToTensor
+
+    eval_cfg = Config.fromfile(args.config)
+    if hasattr(eval_cfg, 'plugin') and eval_cfg.plugin:
+        pass  # already imported
+    eval_cfg.data.test.test_mode = True
+    if isinstance(eval_cfg.data.test, dict):
+        eval_cfg.data.test.pipeline = replace_ImageToTensor(eval_cfg.data.test.pipeline)
+
+    dataset = build_dataset(eval_cfg.data.test)
+    data_loader = build_dataloader(
+        dataset, samples_per_gpu=1, workers_per_gpu=0,
+        dist=False, shuffle=False,
+    )
+
+    model_parallel = MMDataParallel(model_multi.cuda(), device_ids=[0])
+    model_parallel.eval()
+
+    with torch.no_grad():
+        outputs = single_gpu_test(model_parallel, data_loader)
+
+    # Evaluate
+    eval_prefix = f'output/quant_eval_{os.path.basename(args.quant_config).replace(".json","")}'
+    if args.prune_config:
+        eval_prefix += f'_pruned_{os.path.basename(args.prune_config).replace(".json","")}'
+    metrics = dataset.evaluate(outputs, jsonfile_prefix=eval_prefix)
+
+    print(f'\n{"="*60}')
+    print(f'  Quantization Evaluation Results')
+    print(f'{"="*60}')
+    key_metrics = [
+        'pts_bbox_NuScenes/amota', 'pts_bbox_NuScenes/amotp',
+        'pts_bbox_NuScenes/mAP', 'pts_bbox_NuScenes/NDS',
+        'pts_bbox_NuScenes/recall', 'pts_bbox_NuScenes/motar',
+        'pts_bbox_NuScenes/mota',
+        'pts_bbox_NuScenes/tp', 'pts_bbox_NuScenes/fp',
+        'pts_bbox_NuScenes/fn', 'pts_bbox_NuScenes/ids',
+        'drivable_iou', 'lanes_iou', 'crossing_iou', 'contour_iou',
+    ]
+    for k in key_metrics:
+        if k in metrics:
+            v = metrics[k]
+            if isinstance(v, float):
+                print(f'  {k:<40} {v:.4f}')
+            else:
+                print(f'  {k:<40} {v}')
+
+    # Save metrics JSON
+    metrics_path = f'{eval_prefix}_metrics.json'
+    clean = {k: v for k, v in metrics.items() if isinstance(v, (int, float)) and v == v}
+    clean['_meta'] = {
+        'quant_config': args.quant_config,
+        'prune_config': args.prune_config,
+        'finetuned_ckpt': args.finetuned_ckpt,
+        'eval_samples': args.eval_samples,
+    }
+    with open(metrics_path, 'w') as f:
+        json.dump(clean, f, indent=2, default=str)
+    print(f'\n  Metrics saved: {metrics_path}')
 
     # ── Export scales ────────────────────────────────────────────────────
     if args.export_scales:

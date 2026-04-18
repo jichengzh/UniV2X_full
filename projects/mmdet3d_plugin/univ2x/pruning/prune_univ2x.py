@@ -50,6 +50,8 @@ def prune_model(
     # Step 2: 通道/头剪枝 (P1-P3, P8)
     has_channel_pruning = (
         prune_cfg.get("ffn_mid_ratio", 1.0) < 1.0
+        or prune_cfg.get("encoder_ffn_mid_ratio", 1.0) < 1.0
+        or prune_cfg.get("decoder_ffn_mid_ratio", 1.0) < 1.0
         or prune_cfg.get("attn_proj_ratio", 0.0) > 0.0
         or prune_cfg.get("head_mid_ratio", 1.0) < 1.0
         or prune_cfg.get("head_pruning_ratio", 0.0) > 0.0
@@ -86,7 +88,12 @@ def prune_direct(model: nn.Module, prune_cfg: Dict[str, Any]) -> None:
     """
     import torch
 
-    ffn_prune_ratio = 1.0 - prune_cfg.get("ffn_mid_ratio", 1.0)
+    # P1a/P1b 解耦: encoder 和 decoder 可以有不同的 ffn_mid_ratio
+    encoder_ffn_ratio = prune_cfg.get("encoder_ffn_mid_ratio",
+                                       prune_cfg.get("ffn_mid_ratio", 1.0))
+    decoder_ffn_ratio = prune_cfg.get("decoder_ffn_mid_ratio",
+                                       prune_cfg.get("ffn_mid_ratio", 1.0))
+    ffn_prune_ratio = 1.0 - prune_cfg.get("ffn_mid_ratio", 1.0)  # 兼容旧 config
     attn_prune_ratio = prune_cfg.get("attn_proj_ratio", 0.0)
     head_prune_ratio = 1.0 - prune_cfg.get("head_mid_ratio", 1.0)
     per_layer = prune_cfg.get("per_layer_override", {})
@@ -133,8 +140,13 @@ def prune_direct(model: nn.Module, prune_cfg: Dict[str, Any]) -> None:
     logger.info("找到 %d 对 FFN Linear", len(ffn_pairs))
 
     for name, first_linear, second_linear in ffn_pairs:
-        # 判断剪枝比例 (per_layer_override 优先)
-        ratio = ffn_prune_ratio
+        # 判断剪枝比例: per_layer_override > encoder/decoder 解耦 > 全局
+        ratio = ffn_prune_ratio  # 全局默认
+        if "encoder" in name:
+            ratio = 1.0 - encoder_ffn_ratio
+        elif "decoder" in name:
+            ratio = 1.0 - decoder_ffn_ratio
+        # per_layer_override 最高优先级
         for prefix, override in per_layer.items():
             if prefix in name and "ffn_mid_ratio" in override:
                 ratio = 1.0 - override["ffn_mid_ratio"]
@@ -654,6 +666,12 @@ def apply_prune_config(model, prune_config, dataloader=None):
         collect_gradients(model, dataloader, num_batches=32)
 
     # Step 2: 构建统一的 prune_cfg（合并 locked + search 维度）
+    # P1a/P1b 解耦: encoder 和 decoder 可以有不同的 ffn_mid_ratio
+    enc_ffn = enc.get("ffn_mid_ratio", 1.0)
+    dec_ffn = dec.get("ffn_mid_ratio", 1.0)
+    # 兼容: 如果两者相同, ffn_mid_ratio 设为共同值; 否则只用解耦字段
+    global_ffn = enc_ffn if enc_ffn == dec_ffn else 1.0
+
     prune_cfg = {
         # 锁定维度
         "importance_criterion": criterion,
@@ -661,7 +679,9 @@ def apply_prune_config(model, prune_config, dataloader=None):
         "iterative_steps": locked.get("iterative_steps", 5),
         "round_to": locked.get("round_to", 8),
         # 搜索维度
-        "ffn_mid_ratio": enc.get("ffn_mid_ratio", 1.0),
+        "ffn_mid_ratio": global_ffn,
+        "encoder_ffn_mid_ratio": enc_ffn,
+        "decoder_ffn_mid_ratio": dec_ffn,
         "attn_proj_ratio": enc.get("attn_proj_ratio", 0.0),
         "head_mid_ratio": heads.get("head_mid_ratio", 1.0),
         "head_pruning_ratio": enc.get("head_pruning_ratio", 0.0),

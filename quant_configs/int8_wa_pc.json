@@ -1,0 +1,12 @@
+{
+  "version": "1.1",
+  "_description": "INT8 W+A per-channel (更高精度量化)",
+  "global": {
+    "symmetric": true, "scale_method": "minmax",
+    "default_w_bits": 8, "default_a_bits": 8,
+    "default_w_granularity": "per_channel", "default_a_granularity": "per_tensor",
+    "default_quant_target": "W+A"
+  },
+  "layers": {},
+  "v2x_comm": { "agent_query_precision": "int8", "lane_query_precision": "int8", "bev_scatter_precision": "fp16" }
+}
