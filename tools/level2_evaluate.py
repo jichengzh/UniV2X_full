@@ -58,9 +58,15 @@ def parse_args():
 
 
 def setup_d4(strategy):
-    """D4: 设置显存分配策略"""
+    """D4: 设置显存分配策略
+
+    注: expandable_segments 需要 PyTorch >= 2.1。
+    当前 UniV2X_2.0 env 为 PyTorch 2.0.1，不支持。
+    D4 的 benchmark 结果来自 memory_strategy.py 的独立测试。
+    """
     if strategy == 'defrag':
-        os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+        # PyTorch 2.0.1 不支持 expandable_segments, 跳过
+        pass
 
 
 def build_model(args):
