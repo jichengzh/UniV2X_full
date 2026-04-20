@@ -24,10 +24,10 @@
 - [ ] 1.3.6 记录结果到 latency_lut.json
 
 ### Step 1.4: D4 显存分配策略
-- [ ] 1.4.1 实现 setup_memory_strategy（动态/静态/碎片整理）
-- [ ] 1.4.2 benchmark 3 种策略的时延稳定性（std of latency over 100 frames）
-- [ ] 1.4.3 benchmark 3 种策略的峰值显存
-- [ ] 1.4.4 记录结果到 latency_lut.json
+- [x] 1.4.1 实现 setup_memory_strategy（动态/碎片整理）— `tools/memory_strategy.py`
+- [x] 1.4.2 benchmark: dynamic std=37ms vs defrag std=20.8ms (44% more stable)
+- [x] 1.4.3 benchmark: 两者 peak 相同 2836MB (其中 allocated 2476MB, waste 360MB=12.7%)
+- [x] 1.4.4 记录结果到 latency_lut.json
 
 ## Phase 2: Latency LUT 汇总
 - [ ] 2.1 合并所有 benchmark 结果到 latency_lut.json

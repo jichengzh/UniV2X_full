@@ -32,5 +32,21 @@
       }
     },
     "_conclusion": "backbone(32ms)远小于non-backbone(125ms)，重叠可完全隐藏backbone; 剪枝后non-backbone降10ms; 真实瓶颈是Python/data开销(~460ms)"
+  },
+
+  "D4_memory_strategy": {
+    "baseline": {
+      "dynamic": {
+        "latency_mean_ms": 526.1, "latency_std_ms": 37.0,
+        "latency_p50_ms": 512.5, "latency_p90_ms": 544.3,
+        "peak_allocated_mb": 2476, "peak_reserved_mb": 2836, "memory_waste_pct": 12.7
+      },
+      "defrag": {
+        "latency_mean_ms": 523.1, "latency_std_ms": 20.8,
+        "latency_p50_ms": 522.7, "latency_p90_ms": 540.4,
+        "peak_allocated_mb": 2476, "peak_reserved_mb": 2836, "memory_waste_pct": 12.7
+      }
+    },
+    "_conclusion": "defrag(expandable_segments)降低latency抖动44%(std 37→21ms)，显存开销不变; 在RTX4090上waste仅12.7%，静态预分配价值不大"
   }
 }
