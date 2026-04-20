@@ -34,6 +34,17 @@
     "_conclusion": "backbone(32ms)远小于non-backbone(125ms)，重叠可完全隐藏backbone; 剪枝后non-backbone降10ms; 真实瓶颈是Python/data开销(~460ms)"
   },
 
+  "D3_temporal_cache": {
+    "baseline": {
+      "fp16_1frame": {"amota": 0.333, "mAP": 0.074, "latency_ms": 535, "cache_size_mb": 19.5, "peak_memory_mb": 2496},
+      "int8_1frame": {"amota": null, "mAP": null, "latency_ms": null, "cache_size_mb": 9.8, "peak_memory_mb": null, "_status": "running"},
+      "fp16_0frame": {"amota": null, "mAP": null, "latency_ms": null, "cache_size_mb": 0, "peak_memory_mb": null, "_status": "running"},
+      "fp16_2frame": {"amota": null, "_status": "TODO"},
+      "int8_2frame": {"amota": null, "_status": "TODO"}
+    },
+    "_conclusion": "fp16-1frame作为D3基线AMOTA=0.333; INT8和0-frame结果待补充"
+  },
+
   "D4_memory_strategy": {
     "baseline": {
       "dynamic": {
