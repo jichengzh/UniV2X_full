@@ -16,7 +16,7 @@
 - [x] 1.2.5 记录结果到 latency_lut.json
 
 ### Step 1.3: D3 时序缓存管理
-- [ ] 1.3.1 实现 TemporalCacheManager（FP16/INT8 缓存 + 0/1/2 帧）
+- [x] 1.3.1 实现 TemporalCacheManager（FP16/INT8 缓存 + 0/1/2 帧）— `pruning/temporal_cache.py`，FP16 2帧=39MB, INT8 2帧=19.5MB (-50%), quant error=0.011
 - [ ] 1.3.2 集成到 univ2x_head.py 的 prev_bev 管理逻辑
 - [ ] 1.3.3 验证 5 种组合的精度影响（AMOTA 对比）
 - [ ] 1.3.4 benchmark 5 种配置的显存占用
