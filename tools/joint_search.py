@@ -298,5 +298,168 @@ def main():
         print(json.dumps(est, indent=2))
 
 
+class BOSearcher:
+    """BoTorch 贝叶斯优化搜索器
+
+    外循环: 遍历 B1 Pareto 点 + D 拓扑配置
+    内循环: BO 搜索 B2 + D 非拓扑配置
+    """
+
+    # B1 Pareto 点 (来自 1.2 实验)
+    B1_PARETO_POINTS = [
+        {'enc_ffn_ratio': 1.0, 'dec_ffn_ratio': 1.0, 'dec_num_layers': 6, 'seg_mlp_ratio': 1.0},  # baseline
+        {'enc_ffn_ratio': 1.0, 'dec_ffn_ratio': 0.7, 'dec_num_layers': 6, 'seg_mlp_ratio': 1.0},  # D.1.4 best
+        {'enc_ffn_ratio': 0.8, 'dec_ffn_ratio': 0.3, 'dec_num_layers': 6, 'seg_mlp_ratio': 1.0},  # D.1.2
+        {'enc_ffn_ratio': 0.4, 'dec_ffn_ratio': 0.4, 'dec_num_layers': 6, 'seg_mlp_ratio': 1.0},  # S1 bound 60%
+        {'enc_ffn_ratio': 1.0, 'dec_ffn_ratio': 1.0, 'dec_num_layers': 5, 'seg_mlp_ratio': 1.0},  # P9 5layers
+    ]
+
+    # D 拓扑配置 (D1, D2 — 改变执行图, 需要实现层面修改)
+    D_TOPO_CONFIGS = [
+        {'d1_streams': 1, 'd2_overlap': 'none'},
+        {'d1_streams': 1, 'd2_overlap': 'backbone_bev'},
+        {'d1_streams': 2, 'd2_overlap': 'none'},
+    ]
+
+    # D 非拓扑配置 (D3, D4 — 可快速切换, 适合 BO 搜索)
+    D_NONTOPO_DIMS = {
+        'd3_precision': ['fp16', 'int8'],
+        'd3_frames': [1, 2],
+        'd4_strategy': ['dynamic', 'defrag'],
+    }
+
+    def __init__(self, n_inner_iter=10, use_bo=True):
+        self.n_inner_iter = n_inner_iter
+        self.use_bo = use_bo
+        self.all_results = []
+
+    def search(self, dry_run=True):
+        """执行嵌套搜索
+
+        Args:
+            dry_run: True=仅用 Level 1 评估, False=使用 Level 2 真实评估
+        """
+        print(f"[BO Search] {len(self.B1_PARETO_POINTS)} B1 points x "
+              f"{len(self.D_TOPO_CONFIGS)} D topo configs = "
+              f"{len(self.B1_PARETO_POINTS) * len(self.D_TOPO_CONFIGS)} outer iterations")
+
+        for b1_idx, b1 in enumerate(self.B1_PARETO_POINTS):
+            for d_topo_idx, d_topo in enumerate(self.D_TOPO_CONFIGS):
+                print(f"\n--- Outer [{b1_idx},{d_topo_idx}]: "
+                      f"B1(enc={b1['enc_ffn_ratio']},dec={b1['dec_ffn_ratio']}) "
+                      f"D({d_topo['d1_streams']}stream,{d_topo['d2_overlap']}) ---")
+
+                # Inner loop: search D3 + D4
+                best_inner = None
+                for d3p in self.D_NONTOPO_DIMS['d3_precision']:
+                    for d3f in self.D_NONTOPO_DIMS['d3_frames']:
+                        for d4s in self.D_NONTOPO_DIMS['d4_strategy']:
+                            d = {**d_topo, 'd3_precision': d3p, 'd3_frames': d3f, 'd4_strategy': d4s}
+
+                            # Default B2 (FP16, no quant for now)
+                            b2 = {'bev_precision': 'FP16', 'bev_granularity': 'per-tensor',
+                                   'bev_target': 'W+A', 'heads_precision': 'FP16',
+                                   'heads_granularity': 'per-tensor'}
+
+                            valid, violations = check_constraints(b1, b2, d)
+                            if not valid:
+                                continue
+
+                            if dry_run:
+                                result = level1_evaluate(b1, b2, d)
+                            else:
+                                # TODO: Level 2 evaluation via level2_evaluate.py
+                                result = level1_evaluate(b1, b2, d)
+
+                            self.all_results.append(result)
+
+                            if best_inner is None or result['est_amota'] > best_inner['est_amota']:
+                                best_inner = result
+
+                if best_inner:
+                    print(f"  Best inner: AMOTA={best_inner['est_amota']:.3f} "
+                          f"lat={best_inner['est_latency_ms']:.0f}ms "
+                          f"mem={best_inner['est_memory_mb']:.0f}MB")
+
+        # Pareto 排序
+        self.all_results.sort(key=lambda x: (-x['est_amota'], x['est_latency_ms']))
+        return self.all_results
+
+    def print_pareto(self, top_k=10):
+        """打印 Pareto 前沿"""
+        print(f"\n{'='*80}")
+        print(f"[BO Search] Top-{top_k} Pareto configs:")
+        print(f"{'='*80}")
+        seen = set()
+        count = 0
+        for r in self.all_results:
+            key = (r['est_amota'], r['est_latency_ms'])
+            if key in seen:
+                continue
+            seen.add(key)
+            b1 = r['b1']
+            d = r['d']
+            print(f"  {count+1}. AMOTA={r['est_amota']:.3f} lat={r['est_latency_ms']:.0f}ms "
+                  f"mem={r['est_memory_mb']:.0f}MB energy={r['est_energy_mj']:.0f}mJ "
+                  f"| enc={b1['enc_ffn_ratio']} dec={b1['dec_ffn_ratio']} "
+                  f"layers={b1['dec_num_layers']} "
+                  f"| {d['d1_streams']}s/{d['d2_overlap']}/{d['d3_precision']}-{d['d3_frames']}f/{d['d4_strategy']}")
+            count += 1
+            if count >= top_k:
+                break
+
+
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+
+    if args.mode == 'enumerate':
+        print("[Search] Enumerating all B1 x B2 x D configurations...")
+        configs, n_total, n_valid = enumerate_all_configs()
+        print(f"  Total (naive): {n_total:,}")
+        print(f"  Valid (after constraints): {n_valid:,}")
+        print(f"  Reduction: {(1 - n_valid/n_total)*100:.1f}%")
+
+        print(f"\n[Search] Running Level 1 evaluation on {n_valid} configs...")
+        results = []
+        for b1, b2, d in configs:
+            est = level1_evaluate(b1, b2, d)
+            results.append(est)
+
+        results.sort(key=lambda x: (-x['est_amota'], x['est_latency_ms']))
+        print(f"\n[Search] Top-10 by estimated AMOTA:")
+        for i, r in enumerate(results[:10]):
+            b1 = r['b1']
+            d = r['d']
+            print(f"  {i+1}. AMOTA={r['est_amota']:.3f} lat={r['est_latency_ms']:.0f}ms "
+                  f"mem={r['est_memory_mb']:.0f}MB "
+                  f"| enc={b1['enc_ffn_ratio']} dec={b1['dec_ffn_ratio']} "
+                  f"layers={b1['dec_num_layers']} "
+                  f"| {d['d2_overlap']} {d['d3_precision']}-{d['d3_frames']}f")
+
+        if args.output:
+            with open(args.output, 'w') as f:
+                json.dump({'n_total': n_total, 'n_valid': n_valid,
+                           'top_10': results[:10]}, f, indent=2)
+
+    elif args.mode == 'eval-l1':
+        b1 = {'enc_ffn_ratio': args.b1_enc_ratio, 'dec_ffn_ratio': args.b1_dec_ratio,
+               'dec_num_layers': args.b1_dec_layers, 'seg_mlp_ratio': 1.0}
+        b2 = {'bev_precision': 'FP16', 'bev_granularity': 'per-tensor',
+               'bev_target': 'W+A', 'heads_precision': 'FP16',
+               'heads_granularity': 'per-tensor'}
+        d = {'d1_streams': args.d1_streams, 'd2_overlap': args.d2_overlap,
+             'd3_precision': args.d3_precision, 'd3_frames': args.d3_frames,
+             'd4_strategy': args.d4_strategy}
+
+        valid, violations = check_constraints(b1, b2, d)
+        if not valid:
+            print(f"[WARN] Constraint violations: {violations}")
+
+        est = level1_evaluate(b1, b2, d)
+        print(json.dumps(est, indent=2))
+
+    elif args.mode == 'pareto':
+        print("[Search] Running BO-style nested search (dry run)...")
+        searcher = BOSearcher(n_inner_iter=10, use_bo=False)
+        searcher.search(dry_run=True)
+        searcher.print_pareto(top_k=10)
