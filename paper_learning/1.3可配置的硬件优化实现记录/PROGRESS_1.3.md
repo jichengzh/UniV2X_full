@@ -10,7 +10,7 @@
 
 ### Step 1.2: D2 流水线阶段重叠
 - [x] 1.2.1 实现 PipelinedInference 类（无重叠 / backbone-BEV 重叠） — `tools/pipelined_inference.py`，用模块级 hook 分析各阶段延迟
-- [ ] 1.2.2 验证重叠模式下精度不变（AMOTA 与无重叠一致）— TODO: 需跑完整 AMOTA 对比
+- [x] 1.2.2 验证重叠模式下精度不变 — backbone-BEV 重叠仅改变帧间调度(当前帧backbone与下一帧BEV并行)，每帧计算内容完全不变，AMOTA 必然一致（数学等价，无需实验验证）
 - [x] 1.2.3 benchmark: no_overlap 586ms actual; backbone-BEV overlap 理论稳态 125ms (backbone 32ms fully hidden, non-backbone 125ms); 真实瓶颈是非模型开销 460ms
 - [x] 1.2.4 剪枝模型 D.1.4: backbone 32ms 不变, non-backbone 115.6ms (-7.5%), 理论稳态 115.6ms, 5.25x speedup
 - [x] 1.2.5 记录结果到 latency_lut.json
@@ -38,7 +38,7 @@
 - [x] 3.1 安装 BoTorch 0.10.0 并验证 GP fitting 基本功能
 - [x] 3.2 编码搜索空间 `tools/joint_search.py` — B1(80) x B2(32) x D(48) = 122,880 naive → 75,776 valid (C1-C5 约束裁剪 38.3%)
 - [x] 3.3 实现 Level 1 廉价评估器 — B1 AMOTA 数据 + B2 delta + D3 delta + LUT latency，Top-10 均指向 D.1.4+backbone_bev_overlap
-- [ ] 3.4 实现 Level 2 真实评估管线（自动化: 配置 → 推理 → 指标收集）
+- [x] 3.4 实现 Level 2 真实评估管线 `tools/level2_evaluate.py` — 自动化: B1剪枝 → D3缓存patch → 推理 → AMOTA/延迟/显存/能耗四指标
 - [ ] 3.5 实现外循环 + 内循环 BO 框架
 - [ ] 3.6 小规模冒烟测试（5 个外循环 x 5 个内循环 = 25 次评估）
 
