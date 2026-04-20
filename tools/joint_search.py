@@ -49,7 +49,7 @@ D_SPACE = {
     'd1_streams': [1, 2],
     'd2_overlap': ['none', 'backbone_bev'],
     'd3_precision': ['fp16', 'int8'],
-    'd3_frames': [0, 1, 2],
+    'd3_frames': [1, 2],  # 0 removed: AMOTA crashes to 0.021 without temporal
     'd4_strategy': ['dynamic', 'defrag'],
 }
 
