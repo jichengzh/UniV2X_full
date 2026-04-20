@@ -30,14 +30,14 @@
 - [x] 1.4.4 记录结果到 latency_lut.json
 
 ## Phase 2: Latency LUT 汇总
-- [ ] 2.1 合并所有 benchmark 结果到 latency_lut.json
-- [ ] 2.2 验证 LUT 覆盖 D1 x D2 x D3 x D4 的关键组合（~31 个采样点）
-- [ ] 2.3 实现 LUT 查询接口 query_latency_lut(config) -> (latency, memory, power)
+- [x] 2.1 合并所有 benchmark 结果到 latency_lut.json — D1/D2/D3(部分)/D4 数据已入 LUT
+- [ ] 2.2 验证 LUT 覆盖 D1 x D2 x D3 x D4 的关键组合 — D3 int8/0frame 数据待补充
+- [x] 2.3 实现 LUT 查询接口 `tools/query_lut.py` — 枚举 40 种 D 配置，线性叠加预估
 
 ## Phase 3: 联合搜索框架
 - [ ] 3.1 安装 BoTorch 并验证基本功能
-- [ ] 3.2 编码搜索空间（B1 x B2 x D 联合，含约束 C1-C5）
-- [ ] 3.3 实现 Level 1 廉价评估器（sensitivity_map + LUT + 解析公式）
+- [x] 3.2 编码搜索空间 `tools/joint_search.py` — B1(80) x B2(32) x D(48) = 122,880 naive → 75,776 valid (C1-C5 约束裁剪 38.3%)
+- [x] 3.3 实现 Level 1 廉价评估器 — B1 AMOTA 数据 + B2 delta + D3 delta + LUT latency，Top-10 均指向 D.1.4+backbone_bev_overlap
 - [ ] 3.4 实现 Level 2 真实评估管线（自动化: 配置 → 推理 → 指标收集）
 - [ ] 3.5 实现外循环 + 内循环 BO 框架
 - [ ] 3.6 小规模冒烟测试（5 个外循环 x 5 个内循环 = 25 次评估）
