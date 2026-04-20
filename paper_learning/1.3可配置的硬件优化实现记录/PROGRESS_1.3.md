@@ -1,0 +1,49 @@
+# 1.3 可配置硬件优化 — 进度追踪
+
+## Phase 1: D 空间工程实现
+
+### Step 1.1: D1 多 Agent 并行度
+- [x] 1.1.1 在推理入口实现 multi-stream 分支（1/2/3/4 streams） — `tools/infer_multi_stream.py` 实现 serial/2-stream/N-stream 三种策略
+- [ ] 1.1.2 用 baseline 模型 benchmark: 4 种 stream 配置的时延/显存/功率
+- [ ] 1.1.3 用 1.2 最优剪枝模型 (D.1.4 enc=1.0 dec=0.7) 重复 benchmark
+- [ ] 1.1.4 记录结果到 latency_lut.json
+
+### Step 1.2: D2 流水线阶段重叠
+- [ ] 1.2.1 实现 PipelinedInference 类（无重叠 / backbone-BEV 重叠 / 全重叠）
+- [ ] 1.2.2 验证重叠模式下精度不变（AMOTA 与无重叠一致）
+- [ ] 1.2.3 benchmark 3 种重叠策略的稳态帧间延迟/峰值显存/功率
+- [ ] 1.2.4 用剪枝模型重复 benchmark（验证流水线平衡变化）
+- [ ] 1.2.5 记录结果到 latency_lut.json
+
+### Step 1.3: D3 时序缓存管理
+- [ ] 1.3.1 实现 TemporalCacheManager（FP16/INT8 缓存 + 0/1/2 帧）
+- [ ] 1.3.2 集成到 univ2x_head.py 的 prev_bev 管理逻辑
+- [ ] 1.3.3 验证 5 种组合的精度影响（AMOTA 对比）
+- [ ] 1.3.4 benchmark 5 种配置的显存占用
+- [ ] 1.3.5 测试 D3 与 B1 耦合：60% 剪枝模型 + (INT8, 1) vs (FP16, 2) 对比
+- [ ] 1.3.6 记录结果到 latency_lut.json
+
+### Step 1.4: D4 显存分配策略
+- [ ] 1.4.1 实现 setup_memory_strategy（动态/静态/碎片整理）
+- [ ] 1.4.2 benchmark 3 种策略的时延稳定性（std of latency over 100 frames）
+- [ ] 1.4.3 benchmark 3 种策略的峰值显存
+- [ ] 1.4.4 记录结果到 latency_lut.json
+
+## Phase 2: Latency LUT 汇总
+- [ ] 2.1 合并所有 benchmark 结果到 latency_lut.json
+- [ ] 2.2 验证 LUT 覆盖 D1 x D2 x D3 x D4 的关键组合（~31 个采样点）
+- [ ] 2.3 实现 LUT 查询接口 query_latency_lut(config) -> (latency, memory, power)
+
+## Phase 3: 联合搜索框架
+- [ ] 3.1 安装 BoTorch 并验证基本功能
+- [ ] 3.2 编码搜索空间（B1 x B2 x D 联合，含约束 C1-C5）
+- [ ] 3.3 实现 Level 1 廉价评估器（sensitivity_map + LUT + 解析公式）
+- [ ] 3.4 实现 Level 2 真实评估管线（自动化: 配置 → 推理 → 指标收集）
+- [ ] 3.5 实现外循环 + 内循环 BO 框架
+- [ ] 3.6 小规模冒烟测试（5 个外循环 x 5 个内循环 = 25 次评估）
+
+## Phase 4: 搜索执行与验证
+- [ ] 4.1 完整联合搜索运行
+- [ ] 4.2 Top-3 配置完整验证集评估
+- [ ] 4.3 Pareto 前沿绘制（精度 vs 时延 vs 能耗 vs 存储）
+- [ ] 4.4 结果写入最终报告
