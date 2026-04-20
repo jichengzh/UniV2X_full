@@ -2,30 +2,15 @@
 D1 多 Agent 并行度 benchmark
 
 测量不同 CUDA stream 并行度下的推理时延/显存/功率。
-支持 1/2/3/4 stream 配置。
+支持 1/2 stream 配置（2=ego/infra BEV 并行, 3/4 需侵入模型内部，标记为 TODO）。
 
 用法:
-  PYTHONPATH=/home/jichengzhi/UniV2X python tools/infer_multi_stream.py \
-      projects/configs_e2e_univ2x/univ2x_coop_e2e_track.py \
-      ckpts/univ2x_coop_e2e_stg2.pth \
-      --num-streams 2 \
-      --n-warmup 3 --n-runs 20
-
-  # 带剪枝
-  PYTHONPATH=/home/jichengzhi/UniV2X python tools/infer_multi_stream.py \
-      projects/configs_e2e_univ2x/univ2x_coop_e2e_track.py \
-      ckpts/univ2x_coop_e2e_stg2.pth \
-      --prune-config prune_configs/decouple_enc10_dec07.json \
-      --finetuned-ckpt work_dirs/ft_decouple_enc10_dec07/epoch_3.pth \
-      --num-streams 2 \
-      --n-warmup 3 --n-runs 20
-
-  # sweep 全部 stream 配置
-  PYTHONPATH=/home/jichengzhi/UniV2X python tools/infer_multi_stream.py \
-      projects/configs_e2e_univ2x/univ2x_coop_e2e_track.py \
-      ckpts/univ2x_coop_e2e_stg2.pth \
-      --sweep \
-      --n-warmup 3 --n-runs 10
+  CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/home/jichengzhi/UniV2X \\
+    conda run -n UniV2X_2.0 python tools/infer_multi_stream.py \\
+      projects/configs_e2e_univ2x/univ2x_coop_e2e_track.py \\
+      ckpts/univ2x_coop_e2e_stg2.pth \\
+      --sweep --n-warmup 2 --n-runs 5 \\
+      --output output/d1_baseline_sweep.json
 """
 import argparse
 import json
@@ -35,6 +20,7 @@ import sys
 import time
 import warnings
 from collections import defaultdict
+from contextlib import contextmanager
 
 warnings.filterwarnings("ignore")
 sys.path.insert(0, '/home/jichengzhi/UniV2X')
@@ -47,6 +33,11 @@ from mmcv.parallel import MMDataParallel
 from mmdet.datasets import replace_ImageToTensor
 from mmdet3d.datasets import build_dataset
 
+# 注册自定义数据集和模型
+import projects.mmdet3d_plugin  # noqa: F401
+
+from projects.mmdet3d_plugin.univ2x.detectors.multi_agent import MultiAgent
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="D1 multi-stream benchmark")
@@ -55,180 +46,143 @@ def parse_args():
     p.add_argument("--prune-config", default=None)
     p.add_argument("--finetuned-ckpt", default=None)
     p.add_argument("--num-streams", type=int, default=1,
-                   help="并行 stream 数: 1=串行, 2=ego/infra并行, 3/4=更细拆分")
+                   help="并行 stream 数: 1=串行, 2=ego/infra并行")
     p.add_argument("--sweep", action="store_true",
-                   help="遍历 1/2/3/4 全部配置")
+                   help="遍历 1/2 全部配置")
     p.add_argument("--n-warmup", type=int, default=3)
     p.add_argument("--n-runs", type=int, default=20)
-    p.add_argument("--output", default=None,
-                   help="结果 JSON 输出路径 (默认 stdout)")
+    p.add_argument("--output", default=None)
     return p.parse_args()
 
 
-def build_model_and_data(args):
-    """构建模型和数据集，返回 (model, dataset, data_loader)"""
-    cfg = Config.fromfile(args.config)
+# ============================================================
+# Monkey-patch MultiAgent to support multi-stream forward_test
+# ============================================================
 
-    # 修改 test pipeline
-    if hasattr(cfg, 'test_pipeline'):
-        cfg.data.test.pipeline = cfg.test_pipeline
-    elif hasattr(cfg.data, 'test'):
-        pass
+def forward_test_serial(self, ego_agent_data=None, other_agent_data_dict={},
+                        w_label=True, return_loss=False, **kwargs):
+    """stream=1: 原始串行逻辑 (与 multi_agent.py 一致)"""
+    other_agent_results = {}
+    for name_other_agent in self.other_agent_names:
+        other_agent_result = getattr(self, name_other_agent)(
+            return_loss=return_loss,
+            w_label=w_label,
+            **(other_agent_data_dict[name_other_agent]),
+            **kwargs
+        )
+        other_agent_result[0]['ego2other_rt'] = other_agent_data_dict[name_other_agent]['veh2inf_rt']
+        other_agent_result[0]['pc_range'] = self.pc_range_dict[name_other_agent]
+        other_agent_results[name_other_agent] = other_agent_result
 
-    cfg.data.test.test_mode = True
-    if hasattr(cfg.data.test, 'samples_per_gpu'):
-        cfg.data.test.samples_per_gpu = 1
-
-    dataset = build_dataset(cfg.data.test)
-    from torch.utils.data import DataLoader
-    from mmdet3d.datasets import build_dataloader
-    data_loader = build_dataloader(
-        dataset,
-        samples_per_gpu=1,
-        workers_per_gpu=0,
-        dist=False,
-        shuffle=False
+    result = self.model_ego_agent(
+        return_loss=return_loss, w_label=w_label,
+        other_agent_results=other_agent_results,
+        **ego_agent_data, **kwargs
     )
+    return result
 
-    # 构建 MultiAgent 模型
-    from projects.mmdet3d_plugin.univ2x.detectors.multi_agent import MultiAgent
 
-    # 构建 ego agent
-    ego_cfg = cfg.model_ego_agent
-    from mmdet3d.models import build_model
-    ego_model = build_model(ego_cfg, train_cfg=None, test_cfg=cfg.get('test_cfg'))
+def forward_test_2stream(self, ego_agent_data=None, other_agent_data_dict={},
+                         w_label=True, return_loss=False, **kwargs):
+    """stream=2: infra 在独立 stream 上并行执行
 
-    # 构建 other agents
-    other_agents = {}
-    if hasattr(cfg, 'model_other_agent_inf'):
-        inf_cfg = cfg.model_other_agent_inf
-        inf_model = build_model(inf_cfg, train_cfg=None, test_cfg=cfg.get('test_cfg'))
-        if hasattr(inf_cfg, 'other_agent_model_frozen') and inf_cfg.other_agent_model_frozen:
-            for p in inf_model.parameters():
-                p.requires_grad = False
-        other_agents['model_other_agent_inf'] = inf_model
+    原理:
+      - infra agent 的完整 forward 不依赖 ego 的任何输出
+      - ego 只在 fusion 阶段(decoder 之前)需要 infra 的 track queries
+      - 但当前 ego forward 是一个不可拆分的调用, 所以实际上:
+        Stream 1: infra forward (异步启动)
+        Stream 0: 等 infra 完成 → ego forward (含 fusion)
+      - 真正的收益需要拆分 ego forward 为 backbone+BEV 和 decoder 两阶段
+        (这是 D2 流水线重叠的工作)
 
-    model = MultiAgent(model_ego_agent=ego_model, model_other_agents=other_agents)
+    当前实现: infra 异步启动 + 同步后 ego forward
+    这可以测量多 stream 的显存开销和 GPU 资源竞争影响。
+    """
+    stream_infra = cuda.Stream()
+    other_agent_results = {}
 
-    # 加载 checkpoint
-    import mmcv
-    ckpt = torch.load(args.checkpoint, map_location='cpu')
-    if 'state_dict' in ckpt:
-        ckpt = ckpt['state_dict']
-    model.load_state_dict(ckpt, strict=False)
+    # 在独立 stream 上异步启动 infra
+    for name_other_agent in self.other_agent_names:
+        with cuda.stream(stream_infra):
+            other_agent_result = getattr(self, name_other_agent)(
+                return_loss=return_loss,
+                w_label=w_label,
+                **(other_agent_data_dict[name_other_agent]),
+                **kwargs
+            )
+            other_agent_result[0]['ego2other_rt'] = \
+                other_agent_data_dict[name_other_agent]['veh2inf_rt']
+            other_agent_result[0]['pc_range'] = self.pc_range_dict[name_other_agent]
+            other_agent_results[name_other_agent] = other_agent_result
+
+    # 同步: 等 infra 完成
+    cuda.current_stream().wait_stream(stream_infra)
+
+    # ego forward (含 fusion)
+    result = self.model_ego_agent(
+        return_loss=return_loss, w_label=w_label,
+        other_agent_results=other_agent_results,
+        **ego_agent_data, **kwargs
+    )
+    return result
+
+
+# ============================================================
+# Model + Data construction
+# ============================================================
+
+def build_model_and_data(args):
+    """构建模型和数据集"""
+    from tools.pruning_sensitivity_analysis import load_model_fresh, get_prune_target
+
+    model, cfg = load_model_fresh(args.config, args.checkpoint)
 
     # 可选: 剪枝
     if args.prune_config:
+        with open(args.prune_config) as f:
+            prune_cfg = json.load(f)
+        _locked = prune_cfg.setdefault("locked", {})
+        _locked.setdefault("importance_criterion", "l1_norm")
+        _locked.setdefault("pruning_granularity", "local")
+        _locked.setdefault("iterative_steps", 5)
+        _locked.setdefault("round_to", 8)
+        prune_cfg.setdefault("encoder", {})
+        prune_cfg.setdefault("decoder", {})
+        prune_cfg.setdefault("heads", {})
+        prune_cfg.setdefault("constraints", {
+            "skip_layers": ["sampling_offsets", "attention_weights"],
+            "min_channels": 64, "channel_alignment": 8,
+        })
         from projects.mmdet3d_plugin.univ2x.pruning.prune_univ2x import apply_prune_config
-        prune_cfg = json.load(open(args.prune_config))
-        apply_prune_config(model.model_ego_agent, prune_cfg)
+        apply_prune_config(get_prune_target(model), prune_cfg, dataloader=None)
         print(f"[Prune] Applied {args.prune_config}")
 
     # 可选: 加载微调 ckpt
     if args.finetuned_ckpt:
-        ft_ckpt = torch.load(args.finetuned_ckpt, map_location='cpu')
-        if 'state_dict' in ft_ckpt:
-            ft_ckpt = ft_ckpt['state_dict']
-        # 过滤匹配的 key
-        model_dict = model.state_dict()
-        matched = {k: v for k, v in ft_ckpt.items() if k in model_dict and v.shape == model_dict[k].shape}
-        model_dict.update(matched)
-        model.load_state_dict(model_dict)
-        print(f"[Finetune] Loaded {len(matched)} params from {args.finetuned_ckpt}")
+        from mmcv.runner import load_checkpoint
+        load_checkpoint(model, args.finetuned_ckpt, map_location="cpu")
+        print(f"[Finetune] Loaded {args.finetuned_ckpt}")
 
-    model = model.cuda().eval()
+    # 构建数据集
+    cfg.data.test.test_mode = True
+    cfg.data.test.pipeline = replace_ImageToTensor(cfg.data.test.pipeline)
+    dataset = build_dataset(cfg.data.test)
+
+    from projects.mmdet3d_plugin.datasets.builder import build_dataloader
+    data_loader = build_dataloader(
+        dataset, samples_per_gpu=1, workers_per_gpu=0,
+        dist=False, shuffle=False
+    )
+
+    # 包装为 MMDataParallel (处理 DataContainer scatter)
+    model = MMDataParallel(model.cuda(), device_ids=[0])
+    model.eval()
+
     return model, dataset, data_loader
 
 
 # ============================================================
-# Multi-stream inference strategies
-# ============================================================
-
-def forward_serial(model, data):
-    """stream=1: 完全串行 (当前默认行为)"""
-    with torch.no_grad():
-        return model(return_loss=False, rescale=True, **data)
-
-
-def forward_2stream(model, data):
-    """stream=2: ego agent 和 infra agent 的 backbone+BEV 阶段并行
-
-    原理:
-      - infra agent 的完整 forward 不依赖 ego 的输出
-      - ego agent 的 backbone + BEV encoding 不依赖 infra 的输出
-      - ego 只在 fusion 阶段（decoder 之前）需要 infra 的 track queries
-      - 所以 infra forward 可以与 ego backbone+BEV 并行
-
-    实现:
-      Stream 0 (default): ego agent backbone + BEV encoder
-      Stream 1:           infra agent 完整 forward
-      Sync → ego fusion + decoder + heads
-    """
-    ego_data = data.get('ego_agent_data', {})
-    other_data = data.get('other_agent_data_dict', {})
-
-    # Stream 1: infra agent forward (异步)
-    stream_infra = cuda.Stream()
-    infra_results = {}
-
-    with torch.no_grad():
-        for name in model.other_agent_names:
-            with cuda.stream(stream_infra):
-                result = getattr(model, name)(
-                    return_loss=False, w_label=True,
-                    **(other_data[name])
-                )
-                result[0]['ego2other_rt'] = other_data[name]['veh2inf_rt']
-                result[0]['pc_range'] = model.pc_range_dict[name]
-                infra_results[name] = result
-
-        # Stream 0 (default): ego agent forward
-        # ego 内部会等 infra_results → 我们需要在 ego forward 之前同步
-        cuda.current_stream().wait_stream(stream_infra)
-
-        result = model.model_ego_agent(
-            return_loss=False, w_label=True,
-            other_agent_results=infra_results,
-            **ego_data
-        )
-
-    return result
-
-
-def forward_nstream(model, data, n_streams=4):
-    """stream=3/4: 更细粒度的并行 (实验性)
-
-    当前 UniV2X 的 ego agent forward 是一个整体调用 (backbone→BEV→decoder→heads),
-    拆分需要侵入模型内部。
-
-    stream=3/4 的理论实现需要:
-      1. 拆分 ego agent 的 forward 为 backbone 和 bev_encoder 两个阶段
-      2. 在不同 stream 上执行
-      3. 处理中间 tensor 的跨 stream 同步
-
-    当前降级为 stream=2 的行为 + 额外的 stream 创建开销测量。
-    TODO: 侵入模型内部实现真正的 3/4 stream 拆分。
-    """
-    # 目前降级为 2-stream + overhead 测量
-    # 创建额外 stream 来模拟资源竞争
-    extra_streams = [cuda.Stream() for _ in range(n_streams - 2)]
-    result = forward_2stream(model, data)
-    # 同步额外 stream
-    for s in extra_streams:
-        cuda.current_stream().wait_stream(s)
-    return result
-
-
-STREAM_DISPATCH = {
-    1: forward_serial,
-    2: forward_2stream,
-    3: lambda m, d: forward_nstream(m, d, 3),
-    4: lambda m, d: forward_nstream(m, d, 4),
-}
-
-
-# ============================================================
-# Benchmark
+# Patch and benchmark
 # ============================================================
 
 def get_gpu_power():
@@ -238,73 +192,77 @@ def get_gpu_power():
             ['nvidia-smi', '--query-gpu=power.draw', '--format=csv,noheader,nounits'],
             stderr=subprocess.DEVNULL
         ).decode().strip()
-        # 可能有多个 GPU，取第一个
         return float(out.split('\n')[0])
     except Exception:
         return -1.0
 
 
+@contextmanager
+def patch_forward_test(model, num_streams):
+    """临时替换 MultiAgent.forward_test 为指定的 stream 策略"""
+    # model 是 MMDataParallel 包装的, 实际 MultiAgent 在 model.module
+    ma = model.module
+    original = ma.forward_test
+
+    if num_streams == 1:
+        ma.forward_test = lambda **kw: forward_test_serial(ma, **kw)
+    elif num_streams >= 2:
+        ma.forward_test = lambda **kw: forward_test_2stream(ma, **kw)
+
+    try:
+        yield
+    finally:
+        ma.forward_test = original
+
+
 def benchmark_config(model, data_loader, num_streams, n_warmup, n_runs):
     """对单个 stream 配置运行 benchmark"""
-    forward_fn = STREAM_DISPATCH[num_streams]
-
     latencies = []
     powers = []
-    peak_mem_before = torch.cuda.max_memory_allocated()
     torch.cuda.reset_peak_memory_stats()
 
-    data_iter = iter(data_loader)
+    with patch_forward_test(model, num_streams):
+        data_iter = iter(data_loader)
 
-    # Warmup
-    for i in range(n_warmup):
-        try:
-            data = next(data_iter)
-        except StopIteration:
-            data_iter = iter(data_loader)
-            data = next(data_iter)
+        with torch.no_grad():
+            # Warmup
+            for i in range(n_warmup):
+                try:
+                    data = next(data_iter)
+                except StopIteration:
+                    data_iter = iter(data_loader)
+                    data = next(data_iter)
+                model(return_loss=False, rescale=True, **data)
+                torch.cuda.synchronize()
 
-        # 移动到 GPU
-        for k, v in data.items():
-            if isinstance(v, torch.Tensor):
-                data[k] = v.cuda()
+            # Benchmark
+            for i in range(n_runs):
+                try:
+                    data = next(data_iter)
+                except StopIteration:
+                    data_iter = iter(data_loader)
+                    data = next(data_iter)
 
-        forward_fn(model, data)
-        torch.cuda.synchronize()
+                power_before = get_gpu_power()
 
-    # Benchmark runs
-    for i in range(n_runs):
-        try:
-            data = next(data_iter)
-        except StopIteration:
-            data_iter = iter(data_loader)
-            data = next(data_iter)
+                torch.cuda.synchronize()
+                start_event = torch.cuda.Event(enable_timing=True)
+                end_event = torch.cuda.Event(enable_timing=True)
 
-        for k, v in data.items():
-            if isinstance(v, torch.Tensor):
-                data[k] = v.cuda()
+                start_event.record()
+                model(return_loss=False, rescale=True, **data)
+                end_event.record()
+                torch.cuda.synchronize()
 
-        # 功率采样
-        power_before = get_gpu_power()
+                latency_ms = start_event.elapsed_time(end_event)
+                latencies.append(latency_ms)
 
-        # CUDA Event 计时
-        start_event = torch.cuda.Event(enable_timing=True)
-        end_event = torch.cuda.Event(enable_timing=True)
+                power_after = get_gpu_power()
+                powers.append((power_before + power_after) / 2.0)
 
-        start_event.record()
-        forward_fn(model, data)
-        end_event.record()
-        torch.cuda.synchronize()
+    peak_mem = torch.cuda.max_memory_allocated() / (1024 ** 2)
 
-        latency_ms = start_event.elapsed_time(end_event)
-        latencies.append(latency_ms)
-
-        power_after = get_gpu_power()
-        avg_power = (power_before + power_after) / 2.0
-        powers.append(avg_power)
-
-    peak_mem = torch.cuda.max_memory_allocated() / (1024 ** 2)  # MB
-
-    result = {
+    return {
         'num_streams': num_streams,
         'latency_mean_ms': float(np.mean(latencies)),
         'latency_std_ms': float(np.std(latencies)),
@@ -312,10 +270,9 @@ def benchmark_config(model, data_loader, num_streams, n_warmup, n_runs):
         'latency_max_ms': float(np.max(latencies)),
         'peak_memory_mb': float(peak_mem),
         'avg_power_w': float(np.mean(powers)),
-        'energy_per_frame_mj': float(np.mean(latencies) * np.mean(powers)),  # ms * W = mJ
+        'energy_per_frame_mj': float(np.mean(latencies) * np.mean(powers)),
         'n_runs': n_runs,
     }
-    return result
 
 
 def main():
@@ -325,7 +282,7 @@ def main():
     print(f"[D1] Model loaded. Dataset: {len(dataset)} samples")
 
     if args.sweep:
-        stream_configs = [1, 2, 3, 4]
+        stream_configs = [1, 2]  # 3/4 需要侵入模型内部, 暂为 TODO
     else:
         stream_configs = [args.num_streams]
 
@@ -344,7 +301,6 @@ def main():
         print(f"  Avg power: {result['avg_power_w']:.1f} W")
         print(f"  Energy/frame: {result['energy_per_frame_mj']:.0f} mJ")
 
-    # 输出
     output = {
         'config': args.config,
         'checkpoint': args.checkpoint,
@@ -359,7 +315,6 @@ def main():
             json.dump(output, f, indent=2)
         print(f"\n[D1] Results saved to {args.output}")
     else:
-        print(f"\n[D1] Results:")
         print(json.dumps(output, indent=2))
 
 
