@@ -17,8 +17,8 @@
 
 ### Step 1.3: D3 时序缓存管理
 - [x] 1.3.1 实现 TemporalCacheManager（FP16/INT8 缓存 + 0/1/2 帧）— `pruning/temporal_cache.py`，FP16 2帧=39MB, INT8 2帧=19.5MB (-50%), quant error=0.011
-- [ ] 1.3.2 集成到 univ2x_head.py 的 prev_bev 管理逻辑
-- [ ] 1.3.3 验证 5 种组合的精度影响（AMOTA 对比）
+- [x] 1.3.2 集成到 univ2x_track.py — monkey-patch simple_test_track 实现 prev_bev cache 管理，`tools/benchmark_temporal_cache.py`
+- [ ] 1.3.3 验证 5 种组合的精度影响（AMOTA 对比）— 进行中：fp16-1frame AMOTA=0.333 已验证，int8-1frame 和 fp16-0frame 在后台运行
 - [ ] 1.3.4 benchmark 5 种配置的显存占用
 - [ ] 1.3.5 测试 D3 与 B1 耦合：60% 剪枝模型 + (INT8, 1) vs (FP16, 2) 对比
 - [ ] 1.3.6 记录结果到 latency_lut.json
