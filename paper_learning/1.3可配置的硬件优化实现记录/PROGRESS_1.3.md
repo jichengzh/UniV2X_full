@@ -35,7 +35,7 @@
 - [x] 2.3 实现 LUT 查询接口 `tools/query_lut.py` — 枚举 40 种 D 配置，线性叠加预估
 
 ## Phase 3: 联合搜索框架
-- [ ] 3.1 安装 BoTorch 并验证基本功能
+- [x] 3.1 安装 BoTorch 0.10.0 并验证 GP fitting 基本功能
 - [x] 3.2 编码搜索空间 `tools/joint_search.py` — B1(80) x B2(32) x D(48) = 122,880 naive → 75,776 valid (C1-C5 约束裁剪 38.3%)
 - [x] 3.3 实现 Level 1 廉价评估器 — B1 AMOTA 数据 + B2 delta + D3 delta + LUT latency，Top-10 均指向 D.1.4+backbone_bev_overlap
 - [ ] 3.4 实现 Level 2 真实评估管线（自动化: 配置 → 推理 → 指标收集）
