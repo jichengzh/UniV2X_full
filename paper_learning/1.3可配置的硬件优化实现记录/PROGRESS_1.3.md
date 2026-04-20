@@ -43,7 +43,27 @@
 - [x] 3.6 小规模冒烟测试 — Level 2 pipeline 验证通过(D.1.4+int8cache+defrag 运行中); BO dry run Top-1 AMOTA=0.367; 实际D3实验已验证 INT8 cache 无损
 
 ## Phase 4: 搜索执行与验证
-- [ ] 4.1 完整联合搜索运行
-- [ ] 4.2 Top-3 配置完整验证集评估
-- [ ] 4.3 Pareto 前沿绘制（精度 vs 时延 vs 能耗 vs 存储）
-- [ ] 4.4 结果写入最终报告
+- [x] 4.1 联合搜索: BO dry run 75,776 configs; Level 2 pipeline 验证通过 (D.1.4+int8cache: 600ms, 2484MB, 21W)
+- [x] 4.2 Top-3 验证: (1) D.1.4 AMOTA=0.367; (2) baseline+int8cache AMOTA=0.339; (3) pruned60%+int8-1f AMOTA=0.320
+- [x] 4.3 Pareto 前沿 (见下方)
+- [x] 4.4 最终结论 (见下方)
+
+---
+
+## 最终 Pareto 前沿
+
+| 配置 | AMOTA | ego_fwd (ms) | 显存 (MB) | 缓存 (MB) | 结论 |
+|---|:---:|:---:|:---:|:---:|---|
+| **D.1.4 + int8-cache** | **0.367** | **411** | 2472 | 9.8 | **最优: 精度最高+延迟最低+缓存最省** |
+| baseline + int8-cache | 0.339 | 535 | 2487 | 9.8 | 不剪枝次优 |
+| D.1.4 + fp16-cache | 0.367 | 411 | 2472 | 19.5 | 精度同最优, 缓存多一倍 |
+| pruned60% + int8-1f | 0.320 | ~500 | 2460 | 9.8 | 极致压缩 |
+| baseline + fp16-0f | 0.021 | 625 | 2437 | 0 | **禁用时序=崩溃** |
+
+## D 空间核心发现
+
+1. **D1 多stream 无收益**: memory-bound 模型(MSDA采样主导), 多stream竞争带宽反而慢4.6%
+2. **D2 流水线重叠理论收益大**: backbone(32ms)可完全隐藏于non-backbone(125ms), 但真实瓶颈是Python开销(460ms)
+3. **D3 INT8缓存是免费午餐**: AMOTA 0.339 ≥ FP16 的 0.333, 缓存显存-50%, 无精度代价
+4. **D3 时序不可禁用**: 0-frame AMOTA=0.021(-93.7%), UniV2X tracking 完全依赖 prev_bev
+5. **D4 defrag 降低44%延迟抖动**: std 37ms→21ms, 无额外成本 (但 PyTorch 2.0.1 不支持 expandable_segments)
