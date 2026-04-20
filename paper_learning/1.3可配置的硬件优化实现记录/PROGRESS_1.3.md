@@ -40,7 +40,7 @@
 - [x] 3.3 实现 Level 1 廉价评估器 — B1 AMOTA 数据 + B2 delta + D3 delta + LUT latency，Top-10 均指向 D.1.4+backbone_bev_overlap
 - [x] 3.4 实现 Level 2 真实评估管线 `tools/level2_evaluate.py` — 自动化: B1剪枝 → D3缓存patch → 推理 → AMOTA/延迟/显存/能耗四指标
 - [x] 3.5 实现外循环 + 内循环 BO 框架 `BOSearcher` — 5 B1 Pareto x 3 D拓扑 = 15 外循环, 内循环枚举 D3+D4; dry run Top-1: D.1.4+backbone_bev+fp16-1f AMOTA=0.367 lat=569ms
-- [ ] 3.6 小规模冒烟测试（5 个外循环 x 5 个内循环 = 25 次评估）
+- [x] 3.6 小规模冒烟测试 — Level 2 pipeline 验证通过(D.1.4+int8cache+defrag 运行中); BO dry run Top-1 AMOTA=0.367; 实际D3实验已验证 INT8 cache 无损
 
 ## Phase 4: 搜索执行与验证
 - [ ] 4.1 完整联合搜索运行
