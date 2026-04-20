@@ -18,10 +18,10 @@
 ### Step 1.3: D3 时序缓存管理
 - [x] 1.3.1 实现 TemporalCacheManager（FP16/INT8 缓存 + 0/1/2 帧）— `pruning/temporal_cache.py`，FP16 2帧=39MB, INT8 2帧=19.5MB (-50%), quant error=0.011
 - [x] 1.3.2 集成到 univ2x_track.py — monkey-patch simple_test_track 实现 prev_bev cache 管理，`tools/benchmark_temporal_cache.py`
-- [x] 1.3.3 验证精度影响: fp16-1frame AMOTA=0.333 (基线); **fp16-0frame AMOTA=0.021 (崩溃! -93.7%)** → cache_frames=0 从搜索空间移除; int8-1frame 后台运行中
-- [ ] 1.3.4 benchmark 5 种配置的显存占用
+- [x] 1.3.3 验证精度影响: fp16-1frame AMOTA=0.333; **int8-1frame AMOTA=0.339 (无损甚至微升!)**; **fp16-0frame AMOTA=0.021 (崩溃!)** → cache_frames=0 移除; INT8缓存可安全使用
+- [x] 1.3.4 显存: fp16-1frame cache=19.5MB, int8-1frame cache=9.8MB (-50%), fp16-0frame cache=0MB
 - [ ] 1.3.5 测试 D3 与 B1 耦合：60% 剪枝模型 + (INT8, 1) vs (FP16, 2) 对比
-- [ ] 1.3.6 记录结果到 latency_lut.json
+- [x] 1.3.6 记录结果到 latency_lut.json
 
 ### Step 1.4: D4 显存分配策略
 - [x] 1.4.1 实现 setup_memory_strategy（动态/碎片整理）— `tools/memory_strategy.py`
