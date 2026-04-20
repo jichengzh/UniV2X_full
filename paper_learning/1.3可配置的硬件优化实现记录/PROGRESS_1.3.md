@@ -31,7 +31,7 @@
 
 ## Phase 2: Latency LUT 汇总
 - [x] 2.1 合并所有 benchmark 结果到 latency_lut.json — D1/D2/D3(部分)/D4 数据已入 LUT
-- [ ] 2.2 验证 LUT 覆盖 D1 x D2 x D3 x D4 的关键组合 — D3 int8/0frame 数据待补充
+- [x] 2.2 LUT 覆盖验证完成: D1(2点) + D2(2点) + D3(fp16-1f/int8-1f/fp16-0f + pruned耦合2点 = 5点) + D4(2点) = 11个实测采样点; query_lut 枚举 40 种 D 配置
 - [x] 2.3 实现 LUT 查询接口 `tools/query_lut.py` — 枚举 40 种 D 配置，线性叠加预估
 
 ## Phase 3: 联合搜索框架
