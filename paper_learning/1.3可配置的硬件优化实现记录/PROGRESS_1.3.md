@@ -10,10 +10,10 @@
 
 ### Step 1.2: D2 流水线阶段重叠
 - [x] 1.2.1 实现 PipelinedInference 类（无重叠 / backbone-BEV 重叠） — `tools/pipelined_inference.py`，用模块级 hook 分析各阶段延迟
-- [ ] 1.2.2 验证重叠模式下精度不变（AMOTA 与无重叠一致）
+- [ ] 1.2.2 验证重叠模式下精度不变（AMOTA 与无重叠一致）— TODO: 需跑完整 AMOTA 对比
 - [x] 1.2.3 benchmark: no_overlap 586ms actual; backbone-BEV overlap 理论稳态 125ms (backbone 32ms fully hidden, non-backbone 125ms); 真实瓶颈是非模型开销 460ms
-- [ ] 1.2.4 用剪枝模型重复 benchmark（验证流水线平衡变化）
-- [ ] 1.2.5 记录结果到 latency_lut.json
+- [x] 1.2.4 剪枝模型 D.1.4: backbone 32ms 不变, non-backbone 115.6ms (-7.5%), 理论稳态 115.6ms, 5.25x speedup
+- [x] 1.2.5 记录结果到 latency_lut.json
 
 ### Step 1.3: D3 时序缓存管理
 - [ ] 1.3.1 实现 TemporalCacheManager（FP16/INT8 缓存 + 0/1/2 帧）

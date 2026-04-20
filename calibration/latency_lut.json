@@ -13,5 +13,24 @@
       "stream_2": {"latency_ms": 601.7, "peak_memory_mb": 2527, "avg_power_w": 89.4, "energy_mj": 53772}
     },
     "_conclusion": "多stream在RTX4090上无收益(+4.6% baseline, +0.1% pruned)，模型memory-bound，多stream竞争带宽"
+  },
+
+  "D2_pipeline_overlap": {
+    "baseline": {
+      "no_overlap": {"actual_latency_ms": 585.6, "peak_memory_mb": 2476, "avg_power_w": 61.7},
+      "backbone_bev_overlap": {
+        "backbone_ms": 32.0, "non_backbone_ms": 125.0,
+        "theoretical_steady_state_ms": 125.0, "theoretical_speedup": 4.77,
+        "peak_memory_mb": 2475, "avg_power_w": 63.0
+      }
+    },
+    "pruned_d14_enc10_dec07": {
+      "backbone_bev_overlap": {
+        "backbone_ms": 32.2, "non_backbone_ms": 115.6,
+        "theoretical_steady_state_ms": 115.6, "theoretical_speedup": 5.25,
+        "peak_memory_mb": 2472, "avg_power_w": 62.6
+      }
+    },
+    "_conclusion": "backbone(32ms)远小于non-backbone(125ms)，重叠可完全隐藏backbone; 剪枝后non-backbone降10ms; 真实瓶颈是Python/data开销(~460ms)"
   }
 }
