@@ -1,0 +1,17 @@
+{
+  "_description": "D空间 Latency LUT — 各维度配置对延迟/显存/能耗的影响",
+  "_updated": "2026-04-20",
+  "_hardware": "RTX 4090, CUDA Event timing, 5 runs",
+
+  "D1_multi_stream": {
+    "baseline": {
+      "stream_1": {"latency_ms": 596.2, "peak_memory_mb": 2476, "avg_power_w": 88.1, "energy_mj": 52520},
+      "stream_2": {"latency_ms": 623.6, "peak_memory_mb": 2531, "avg_power_w": 91.1, "energy_mj": 56816}
+    },
+    "pruned_d14_enc10_dec07": {
+      "stream_1": {"latency_ms": 601.2, "peak_memory_mb": 2472, "avg_power_w": 92.4, "energy_mj": 55555},
+      "stream_2": {"latency_ms": 601.7, "peak_memory_mb": 2527, "avg_power_w": 89.4, "energy_mj": 53772}
+    },
+    "_conclusion": "多stream在RTX4090上无收益(+4.6% baseline, +0.1% pruned)，模型memory-bound，多stream竞争带宽"
+  }
+}

@@ -5,8 +5,8 @@
 ### Step 1.1: D1 多 Agent 并行度
 - [x] 1.1.1 在推理入口实现 multi-stream 分支（1/2/3/4 streams） — `tools/infer_multi_stream.py` 实现 serial/2-stream/N-stream 三种策略
 - [x] 1.1.2 用 baseline 模型 benchmark: stream=1 (596ms, 2476MB, 88W) vs stream=2 (624ms, 2531MB, 91W) — 并行反而慢 4.6%，验证了 memory-bound 模型多 stream 竞争带宽的预期
-- [ ] 1.1.3 用 1.2 最优剪枝模型 (D.1.4 enc=1.0 dec=0.7) 重复 benchmark
-- [ ] 1.1.4 记录结果到 latency_lut.json
+- [x] 1.1.3 用 1.2 最优剪枝模型 (D.1.4 enc=1.0 dec=0.7) 重复 benchmark — stream=1 (601ms, 2472MB) vs stream=2 (602ms, 2527MB)，剪枝不改变多 stream 结论
+- [x] 1.1.4 记录结果到 latency_lut.json
 
 ### Step 1.2: D2 流水线阶段重叠
 - [ ] 1.2.1 实现 PipelinedInference 类（无重叠 / backbone-BEV 重叠 / 全重叠）
