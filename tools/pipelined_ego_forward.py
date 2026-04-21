@@ -1,29 +1,33 @@
 """
-D2 流水线重叠的真正实现：PipelinedEgoForward
+D2 流水线重叠 benchmark
 
-通过 monkey-patch get_bevs() 方法，实现帧间 backbone-BEV 重叠：
-  - 当前帧 BEV encoding 时，同时在独立 CUDA stream 上执行下一帧的 backbone
-  - 下一帧到来时直接使用已缓存的 backbone 特征
+通过 monkey-patch get_bevs() 方法，分别计时 backbone 和 BEV encoding 两阶段，
+验证流水线重叠的理论收益和实测可行性。
 
-三种模式:
-  none:              原始串行 (无重叠)
-  backbone_bev:      backbone(t+1) 与 BEV+Dec+Seg(t) 重叠
-  full:              全阶段重叠（需要更复杂的拆分，当前降级为 backbone_bev）
+实现方式:
+  mode=none:         原始串行 (无修改)
+  mode=backbone_bev: 在 get_bevs() 内部拆分 backbone 和 BEV 为两个阶段，
+                     分别用 CUDA Event 计时，计算理论稳态帧间延迟
+
+注: 真正的帧间 backbone 异步预取受限于 MMDataParallel 的 DataContainer scatter
+    机制——下一帧数据在 model() 外部无法提前 scatter 到 GPU。
+    完整实现需要绕过 MMDataParallel（使用自定义推理循环）或迁移到 TRT 部署。
+    本 benchmark 测量的是**阶段级延迟**，用于计算理论重叠收益。
 
 用法:
-  CUDA_VISIBLE_DEVICES=4 PYTHONPATH=/home/jichengzhi/UniV2X \\
+  CUDA_VISIBLE_DEVICES=1 PYTHONPATH=/home/jichengzhi/UniV2X \\
     conda run -n UniV2X_2.0 python tools/pipelined_ego_forward.py \\
       projects/configs_e2e_univ2x/univ2x_coop_e2e_track.py \\
       ckpts/univ2x_coop_e2e_stg2.pth \\
-      --mode backbone_bev --n-warmup 3 --n-runs 10 --compare
+      --n-warmup 2 --n-runs 10
 """
 import argparse
 import json
 import os
 import subprocess
 import sys
-import time
 import warnings
+from collections import defaultdict
 
 warnings.filterwarnings("ignore")
 sys.path.insert(0, '/home/jichengzhi/UniV2X')
@@ -36,97 +40,15 @@ import projects.mmdet3d_plugin  # noqa
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="D2 pipelined ego forward benchmark")
+    p = argparse.ArgumentParser(description="D2 pipeline stage timing")
     p.add_argument("config")
     p.add_argument("checkpoint")
     p.add_argument("--prune-config", default=None)
     p.add_argument("--finetuned-ckpt", default=None)
-    p.add_argument("--mode", choices=['none', 'backbone_bev', 'full', 'compare'],
-                   default='compare')
     p.add_argument("--n-warmup", type=int, default=3)
     p.add_argument("--n-runs", type=int, default=10)
     p.add_argument("--output", default=None)
     return p.parse_args()
-
-
-class PipelinedGetBevs:
-    """在 backbone(t+1) 和 BEV(t) 之间实现帧间重叠
-
-    原理:
-      get_bevs() 内部分两步:
-        1. extract_img_feat(img)      → img_feats   [backbone, ~32ms]
-        2. get_bev_features(img_feats) → bev_embed  [BEV encoder, ~65ms]
-
-      backbone_bev 重叠模式:
-        - 保存当前帧 BEV encoding 完成后的状态
-        - 在返回前，异步启动下一帧的 backbone (如果下一帧数据可用)
-        - 下次调用 get_bevs 时，直接使用缓存的 backbone 结果
-    """
-
-    def __init__(self, ego_model, mode='none'):
-        self.ego = ego_model
-        self.mode = mode
-        self.backbone_stream = cuda.Stream() if mode != 'none' else None
-        self.cached_img_feats = None  # 缓存的下一帧 backbone 结果
-        self.next_img = None  # 下一帧图像（由外部设置）
-        self._original_get_bevs = ego_model.get_bevs
-
-    def set_next_frame_img(self, img):
-        """外部调用: 设置下一帧图像，以便异步预取 backbone"""
-        self.next_img = img
-
-    def patched_get_bevs(self, imgs, img_metas, prev_img=None, prev_img_metas=None, prev_bev=None):
-        """替代原始 get_bevs()，加入流水线重叠逻辑"""
-
-        if self.mode == 'none':
-            return self._original_get_bevs(imgs, img_metas, prev_img, prev_img_metas, prev_bev)
-
-        # Step 1: 获取当前帧的 backbone 特征
-        if self.cached_img_feats is not None:
-            # 使用上一帧预取的 backbone 结果
-            img_feats = self.cached_img_feats
-            self.cached_img_feats = None
-        else:
-            # 首帧或缓存不可用，同步执行 backbone
-            if prev_img is not None and prev_img_metas is not None:
-                prev_bev = self.ego.get_history_bev(prev_img, prev_img_metas)
-            img_feats = self.ego.extract_img_feat(img=imgs)
-
-        # Step 2: BEV encoding（在默认 stream 上）
-        if self.ego.freeze_bev_encoder:
-            with torch.no_grad():
-                bev_embed, bev_pos = self.ego.pts_bbox_head.get_bev_features(
-                    mlvl_feats=img_feats, img_metas=img_metas, prev_bev=prev_bev)
-        else:
-            bev_embed, bev_pos = self.ego.pts_bbox_head.get_bev_features(
-                mlvl_feats=img_feats, img_metas=img_metas, prev_bev=prev_bev)
-
-        # Step 3: 异步预取下一帧 backbone（在独立 stream 上）
-        if self.mode in ('backbone_bev', 'full') and self.next_img is not None:
-            with cuda.stream(self.backbone_stream):
-                self.cached_img_feats = self.ego.extract_img_feat(img=self.next_img)
-            self.next_img = None  # 消费掉
-
-        # Step 4: BEV 形状处理（与原始 get_bevs 一致）
-        if bev_embed.shape[1] == self.ego.bev_h * self.ego.bev_w:
-            bev_embed = bev_embed.permute(1, 0, 2)
-        assert bev_embed.shape[0] == self.ego.bev_h * self.ego.bev_w
-
-        # 等待下一帧 backbone 完成（如果有）
-        if self.backbone_stream is not None and self.cached_img_feats is not None:
-            cuda.current_stream().wait_stream(self.backbone_stream)
-
-        return bev_embed, bev_pos
-
-    def enable(self):
-        """激活流水线重叠"""
-        self.ego.get_bevs = self.patched_get_bevs
-
-    def disable(self):
-        """恢复原始 get_bevs"""
-        self.ego.get_bevs = self._original_get_bevs
-        self.cached_img_feats = None
-        self.next_img = None
 
 
 def get_gpu_power():
@@ -180,69 +102,46 @@ def build_model_and_data(args):
     return model, dataset, dl
 
 
-def benchmark_pipeline_mode(model, data_loader, mode, n_warmup, n_runs):
-    """Benchmark 一种流水线模式"""
-    ego = model.module.model_ego_agent
-    pipeline = PipelinedGetBevs(ego, mode=mode)
-    pipeline.enable()
+def patch_get_bevs_with_timing(ego_model):
+    """Monkey-patch get_bevs() 加入阶段级 CUDA Event 计时"""
+    original_get_bevs = ego_model.get_bevs
+    stage_times = defaultdict(list)
 
-    latencies = []
-    powers = []
-    torch.cuda.reset_peak_memory_stats()
+    def timed_get_bevs(imgs, img_metas, prev_img=None, prev_img_metas=None, prev_bev=None):
+        if prev_img is not None and prev_img_metas is not None:
+            prev_bev = ego_model.get_history_bev(prev_img, prev_img_metas)
 
-    data_iter = iter(data_loader)
-    next_data = None
+        # Stage 1: Backbone + FPN
+        s1_start = cuda.Event(enable_timing=True)
+        s1_end = cuda.Event(enable_timing=True)
+        s1_start.record()
+        img_feats = ego_model.extract_img_feat(img=imgs)
+        s1_end.record()
 
-    with torch.no_grad():
-        # Warmup
-        for _ in range(n_warmup):
-            data = next(data_iter, None) or next(iter(data_loader))
-            model(return_loss=False, rescale=True, **data)
-            torch.cuda.synchronize()
+        # Stage 2: BEV Encoder
+        s2_start = cuda.Event(enable_timing=True)
+        s2_end = cuda.Event(enable_timing=True)
+        s2_start.record()
+        if ego_model.freeze_bev_encoder:
+            with torch.no_grad():
+                bev_embed, bev_pos = ego_model.pts_bbox_head.get_bev_features(
+                    mlvl_feats=img_feats, img_metas=img_metas, prev_bev=prev_bev)
+        else:
+            bev_embed, bev_pos = ego_model.pts_bbox_head.get_bev_features(
+                mlvl_feats=img_feats, img_metas=img_metas, prev_bev=prev_bev)
+        s2_end.record()
 
-        # Pre-fetch first "next frame" for pipeline mode
-        if mode != 'none':
-            peek_data = next(data_iter, None) or next(iter(data_loader))
-            # 提取下一帧的 img tensor
-            if 'ego_agent_data' in peek_data and 'img' in peek_data['ego_agent_data']:
-                pipeline.set_next_frame_img(peek_data['ego_agent_data']['img'])
-            next_data = peek_data
+        cuda.synchronize()
+        stage_times['backbone_ms'].append(s1_start.elapsed_time(s1_end))
+        stage_times['bev_encoder_ms'].append(s2_start.elapsed_time(s2_end))
 
-        # Benchmark
-        for i in range(n_runs):
-            if next_data is not None:
-                data = next_data
-            else:
-                data = next(data_iter, None) or next(iter(data_loader))
+        if bev_embed.shape[1] == ego_model.bev_h * ego_model.bev_w:
+            bev_embed = bev_embed.permute(1, 0, 2)
+        assert bev_embed.shape[0] == ego_model.bev_h * ego_model.bev_w
+        return bev_embed, bev_pos
 
-            # 准备下一帧数据
-            next_data = next(data_iter, None) or next(iter(data_loader))
-            if mode != 'none' and 'ego_agent_data' in next_data and 'img' in next_data['ego_agent_data']:
-                pipeline.set_next_frame_img(next_data['ego_agent_data']['img'])
-
-            pw = get_gpu_power()
-            start = torch.cuda.Event(enable_timing=True)
-            end = torch.cuda.Event(enable_timing=True)
-            start.record()
-            model(return_loss=False, rescale=True, **data)
-            end.record()
-            torch.cuda.synchronize()
-
-            latencies.append(start.elapsed_time(end))
-            powers.append(pw)
-
-    pipeline.disable()
-    peak_mem = torch.cuda.max_memory_allocated() / 1024**2
-
-    return {
-        'mode': mode,
-        'latency_mean_ms': float(np.mean(latencies)),
-        'latency_std_ms': float(np.std(latencies)),
-        'peak_memory_mb': float(peak_mem),
-        'avg_power_w': float(np.mean(powers)),
-        'energy_mj': float(np.mean(latencies) * np.mean(powers)),
-        'n_runs': n_runs,
-    }
+    ego_model.get_bevs = timed_get_bevs
+    return original_get_bevs, stage_times
 
 
 def main():
@@ -251,31 +150,86 @@ def main():
     model, dataset, dl = build_model_and_data(args)
     print(f"[D2] Model loaded. Dataset: {len(dataset)} samples")
 
-    if args.mode == 'compare':
-        modes = ['none', 'backbone_bev']
-    else:
-        modes = [args.mode]
+    ego = model.module.model_ego_agent
+    original_get_bevs, stage_times = patch_get_bevs_with_timing(ego)
 
-    results = {}
-    for m in modes:
-        print(f"\n{'='*60}")
-        print(f"[D2] Benchmarking mode={m}")
-        print(f"{'='*60}")
+    # 整体 e2e 计时
+    e2e_latencies = []
+    powers = []
+    torch.cuda.reset_peak_memory_stats()
 
-        torch.cuda.reset_peak_memory_stats()
-        r = benchmark_pipeline_mode(model, dl, m, args.n_warmup, args.n_runs)
-        results[m] = r
+    data_iter = iter(dl)
+    with torch.no_grad():
+        # Warmup
+        for _ in range(args.n_warmup):
+            data = next(data_iter, None) or next(iter(dl))
+            model(return_loss=False, rescale=True, **data)
+            cuda.synchronize()
 
-        print(f"  Latency: {r['latency_mean_ms']:.1f} +/- {r['latency_std_ms']:.1f} ms")
-        print(f"  Peak memory: {r['peak_memory_mb']:.0f} MB")
-        print(f"  Power: {r['avg_power_w']:.1f} W")
+        # 清掉 warmup 的计时
+        stage_times['backbone_ms'].clear()
+        stage_times['bev_encoder_ms'].clear()
 
-    if len(results) == 2:
-        r_none = results['none']
-        r_pipe = results['backbone_bev']
-        delta = r_none['latency_mean_ms'] - r_pipe['latency_mean_ms']
-        print(f"\n[D2] Pipeline saves: {delta:.1f} ms ({delta/r_none['latency_mean_ms']*100:.1f}%)")
-        print(f"     Memory overhead: {r_pipe['peak_memory_mb'] - r_none['peak_memory_mb']:.0f} MB")
+        # Benchmark
+        for i in range(args.n_runs):
+            data = next(data_iter, None) or next(iter(dl))
+            pw = get_gpu_power()
+
+            start = cuda.Event(enable_timing=True)
+            end = cuda.Event(enable_timing=True)
+            start.record()
+            model(return_loss=False, rescale=True, **data)
+            end.record()
+            cuda.synchronize()
+
+            e2e_latencies.append(start.elapsed_time(end))
+            powers.append(pw)
+
+    # 恢复
+    ego.get_bevs = original_get_bevs
+    peak_mem = torch.cuda.max_memory_allocated() / 1024**2
+
+    # 统计
+    backbone_mean = float(np.mean(stage_times['backbone_ms']))
+    bev_mean = float(np.mean(stage_times['bev_encoder_ms']))
+    e2e_mean = float(np.mean(e2e_latencies))
+    other_mean = e2e_mean - backbone_mean - bev_mean  # decoder + seg + infra + overhead
+
+    # 理论流水线计算
+    # backbone-BEV 重叠: 稳态 = max(backbone, bev+decoder+seg+overhead)
+    # 因为 backbone 远小于其他部分，backbone 被完全隐藏
+    non_backbone = e2e_mean - backbone_mean
+    theoretical_steady_state = max(backbone_mean, non_backbone)
+    theoretical_speedup = e2e_mean / theoretical_steady_state if theoretical_steady_state > 0 else 1
+
+    results = {
+        'e2e_mean_ms': round(e2e_mean, 1),
+        'e2e_std_ms': round(float(np.std(e2e_latencies)), 1),
+        'backbone_mean_ms': round(backbone_mean, 1),
+        'bev_encoder_mean_ms': round(bev_mean, 1),
+        'other_mean_ms': round(other_mean, 1),
+        'non_backbone_mean_ms': round(non_backbone, 1),
+        'theoretical_steady_state_ms': round(theoretical_steady_state, 1),
+        'theoretical_speedup': round(theoretical_speedup, 2),
+        'backbone_pct_of_e2e': round(backbone_mean / e2e_mean * 100, 1),
+        'peak_memory_mb': round(peak_mem, 0),
+        'avg_power_w': round(float(np.mean(powers)), 1),
+        'n_runs': args.n_runs,
+        'prune_config': args.prune_config,
+    }
+
+    print(f"\n{'='*60}")
+    print(f"[D2] Pipeline Stage Timing Results")
+    print(f"{'='*60}")
+    print(f"  E2E latency:       {results['e2e_mean_ms']:.1f} +/- {results['e2e_std_ms']:.1f} ms")
+    print(f"  Backbone (stage1): {results['backbone_mean_ms']:.1f} ms ({results['backbone_pct_of_e2e']:.1f}% of e2e)")
+    print(f"  BEV encoder:       {results['bev_encoder_mean_ms']:.1f} ms")
+    print(f"  Other (dec+seg+infra+overhead): {results['other_mean_ms']:.1f} ms")
+    print(f"  Non-backbone total: {results['non_backbone_mean_ms']:.1f} ms")
+    print(f"  ---")
+    print(f"  Theoretical steady-state (backbone-BEV overlap): {results['theoretical_steady_state_ms']:.1f} ms")
+    print(f"  Theoretical speedup: {results['theoretical_speedup']:.2f}x")
+    print(f"  Peak memory: {results['peak_memory_mb']:.0f} MB")
 
     if args.output:
         os.makedirs(os.path.dirname(args.output) or '.', exist_ok=True)
