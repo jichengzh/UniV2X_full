@@ -25,7 +25,7 @@
 ## Phase A: 工程优化底座
 
 ### Step A.1: E3 分阶段内存释放
-- [ ] A.1.1 实现 StagedMemoryManager 类
+- [x] A.1.1 实现 StagedMemoryManager 类 — `tools/staged_memory.py`，4 个阶段边界 hook + 显存释放 + 统计
 - [ ] A.1.2 在 ego agent forward 的 4 个阶段边界插入释放点
 - [ ] A.1.3 验证 AMOTA 不变
 - [ ] A.1.4 benchmark：实施前后的峰值显存对比
