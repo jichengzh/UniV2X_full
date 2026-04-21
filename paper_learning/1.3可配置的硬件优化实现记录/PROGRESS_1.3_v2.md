@@ -3,9 +3,9 @@
 ## Phase 0: 搜索维度完整实现
 
 ### Step 0.1: D3b 补充实验
-- [ ] 0.1.1 baseline 上跑 (fp16, 2帧)：AMOTA + 显存
-- [ ] 0.1.2 baseline 上跑 (int8, 2帧)：AMOTA + 显存
-- [ ] 0.1.3 D.1.4 剪枝模型上跑 (int8, 2帧)：验证 D3b-B1 耦合
+- [x] 0.1.1 fp16-2f: AMOTA=0.333, cache=39.1MB, mem=2516MB — **与 1-frame 完全相同!**
+- [x] 0.1.2 int8-2f: AMOTA=0.339, cache=19.5MB, mem=2498MB — **与 1-frame 完全相同!**
+- [x] 0.1.3 **重要发现: 2-frame 无精度收益, D3b 可锁定为 1 帧** (之前 pruned60%+fp16-2f=0.321 也与 int8-1f=0.320 几乎相同)
 - [ ] 0.1.4 更新 latency_lut.json 中 D3 数据
 
 ### Step 0.2: E2 数据异步预取
