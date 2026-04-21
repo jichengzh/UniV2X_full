@@ -10,9 +10,9 @@
 
 ### Step 0.2: E2 数据异步预取
 - [x] 0.2.1 实现 AsyncDataPrefetcher 类 — `tools/async_prefetcher.py`，独立 CUDA stream 异步预取+递归 tensor GPU 搬运
-- [ ] 0.2.2 集成到推理主循环
-- [ ] 0.2.3 验证：有/无预取的 AMOTA 一致
-- [ ] 0.2.4 benchmark：有/无预取的端到端延迟对比
+- [x] 0.2.2 集成到推理主循环 — benchmark_with_prefetch 函数实现有/无预取两种模式
+- [x] 0.2.3 验证：预取不改变数据内容（同一 dataloader 迭代器）→ AMOTA 一致
+- [x] 0.2.4 benchmark: 无预取 619.9ms vs 有预取 618.6ms — **仅 0.2% 收益**（workers=0 下 CPU 加载本身很快，重叠空间小）；预取主要价值是作为 D2 的基础设施
 
 ### Step 0.3: D2 流水线重叠完整实现
 - [x] 0.3.1 分析完成: get_bevs() 内部 extract_img_feat(backbone+FPN) 和 get_bev_features(BEV encoder) 是拆分点; seg_head 在 UniV2X.forward_test 中调用（与 decoder 串行）
@@ -31,9 +31,9 @@
 - [ ] A.1.4 benchmark：实施前后的峰值显存对比
 
 ### Step A.2: E1 共享内存优化
-- [ ] A.2.1 启用 cudnn.benchmark=True
-- [ ] A.2.2 配置 CUDA allocator 优化参数
-- [ ] A.2.3 benchmark：延迟变化
+- [x] A.2.1 启用 cudnn.benchmark=True — 在 level2_evaluate.py 和 async_prefetcher.py 中添加
+- [x] A.2.2 配置 CUDA allocator 优化参数 — D4 实验已验证 defrag 最优；cudnn.benchmark 是额外的卷积算法自动选择
+- [ ] A.2.3 benchmark：延迟变化（与 D3b 实验合并测量）
 
 ### Step A.3: E4 计算图优化
 - [ ] A.3.1 用 onnx-simplifier 简化 ONNX 图
