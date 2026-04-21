@@ -15,7 +15,7 @@
 - [ ] 0.2.4 benchmark：有/无预取的端到端延迟对比
 
 ### Step 0.3: D2 流水线重叠完整实现
-- [ ] 0.3.1 分析 ego agent forward 的可拆分点（extract_img_feat vs get_bev_features vs decoder vs seg_head）
+- [x] 0.3.1 分析完成: get_bevs() 内部 extract_img_feat(backbone+FPN) 和 get_bev_features(BEV encoder) 是拆分点; seg_head 在 UniV2X.forward_test 中调用（与 decoder 串行）
 - [ ] 0.3.2 实现 PipelinedEgoForward 类（backbone 在独立 stream，BEV+dec+seg 在默认 stream）
 - [ ] 0.3.3 实现三种重叠模式：无重叠 / backbone-BEV 重叠 / 全重叠
 - [ ] 0.3.4 验证：backbone-BEV 重叠模式下 AMOTA 与无重叠一致
