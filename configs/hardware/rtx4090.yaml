@@ -1,0 +1,122 @@
+# ============================================================================
+# Hardware Capability — NVIDIA RTX 4090 (Desktop)
+# Schema: configs/hardware/schema.yaml v1.0
+# 角色: 主开发平台 + 数据中心式 GPU 代表 (论文 §一 三档硬件之一)
+# ============================================================================
+
+schema_version: "1.0"
+
+basic:
+  name: "NVIDIA GeForce RTX 4090"
+  vendor: "nvidia"
+  category: "datacenter"          # 桌面顶级卡，性能层级与数据中心 L40S 接近
+  cost_estimate_usd: 1600
+  tdp_w: 450
+
+arch:
+  family: "ada"
+  sm: "sm89"
+  cuda_capability: [8, 9]
+  fab_node: "5nm_tsmc"
+  tensor_core_gen: 4              # 4th gen TC (Ada) — 支持 FP8 E4M3/E5M2
+
+ips:
+  gpu:
+    enabled: true
+    cores: 16384                  # CUDA cores (Ada 完整版)
+    streams_max: 8
+    mig_supported: false           # 消费卡不支持 MIG (仅 A100/H100/B200)
+    mps_supported: true             # 标准 MPS 可用
+    sparse_tc_supported: true       # 第 4 代 TC 仍支持 2:4
+    cusparse_lt: true                # cuSPARSELt 0.7+
+    cuda_graph: true
+    precisions: [FP32, TF32, BF16, FP16, FP8_E4M3, FP8_E5M2, INT8, INT4]
+    # ★ 注意: 4090 上 INT4 IMMA Tensor Core 仍可用 (Ada/Ampere)
+    #    但 Hopper (sm90) 上 INT4 退化为 IMAD (CUDA core) - 跨硬件迁移注意点
+  dla:
+    enabled: false                  # 桌面卡无 DLA
+  cpu:
+    cores_total: 32                 # 取决于 host CPU，写示例值 (i9 / Threadripper)
+    arch: "x86_64"
+    isa_extensions: [avx2, avx512, f16c]
+
+alignment:
+  fp16_dense_channel: 8
+  fp16_sparse_channel: 16
+  int8_dense_channel: 32
+  int8_sparse_channel: 32
+  k_dim_min_for_2_4_sparse: 64
+  alignment_enforcement: "hard"    # ★ 默认保守: 4090 端尚未做对齐拐点实证 (Orin 已验证 soft)
+                                    #   待补实验后改 (类比 N2v2 在 4090 上重做)
+
+quant_constraints:
+  symmetric_only: true              # TRT GPU 强制
+  per_channel_activation_supported: false
+  per_group_supported: true          # ★ TRT 10.x 支持 INT4 group (group=128 AWQ 风格)
+  bit_widths_w: [4, 8, 16, 32]
+  bit_widths_a: [8, 16, 32]
+  granularity_w: [per_tensor, per_channel, per_group]
+  granularity_a: [per_tensor]
+  notes: |
+    TRT 10.x advantages over Orin TRT 8.5:
+    - STRONGLY_TYPED 模式可用
+    - explicit INT8 显式 Q/DQ 路径成熟
+    - per-group W4A16 (AWQ Marlin kernel) 可用
+    - FP8 (E4M3/E5M2) Tensor Core 路径
+    跨硬件迁移注意:
+    - per-group / FP8 / STRONGLY_TYPED 配置在 Orin 上不可用，搜索空间按硬件 capability 区分
+
+toolchain:
+  framework: "tensorrt"
+  framework_version: "10.13"        # TRT 10 新版
+  cuda: "13.0"                      # CUDA 13 (注: NV blackwell 时代要求)
+  cudnn: "9.5"
+  driver: "TBD"                      # nvidia-smi 输出后填
+  python: "3.10"
+
+power:
+  modes:
+    - {id: 0, name: "default", power_w: 450, gpu_max_freq_mhz: 2520}
+  default_mode_id: 0
+  # 桌面卡仅有"默认档" + nvidia-smi --persistence-mode
+
+memory:
+  type: "gddr6x"
+  capacity_gb: 24
+  bandwidth_gbs: 1008               # 21 Gbps × 384-bit
+  unified: false                     # discrete GPU
+  available_for_inference_gb: 22     # 减驱动/cuda context
+
+features:
+  cuda_graph: true
+  cuda_streams_priority: true
+  trt_strongly_typed: true          # ★ TRT 10+ 才有
+  trt_sparse_weights_flag: true
+  trt_timing_cache: true
+  cuDLA: false                       # 无 DLA
+
+paths:
+  trtexec: "/usr/src/tensorrt/bin/trtexec"  # 系统装的话；4090 host 待确认
+  cuda_root: "/usr/local/cuda"
+  onnx_samples: null
+
+# ============================================================================
+# 与 Orin AGX 的关键差异（论文 §C4 三硬件 Pareto 对比的依据）
+# ============================================================================
+diff_vs_orin_agx:
+  - "无 DLA → L1 设备路由轴退化为仅 GPU"
+  - "TC 第 4 代 → 多了 FP8 / 改进 INT8/INT4 路径"
+  - "TRT 10.x → 新增 STRONGLY_TYPED + per-group + explicit FP8"
+  - "GDDR6X 1008 GB/s vs Orin LPDDR5 204 GB/s ≈ 5×带宽 → memory-bound 算子差距大"
+  - "discrete GPU → 无 unified memory, H2D/D2H 拷贝有开销"
+  - "无 nvpmodel 档位 → 能耗维度不可搜 (留 Orin 端做)"
+
+# ============================================================================
+# 主开发平台 baseline (历史实验数据)
+# ============================================================================
+empirical_baseline:
+  univ2x_coop_pytorch_e2e_ms: 515.5    # 1.3 实测 baseline
+  univ2x_coop_pytorch_python_loop_pct: 80   # Python tracking loop 占比
+  bev_encoder_fp16_trt_ms: 24.1         # 1.2 BEV encoder FP16 TRT
+  bev_encoder_int8_trt_ms: 24.6         # INT8 ≈ FP16 (MSDA plugin FP16-only)
+  best_pareto_v4_speedup: 1.48          # NSGA-II v4 极速点 (347.5ms)

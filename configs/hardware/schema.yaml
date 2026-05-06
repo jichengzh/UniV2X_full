@@ -1,0 +1,124 @@
+# ============================================================================
+# Hardware Capability Description Schema (v1.5 步骤 1 标准)
+# ----------------------------------------------------------------------------
+# 用途:
+#   描述一档目标硬件的可用 IP / 精度 / 对齐约束 / 算子白名单 / 工具链 / 功耗模式。
+#   下游消费:
+#     - 步骤 2 硬约束 DSL (framework/constraints.py) 按本 schema 字段自动生成
+#       物理硬约束 + 经验硬约束清单
+#     - 步骤 3 联合搜索器按本 schema 自动展开合法搜索空间
+# ----------------------------------------------------------------------------
+# 字段类别:
+#   [必填]  basic / arch / ips
+#   [推荐]  alignment / precisions / quant_constraints / op_whitelist / toolchain
+#   [可选]  power / memory / features / paths
+# ============================================================================
+
+schema_version: "1.0"
+
+basic:
+  name: string                  # 例: "Jetson AGX Orin 64GB Developer Kit"
+  vendor: string                # nvidia / qualcomm / apple / horizon / huawei / ...
+  category: enum                # datacenter / edge_dev / edge_prod / mobile / embedded
+  cost_estimate_usd: int        # 约 — 用于 cost-perf 分析
+  tdp_w: int                    # 名义 TDP（峰值功耗上限）
+
+arch:
+  family: string                # ada / ampere / hopper / blackwell / a78ae / ...
+  sm: string                    # sm89 / sm87 / sm90 / sm100 / -
+  cuda_capability: [int, int]   # [major, minor]
+  fab_node: string              # 5nm / 8nm / 4nm / ...
+  tensor_core_gen: int          # 0 (无) / 3 / 4 / 5
+
+ips:                            # 可用 IP 列表 (按硬件实际能用的填)
+  gpu:                          # 主 GPU
+    enabled: bool
+    cores: int                  # CUDA / shading core 数
+    streams_max: int            # 推荐并发 stream 数
+    mig_supported: bool
+    mps_supported: bool         # Multi-Process Service
+    sparse_tc_supported: bool   # 2:4 Sparse Tensor Core
+    cusparse_lt: bool           # cuSPARSELt 0.7+
+    cuda_graph: bool
+    precisions: [enum]          # [FP32, TF32, BF16, FP16, FP8_E4M3, FP8_E5M2, INT8, INT4]
+  dla:                          # DLA (NVIDIA Jetson 专属) - 没有就不写
+    enabled: bool
+    count: int                  # AGX=2 / NX=1 / Nano=0
+    cores_id: [int]
+    precisions: [enum]          # 通常 [FP16, INT8]
+    quant_constraints:
+      granularity: enum         # 通常 per_tensor
+      symmetric_only: bool
+      layout: enum              # HWC4 / CHW32 / ...
+    op_whitelist: [string]      # 支持的 ONNX op 列表 (Conv/Pool/FC/...)
+    op_blacklist: [string]      # 已知不支持的 op (LayerNorm/GELU/...)
+  npu:                          # 国产 NPU (华为 Ascend / Horizon BPU / 黑芝麻 ...)
+    enabled: bool
+    family: string              # 例: "horizon_bpu_2" / "ascend_310p"
+    precisions: [enum]
+    op_whitelist: [string]
+  cpu:                          # CPU 推理 fallback (兜底)
+    cores_total: int
+    cores_online: int
+    arch: string                # arm64 / x86_64
+    isa_extensions: [string]    # neon / avx2 / avx512 / ...
+
+alignment:                      # 通道对齐要求 (硬约束注入)
+  fp16_dense_channel: int       # 默认 8
+  fp16_sparse_channel: int      # 默认 16
+  int8_dense_channel: int       # 默认 32 (TC 要求)
+  int8_sparse_channel: int      # 默认 32
+  k_dim_min_for_2_4_sparse: int # 默认 64
+
+quant_constraints:              # B2 量化空间的硬约束
+  symmetric_only: bool          # TRT GPU 强制 symmetric=true
+  per_channel_activation_supported: bool   # GPU GEMM 通常 false
+  per_group_supported: bool     # AWQ / GPTQ 风格 (group=128)
+  bit_widths_w: [int]           # 权重位宽集合 [4,8,16,32]
+  bit_widths_a: [int]           # 激活位宽集合
+  granularity_w: [enum]         # [per_tensor, per_channel, per_group]
+  granularity_a: [enum]
+  notes: string                 # 例: "TRT 10 显式 INT8 推荐 STRONGLY_TYPED"
+
+toolchain:                      # 工具链版本 (engine 必须与版本绑定)
+  framework: string             # tensorrt / openvino / qnn / cann / mlir / ...
+  framework_version: string
+  cuda: string
+  cudnn: string
+  jetpack: string               # Jetson 专属
+  python: string
+
+power:                          # 功耗模式 (Jetson nvpmodel; 数据中心卡通常 1 档)
+  modes:
+    - id: int
+      name: string              # MAXN / MODE_15W / MODE_30W / MODE_50W
+      power_w: int
+      cpu_cores_online: int
+      gpu_max_freq_mhz: int
+      dla_max_freq_mhz: int
+  default_mode_id: int
+
+memory:
+  type: enum                    # gddr6x / hbm3 / lpddr5 / ...
+  capacity_gb: int
+  bandwidth_gbs: int            # GB/s
+  unified: bool                 # Jetson SoC iGPU = true (CPU/GPU 共享)
+  available_for_inference_gb: int  # 减系统/OS 占用后可用
+
+features:                       # 软件特性 (步骤 3 D 旋钮的可用集合)
+  cuda_graph: bool
+  cuda_streams_priority: bool
+  trt_strongly_typed: bool      # TRT 10+ 才有
+  trt_sparse_weights_flag: bool # TRT --sparsity=enable
+  trt_timing_cache: bool        # 推荐 always true
+  cuDLA: bool                   # Jetson cuDLA standalone
+
+paths:                          # 关键工具路径 (避免 PATH 不全)
+  trtexec: string               # 例: "/usr/src/tensorrt/bin/trtexec"
+  cuda_root: string             # 例: "/usr/local/cuda"
+  onnx_samples: string          # 例: "/usr/src/tensorrt/data/"
+
+# ============================================================================
+# 注: 本 schema 字段允许下游硬件实例选择性留空（用 null 或省略），
+#     constraints.py 应能容错——例如 dla 字段缺失时退化为只搜 GPU 路径。
+# ============================================================================

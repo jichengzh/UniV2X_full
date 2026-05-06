@@ -1,0 +1,155 @@
+# ============================================================================
+# Hardware Capability — Jetson AGX Orin 64GB Developer Kit
+# Schema: configs/hardware/schema.yaml v1.0
+# 实测来源:
+#   - Orin AGX (172.16.62.222) Phase 1A.2 探查 (2026-05-05)
+#   - N2v2 jetson_clocks 锁频实测 (2026-05-06): ResNet-50 FP16=2.530ms / INT8=1.767ms
+#   - DCN v4 plugin native build 验证 (libDCNv4_plugin.so 15.6 MB ARM aarch64)
+# ============================================================================
+
+schema_version: "1.0"
+
+basic:
+  name: "Jetson AGX Orin 64GB Developer Kit"
+  vendor: "nvidia"
+  category: "edge_dev"        # 开发套件，与车规量产 (Drive Orin) 不同
+  cost_estimate_usd: 2000      # 64GB Dev Kit 含散热 ~$2000
+  tdp_w: 60                    # MAXN 档峰值
+
+arch:
+  family: "ampere_igpu"        # Orin SoC 内嵌 Ampere iGPU (与桌面 Ampere 略不同)
+  sm: "sm87"
+  cuda_capability: [8, 7]
+  fab_node: "8nm_samsung"
+  tensor_core_gen: 3            # 3rd gen TC (Ampere)
+
+ips:
+  gpu:
+    enabled: true
+    cores: 2048                # 64GB 版完整 GPU
+    streams_max: 8
+    mig_supported: false        # iGPU 架构上不支持 MIG
+    mps_supported: false        # ⚠️ JP 5.1.4 不支持 (JP 6.1+ 才行)
+    sparse_tc_supported: true   # Ampere 第三代 TC 支持 2:4
+    cusparse_lt: true            # cuSPARSELt 在 sm87 可用
+    cuda_graph: true
+    precisions: [FP32, TF32, BF16, FP16, INT8, INT4]
+    # 注意: 无 FP8 (Ada/Hopper 才有)
+  dla:
+    enabled: true
+    count: 2                   # AGX 的两个 NVDLA v2
+    cores_id: [0, 1]
+    precisions: [FP16, INT8]    # 不支持 FP32/BF16/FP8
+    quant_constraints:
+      granularity: "per_tensor"
+      symmetric_only: true
+      layout: "HWC4"
+    op_whitelist:
+      - Conv
+      - Deconvolution
+      - Pooling
+      - FullyConnected
+      - Activation
+      - ElementWise
+      - Concatenation
+      - Slice
+      - Softmax
+      - Scale
+      - Resize
+      - LRN
+    op_blacklist:
+      - LayerNorm                # transformer 关键算子，DLA 不支持
+      - GELU
+      - MultiHeadAttention
+      - DeformableConvolution    # DCN 在 DLA 上 fallback
+  cpu:
+    cores_total: 12              # AGX 64GB 12 个 A78AE
+    cores_online: 8              # MODE_30W 默认档限 8 核
+    arch: "arm64"
+    isa_extensions: [neon, fp16, dotprod, crypto]
+
+alignment:
+  fp16_dense_channel: 8
+  fp16_sparse_channel: 16
+  int8_dense_channel: 32         # 经验值
+  int8_sparse_channel: 32
+  k_dim_min_for_2_4_sparse: 64
+  # ⚠️ 实测发现: TRT 8.5 在 Orin sm87 上对非对齐通道做 implicit padding
+  #    导致 64 vs 63 / 96 vs 90 的 latency 差异 < 1% (N2v2 实测)
+  #    所以这个对齐"经验硬约束"在搜索空间里应作为软约束而非硬约束
+  alignment_enforcement: "soft"  # 由 N2v2 实测推翻 v1.5 §0.3 的"硬约束"假设
+
+quant_constraints:
+  symmetric_only: true           # TRT GPU 强制
+  per_channel_activation_supported: false  # GEMM 不支持
+  per_group_supported: false     # TRT 8.5 不支持 (TRT 10+ 才有 INT4 group)
+  bit_widths_w: [4, 8, 16, 32]
+  bit_widths_a: [8, 16, 32]
+  granularity_w: [per_tensor, per_channel]
+  granularity_a: [per_tensor]
+  notes: |
+    JP 5.1.4 / TRT 8.5.2.2 限制:
+    - 无 STRONGLY_TYPED (TRT 10+ feature)
+    - DLA INT8 走传统 calibrator 路径，不能用 explicit Q/DQ
+    - DCN v2 plugin 是 fused FP16-only kernel
+    - DCN v4 plugin (DL4AGX/dcnv4-trt) 已验证在本平台 native 编译成功
+
+toolchain:
+  framework: "tensorrt"
+  framework_version: "8.5.2.2"   # ⚠️ 不是 TRT 10.x
+  cuda: "11.4"
+  cudnn: "8.6"
+  jetpack: "5.1.4"
+  l4t: "R35.6.1"
+  python: "3.8.10"
+
+power:
+  modes:
+    - {id: 0, name: "MAXN",       power_w: 60, cpu_cores_online: 12, gpu_max_freq_mhz: 1300, dla_max_freq_mhz: 1600}
+    - {id: 1, name: "MODE_15W",   power_w: 15, cpu_cores_online: 4,  gpu_max_freq_mhz: 420,  dla_max_freq_mhz: 600}
+    - {id: 2, name: "MODE_30W",   power_w: 30, cpu_cores_online: 8,  gpu_max_freq_mhz: 800,  dla_max_freq_mhz: 1100}
+    - {id: 3, name: "MODE_50W",   power_w: 50, cpu_cores_online: 12, gpu_max_freq_mhz: 1100, dla_max_freq_mhz: 1400}
+  default_mode_id: 2
+  # ⚠️ 实测: 当前设备 nvpmodel.service 状态异常 (系统时间未同步)
+  #    导致 nvpmodel -m N 切档命令失败 (NVPM ERROR: optMask is 1)
+  #    本工作流当前数据采自 MODE_30W 默认档；多档对照留 future work
+  current_known_issues: ["nvpmodel.service inactive due to time sync"]
+
+memory:
+  type: "lpddr5"
+  capacity_gb: 64
+  bandwidth_gbs: 204.8           # 共享 CPU/GPU
+  unified: true                   # SoC iGPU 与 CPU 共享物理 LPDDR5
+  available_for_inference_gb: 50
+
+features:
+  cuda_graph: true
+  cuda_streams_priority: true
+  trt_strongly_typed: false      # TRT 8.5 无此 feature
+  trt_sparse_weights_flag: true  # --sparsity=enable 可用
+  trt_timing_cache: true
+  cuDLA: true                    # cuDLA standalone 在 JP 5.1.4 可用
+
+paths:
+  trtexec: "/usr/src/tensorrt/bin/trtexec"
+  cuda_root: "/usr/local/cuda-11.4"
+  onnx_samples: "/usr/src/tensorrt/data/"
+  dcnv4_plugin: "/home/jichengzhi/DL4AGX/AV-Solutions/dcnv4-trt/build_native/plugins/libDCNv4_plugin.so"
+
+# ============================================================================
+# 实测参考 baseline (N2v2 jetson_clocks 锁频, MODE_30W)
+# 用于步骤 4 实测验证的 sanity check 锚点
+# ============================================================================
+empirical_baseline:
+  resnet50:
+    fp16_gpu_mean_ms: 2.530      # 5 reps 平均
+    fp16_gpu_std_ms: 0.015       # 锁频后极稳定
+    int8_gpu_mean_ms: 1.767      # vs FP16 30% 加速
+    int8_gpu_std_ms: 0.007
+    int8_dla0_build_success: true
+  channel_alignment_observation:  # N2v2 拐点数据
+    out_c_63_vs_64_fp16_diff_pct: 0.27
+    out_c_90_vs_96_fp16_diff_pct: -0.93   # 96 略慢于 90
+    in_c_63_vs_64_fp16_diff_pct: -0.50
+    in_c_90_vs_96_fp16_diff_pct: 0.07
+    conclusion: "TRT 8.5 implicit padding 让对齐拐点经验约束在 Orin sm87 上失效"
