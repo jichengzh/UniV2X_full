@@ -118,7 +118,17 @@ class HardwareCapability(BaseModel):
 
     @property
     def has_dla(self) -> bool:
-        return "dla" in self.ips and self.features.dla_count > 0
+        """是否有可用 DLA. 兼容旧 (features.dla_count) 和新 (ips.dla.count) schema."""
+        if "dla" not in self.ips:
+            return False
+        # 旧 schema: features.dla_count > 0
+        if self.features.dla_count > 0:
+            return True
+        # 新 schema v1.0: ips.dla 节点下的 count + enabled (extra=allow 吸收)
+        dla_extra = self.ips["dla"].model_extra or {}
+        if dla_extra.get("enabled") is False:
+            return False
+        return dla_extra.get("count", 0) > 0 or len(self.ips["dla"].precisions) > 0
 
     @property
     def supported_precisions(self) -> set[str]:
