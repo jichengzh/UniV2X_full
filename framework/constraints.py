@@ -76,9 +76,16 @@ def _check_precision_supported(cfg: Config, hw: HardwareCapability) -> tuple[boo
 def _check_dla_count(cfg: Config, hw: HardwareCapability) -> tuple[bool, str]:
     """请求的 DLA core 数不能超过硬件实际数."""
     requested = {r for r in cfg.d_routing.values() if r.startswith("DLA")}
+    if not requested:
+        return True, ""
     needed = max((int(r.replace("DLA", "")) for r in requested), default=-1) + 1
-    if needed > hw.features.dla_count:
-        return False, f"配置请求 DLA{needed-1} 但硬件只有 {hw.features.dla_count} 个 DLA"
+    # v1.1 schema 兼容: 优先 features.dla_count, fallback ips.dla.count (extra=allow)
+    actual = hw.features.dla_count
+    if actual == 0 and "dla" in hw.ips:
+        dla_extra = hw.ips["dla"].model_extra or {}
+        actual = dla_extra.get("count", 0)
+    if needed > actual:
+        return False, f"配置请求 DLA{needed-1} 但硬件只有 {actual} 个 DLA"
     return True, ""
 
 
