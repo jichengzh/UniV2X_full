@@ -10,8 +10,11 @@ __pycache__/
 .dist_test/
 *.avi
 ckpts/
-data
+data/*
 data_carla
+# A6 产物例外 — 项目核心数据资产 (~50KB, 入版本控制)
+!data/baseline_4090.parquet
+!data/baseline_4090.csv
 viz/
 .Python
 build/
