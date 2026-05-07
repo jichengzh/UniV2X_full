@@ -1,0 +1,32 @@
+{
+  "amota": {
+    "target": "amota",
+    "n_rows_train": 420,
+    "n_rows_eval_real": 52,
+    "n_real": 52,
+    "n_synth": 368,
+    "n_features": 60,
+    "y_min": 0.021,
+    "y_max": 0.381,
+    "spearman_loocv": 0.6243009008239765,
+    "p_value": 7.591208950069657e-07,
+    "mae_loocv": 0.024934944750578968,
+    "rmse_loocv": 0.05494913082340132,
+    "relative_mae_pct": 6.926373541827491
+  },
+  "lat_e2e_ms": {
+    "target": "lat_e2e_ms",
+    "n_rows_train": 405,
+    "n_rows_eval_real": 37,
+    "n_real": 37,
+    "n_synth": 368,
+    "n_features": 60,
+    "y_min": 90.0,
+    "y_max": 625.4,
+    "spearman_loocv": 0.4706579760402026,
+    "p_value": 0.0032837766136645553,
+    "mae_loocv": 17.271835902162323,
+    "rmse_loocv": 24.51900413003649,
+    "relative_mae_pct": 3.22596860331758
+  }
+}
