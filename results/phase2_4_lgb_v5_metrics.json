@@ -1,0 +1,28 @@
+{
+  "amota": {
+    "target": "amota",
+    "n_rows": 52,
+    "n_features": 51,
+    "y_min": 0.021,
+    "y_max": 0.381,
+    "y_span": 0.36,
+    "spearman_loocv": 0.13384280408145838,
+    "p_value": 0.34417022852068824,
+    "mae_loocv": 0.03461248819944161,
+    "rmse_loocv": 0.061061020845237096,
+    "relative_mae_pct": 9.614580055400449
+  },
+  "lat_e2e_ms": {
+    "target": "lat_e2e_ms",
+    "n_rows": 38,
+    "n_features": 51,
+    "y_min": 90.0,
+    "y_max": 5640.0,
+    "y_span": 5550.0,
+    "spearman_loocv": -0.44353250429728347,
+    "p_value": 0.005285237909226022,
+    "mae_loocv": 434.6394729351866,
+    "rmse_loocv": 1008.3043545517183,
+    "relative_mae_pct": 7.831341854688047
+  }
+}
