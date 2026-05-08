@@ -54,19 +54,19 @@ fi
 echo "  ✅ 解压后结构:" | tee -a "$LOG"
 ls "$DATASET_DIR" | tee -a "$LOG"
 
-# ----- Step 3: extract HEAL_OPV2V.zip ckpt -----
-echo -e "\n[Step 3] 解压 HEAL ckpt" | tee -a "$LOG"
-cd "$CKPT_DIR"
-if [ ! -d "HEAL_OPV2V" ]; then
-  unzip -q HEAL_OPV2V.zip
-  echo "  ✅ 解压 HEAL_OPV2V/" | tee -a "$LOG"
+# ----- Step 3: HEAL ckpt 已解压 (stage1/Pyramid_m1_base 是 LiDAR-only baseline) -----
+echo -e "\n[Step 3] 验证 HEAL ckpt 解压结构" | tee -a "$LOG"
+PYRAMID_CKPT_DIR=$(find "$CKPT_DIR/stage1" -maxdepth 2 -type d -name "Pyramid_m1_base*" 2>/dev/null | head -1)
+if [ -z "$PYRAMID_CKPT_DIR" ]; then
+  echo "  ❌ stage1/Pyramid_m1_base* 未找到, 请先 unzip HEAL_OPV2V.zip" | tee -a "$LOG"
+  exit 1
 fi
-echo "  ckpt 内容:" | tee -a "$LOG"
-ls HEAL_OPV2V/ | tee -a "$LOG"
+echo "  ✅ Pyramid baseline ckpt: $PYRAMID_CKPT_DIR" | tee -a "$LOG"
+ls "$PYRAMID_CKPT_DIR" | head -5 | tee -a "$LOG"
 
 # ----- Step 4: 修 config.yaml 路径指向本地 OPV2V-H -----
 echo -e "\n[Step 4] 修 config.yaml test_dir/validate_dir" | tee -a "$LOG"
-CONFIG="$CKPT_DIR/HEAL_OPV2V/config.yaml"
+CONFIG="$PYRAMID_CKPT_DIR/config.yaml"
 if [ -f "$CONFIG" ]; then
   cp "$CONFIG" "$CONFIG.bak"
   # 找出 test/validate split 真实路径
@@ -91,10 +91,10 @@ print('  config.yaml 已更新')
 fi
 
 # ----- Step 5: 跑 HEAL inference (AP30/50/70) -----
-echo -e "\n[Step 5] 跑 HEAL inference" | tee -a "$LOG"
+echo -e "\n[Step 5] 跑 HEAL inference (Pyramid LiDAR-only baseline)" | tee -a "$LOG"
 cd "$HEAL_REPO"
 $PY opencood/tools/inference.py \
-  --model_dir "$CKPT_DIR/HEAL_OPV2V" \
+  --model_dir "$PYRAMID_CKPT_DIR" \
   --fusion_method intermediate 2>&1 | tee -a "$LOG"
 
 echo -e "\n=== M4.5 baseline evaluation 完成 ===" | tee -a "$LOG"
