@@ -17,6 +17,9 @@ data_carla
 !data/baseline_4090.csv
 # M5.2 产物例外 — univ2x-tiny baseline (4090 实测 + M2 f 估算 Orin)
 !data/uniad_tiny_baseline.csv
+# M4.5 latency-only 产物例外 — Pyramid Fusion 8 configs (4090 实测 + M2 f 估算 Orin)
+!data/pyramid_fusion_4090.csv
+!data/pyramid_fusion_4090.parquet
 viz/
 .Python
 build/
