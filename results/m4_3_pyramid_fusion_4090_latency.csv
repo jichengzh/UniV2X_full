@@ -1,0 +1,3 @@
+model,platform,precision,framework,n_params_M,mean_ms,p50_ms,p99_ms,std_ms,n_iter
+pyramid_fusion_lidar_pyramid,rtx4090,fp32,pytorch_cuda_event,3.7576,4.494348149299622,4.281856060028076,6.516838431358337,0.5311462278598674,200
+pyramid_fusion_lidar_pyramid,rtx4090,fp16,pytorch_cuda_event,3.7576,3.2739740920066835,3.1083520650863647,5.003417778015136,0.4283724216331591,200
