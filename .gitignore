@@ -15,6 +15,8 @@ data_carla
 # A6 产物例外 — 项目核心数据资产 (~50KB, 入版本控制)
 !data/baseline_4090.parquet
 !data/baseline_4090.csv
+# M5.2 产物例外 — univ2x-tiny baseline (4090 实测 + M2 f 估算 Orin)
+!data/uniad_tiny_baseline.csv
 viz/
 .Python
 build/
