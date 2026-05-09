@@ -1,0 +1,17 @@
+{
+  "v6_features": 81,
+  "amota": {
+    "target": "amota",
+    "n_train": 72,
+    "cv_spearman": 0.7120874703771551,
+    "cv_mae": 0.04684371641638715,
+    "n_folds": 5
+  },
+  "latency": {
+    "target": "lat_e2e_ms",
+    "n_train": 64,
+    "cv_spearman": 0.6218202647754663,
+    "cv_mae": 296.4369176675601,
+    "n_folds": 5
+  }
+}
