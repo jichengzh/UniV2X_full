@@ -43,8 +43,9 @@ def parse_ap(log_path: Path) -> dict[str, float]:
 
     out = {}
     for iou_str, key in [("0.3", "AP30"), ("0.5", "AP50"), ("0.7", "AP70")]:
+        # HEAL 实际格式: "The Average Precision at IOU 0.3 is 0.97"
         m = re.search(
-            rf"Average Precision\s*(?:@|at)\s*IoU\s*{re.escape(iou_str)}\s*[:\s]+(\d+\.?\d*)",
+            rf"Average Precision\s*(?:@|at)\s*IoU\s*{re.escape(iou_str)}\s*(?:is|=|:)\s*(\d+\.?\d*)",
             text,
             re.IGNORECASE,
         )

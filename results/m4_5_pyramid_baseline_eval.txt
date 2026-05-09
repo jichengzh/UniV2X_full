@@ -1,0 +1,19 @@
+# M4.5 Pyramid Fusion baseline AP 评估
+
+**日期**: 2026-05-09 13:01:35
+**模型**: HEAL Pyramid_m1_base (LiDAR-only, 3.76M params)
+**ckpt**: stage1/Pyramid_m1_base_2023_08_14_04_28_12/net_epoch_bestval_at23.pth
+**数据集**: OPV2V test split (~21GB from HF gqk/opv2v)
+**evaluation 框架**: HEAL `opencood/tools/inference.py --fusion_method intermediate`
+
+## AP 结果
+
+- **AP30**: 0.9700
+- **AP50**: 0.9600
+- **AP70**: 0.9300
+
+## 用途
+
+- **AP50** (0.96) → baseline_4090.parquet 的 amota 字段 anchor
+- 三模型 spectrum: pyramid_fusion = AP50, univ2x_full = nuScenes mAP, uniad_tiny_variant = nuScenes amota
+- 用作 Phase 2.5 LGB 重训时的 cross-model anchor
