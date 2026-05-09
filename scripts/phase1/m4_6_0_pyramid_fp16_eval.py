@@ -114,9 +114,10 @@ def main():
     opt.note += f"_epoch{resume_epoch}_{opt.precision}"
 
     model.cuda().eval()
+    # 不直接 model.half(): post-processor 中 anchor 是 fp32, 跟 fp16 model 输出 dtype 冲突.
+    # 改用 torch.cuda.amp.autocast(dtype=fp16): 算子内部 fp16, output 自动转回 fp32.
     if is_fp16:
-        model = model.half()
-        print("✅ model.half() — FP16")
+        print("✅ FP16 via torch.cuda.amp.autocast (model 不调 .half(), 兼容 fp32 anchor)")
 
     print("Dataset Building")
     np.random.seed(303)
@@ -146,27 +147,39 @@ def main():
             continue
         with torch.no_grad():
             batch_data = train_utils.to_device(batch_data, device)
-            if is_fp16:
-                batch_data = to_half_recursive(batch_data)
 
             torch.cuda.synchronize()
             starter.record()
 
-            if opt.fusion_method == "intermediate":
-                infer_result = inference_utils.inference_intermediate_fusion(
-                    batch_data, model, dataset)
-            elif opt.fusion_method == "no":
-                infer_result = inference_utils.inference_no_fusion(
-                    batch_data, model, dataset)
-            elif opt.fusion_method == "single":
-                infer_result = inference_utils.inference_no_fusion(
-                    batch_data, model, dataset, single_gt=True)
-            else:
-                raise NotImplementedError(opt.fusion_method)
+            # 拆分 inference_intermediate_fusion: model forward 用 autocast(fp16),
+            # output_dict 强制转回 fp32 后再调 dataset.post_process (post-process 内部假设 fp32 anchor)
+            from collections import OrderedDict as _OD
+            output_dict = _OD()
+            cav_content = batch_data["ego"]
+
+            ctx = torch.cuda.amp.autocast(dtype=torch.float16) if is_fp16 \
+                else torch.cuda.amp.autocast(enabled=False)
+            with ctx:
+                model_out = model(cav_content)
+
+            # 把 model_out 全部 fp16 tensor 转回 fp32
+            if is_fp16:
+                model_out = {k: (v.float() if torch.is_tensor(v) and v.is_floating_point() else v)
+                             for k, v in model_out.items()}
+            output_dict["ego"] = model_out
 
             ender.record()
             torch.cuda.synchronize()
             timings.append(starter.elapsed_time(ender))
+
+            # post-process (在 timing 外, 跟 FP32 baseline 一致)
+            pred_box_tensor, pred_score, gt_box_tensor = dataset.post_process(
+                batch_data, output_dict)
+            infer_result = {
+                "pred_box_tensor": pred_box_tensor,
+                "pred_score": pred_score,
+                "gt_box_tensor": gt_box_tensor,
+            }
 
             pred_box_tensor = infer_result["pred_box_tensor"]
             gt_box_tensor = infer_result["gt_box_tensor"]

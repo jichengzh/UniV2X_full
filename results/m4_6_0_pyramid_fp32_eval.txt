@@ -1,0 +1,15 @@
+# M4.6.0 Pyramid_m1_base 完整 e2e — fp32
+date: 2026-05-09 15:47:34
+model_dir: /home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12
+max_samples: 0 (0=all)
+precision: fp32
+n_samples: 2170
+AP30: 0.9690594025059
+AP50: 0.9634881685775464
+AP70: 0.9271892715548037
+lat_mean_ms: 42.99608231953212
+lat_p50_ms: 35.3111515045166
+lat_p99_ms: 119.97233329772948
+lat_std_ms: 25.29565835301836
+lat_min_ms: 14.48857593536377
+lat_max_ms: 682.3147583007812
