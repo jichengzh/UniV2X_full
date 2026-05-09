@@ -1,0 +1,4 @@
+# M4.7 v2 LGB v5.1 calibration on Pyramid baseline anchors
+anchor 0: actual_amota=0.9635, predicted=0.9613, actual_lat=35.31, predicted_lat=35.00
+anchor 1: actual_amota=0.9631, predicted=0.9629, actual_lat=26.70, predicted_lat=26.60
+amota_mae=0.0012, lat_mae_ms=0.21
