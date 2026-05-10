@@ -171,5 +171,5 @@ plugins/build/
 
 # Calibration large binary data
 calibration/*.pkl
-calibration/*.cache
+calibration/*.npy
 docs/quant/outputs/

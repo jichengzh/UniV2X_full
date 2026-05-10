@@ -1,0 +1,14 @@
+{
+  "tag": "trt_int8_entropy",
+  "engine": "/home/jichengzhi/UniV2X/models/pyramid_m1_subnet_int8_entropy.engine",
+  "n_samples": 2170,
+  "n_trt_path": 119,
+  "n_pytorch_fallback": 2051,
+  "ap30": 0.9389788414695387,
+  "ap50": 0.9337718900622407,
+  "ap70": 0.9009015819553033,
+  "elapsed_secs": 717.323483467102,
+  "mean_per_sample_lat_ms": 27.348248530093425,
+  "p50_per_sample_lat_ms": 27.119994163513184,
+  "p99_per_sample_lat_ms": 56.84455156326293
+}
