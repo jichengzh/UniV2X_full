@@ -1,0 +1,28 @@
+{
+  "n_warmup": 100,
+  "n_measure": 200,
+  "mean_ms": 3.388898547887802,
+  "std_ms": 0.039032022764734546,
+  "p50_ms": 3.368959903717041,
+  "p95_ms": 3.4652671217918396,
+  "p99_ms": 3.468307785987854,
+  "min_ms": 3.357696056365967,
+  "max_ms": 3.471359968185425,
+  "engine_size_mb": 28.449596,
+  "input_shape": [
+    2,
+    64,
+    128,
+    256
+  ],
+  "input_name": "spatial_features",
+  "output_names": [
+    "cls_preds",
+    "reg_preds",
+    "dir_preds"
+  ],
+  "precision": "fp32",
+  "onnx": "models/pyramid_dair_m1_collab_n2_fp32.onnx",
+  "engine": "models/pyramid_dair_m1_collab_n2_fp32.engine",
+  "build_secs": 21.796403884887695
+}

@@ -1,0 +1,17 @@
+{
+  "tag": "dair_collab_fp32_fresh_ctx",
+  "engine": null,
+  "engine_collab": "/home/jichengzhi/UniV2X/models/pyramid_dair_m1_collab_n2_fp32.engine",
+  "n_samples": 200,
+  "n_trt_single_path": 0,
+  "n_trt_collab_path": 184,
+  "n_trt_path": 184,
+  "n_pytorch_fallback": 16,
+  "ap30": 0.8176095259744997,
+  "ap50": 0.7847382977933659,
+  "ap70": 0.6409990853419744,
+  "elapsed_secs": 26.038106441497803,
+  "mean_per_sample_lat_ms": 18.380838632583618,
+  "p50_per_sample_lat_ms": 14.210224151611328,
+  "p99_per_sample_lat_ms": 28.27159881591718
+}

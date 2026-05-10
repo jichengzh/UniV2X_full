@@ -1,0 +1,17 @@
+{
+  "tag": "dair_collab_fp16",
+  "engine": null,
+  "engine_collab": "/home/jichengzhi/UniV2X/models/pyramid_dair_m1_collab_n2_fp16.engine",
+  "n_samples": 1789,
+  "n_trt_single_path": 0,
+  "n_trt_collab_path": 1618,
+  "n_trt_path": 1618,
+  "n_pytorch_fallback": 171,
+  "ap30": 0.8330899108281916,
+  "ap50": 0.7909382504034573,
+  "ap70": 0.6307936473048208,
+  "elapsed_secs": 225.92038202285767,
+  "mean_per_sample_lat_ms": 13.361768925103346,
+  "p50_per_sample_lat_ms": 11.560678482055664,
+  "p99_per_sample_lat_ms": 22.68412590026855
+}

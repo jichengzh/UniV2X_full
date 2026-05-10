@@ -50,6 +50,53 @@ TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 # TRT engine wrapper
 # ---------------------------------------------------------------------------
 
+class TrtCollabN2:
+    """Phase A.5 collab N=2 TRT engine wrapper.
+
+    Inputs:
+        spatial_features (2, 64, H, W) torch float on cuda
+        t_ego            (2, 2, 3)     torch float on cuda
+    Outputs: cls_preds, reg_preds, dir_preds (each (1, *, H, W))
+    """
+
+    def __init__(self, engine_path: str, spatial_shape: tuple = (2, 64, 128, 256),
+                 tego_shape: tuple = (2, 2, 3)):
+        runtime = trt.Runtime(TRT_LOGGER)
+        with open(engine_path, "rb") as f:
+            self.engine = runtime.deserialize_cuda_engine(f.read())
+        self.input_names = [self.engine.get_tensor_name(i) for i in range(self.engine.num_io_tensors)
+                            if self.engine.get_tensor_mode(self.engine.get_tensor_name(i)) == trt.TensorIOMode.INPUT]
+        self.output_names = [self.engine.get_tensor_name(i) for i in range(self.engine.num_io_tensors)
+                             if self.engine.get_tensor_mode(self.engine.get_tensor_name(i)) == trt.TensorIOMode.OUTPUT]
+        self.spatial_name = next(n for n in self.input_names if "spatial" in n.lower())
+        self.tego_name = next(n for n in self.input_names if "ego" in n.lower())
+        self.spatial_shape = spatial_shape
+        self.tego_shape = tego_shape
+
+    def __call__(self, spatial: torch.Tensor, t_ego: torch.Tensor):
+        # Fresh context per call — matches the numerically-verified
+        # trt_run_collab in m4_8_collab_numerical_check.py. Avoid stale
+        # state in re-used context that produced wrong outputs.
+        ctx = self.engine.create_execution_context()
+        ctx.set_input_shape(self.spatial_name, self.spatial_shape)
+        ctx.set_input_shape(self.tego_name, self.tego_shape)
+
+        spatial_in = spatial.float().contiguous()
+        tego_in = t_ego.float().contiguous()
+        bufs = {self.spatial_name: spatial_in, self.tego_name: tego_in}
+        for n in self.output_names:
+            shape = tuple(ctx.get_tensor_shape(n))
+            bufs[n] = torch.empty(shape, dtype=torch.float32, device="cuda")
+        for n in self.input_names + self.output_names:
+            ctx.set_tensor_address(n, int(bufs[n].data_ptr()))
+
+        stream = torch.cuda.Stream()
+        with torch.cuda.stream(stream):
+            ctx.execute_async_v3(stream.cuda_stream)
+        stream.synchronize()
+        return tuple(bufs[n] for n in self.output_names)
+
+
 class TrtSubnet:
     """Run pyramid_backbone+shrink+heads via TRT engine, returns torch tensors.
 
@@ -94,7 +141,7 @@ class TrtSubnet:
 # Hybrid forward
 # ---------------------------------------------------------------------------
 
-def hybrid_forward(model, batch_data, trt_subnet: TrtSubnet,
+def hybrid_forward(model, batch_data, trt_subnet=None, trt_collab=None,
                    tile_n_to_one: bool = True):
     """Run HeterPyramidCollab.forward but with sub-module replaced by TRT.
 
@@ -158,13 +205,22 @@ def hybrid_forward(model, batch_data, trt_subnet: TrtSubnet,
         counting[m] += 1
     heter_feat_2d = torch.stack(heter_list)  # (sum_cav, 64, 256, 256)
 
-    # If single-agent, use TRT directly; else fall back to PyTorch sub-module.
-    # In either case, after pyramid_backbone we still do shrink+heads.
+    # Routing:
+    #   N=1 + trt_subnet → single-agent TRT engine
+    #   N=2 + trt_collab → collab N=2 TRT engine (Phase A.5)
+    #   else            → PyTorch fallback (forward_collab)
     n_agents = heter_feat_2d.shape[0]
     if n_agents == 1 and trt_subnet is not None:
         cls_p, reg_p, dir_p = trt_subnet(heter_feat_2d.contiguous())
         return {"cls_preds": cls_p, "reg_preds": reg_p, "dir_preds": dir_p,
-                "occ_single_list": [], "_path": "trt"}
+                "occ_single_list": [], "_path": "trt_single"}
+    elif n_agents == 2 and trt_collab is not None:
+        # affine_matrix: (B, L, L, 2, 3); pick t for ego (b=0, ego_idx=0, both agents)
+        # equivalent to weighted_fuse: t_matrix[ego_idx, :N, :, :]
+        t_ego = affine_matrix[0, 0, :2, :, :].contiguous()  # (2, 2, 3)
+        cls_p, reg_p, dir_p = trt_collab(heter_feat_2d.contiguous(), t_ego)
+        return {"cls_preds": cls_p, "reg_preds": reg_p, "dir_preds": dir_p,
+                "occ_single_list": [], "_path": "trt_collab"}
     else:
         # PyTorch fallback for multi-agent (true forward_collab)
         fused, occ_outputs = model.pyramid_backbone.forward_collab(
@@ -188,11 +244,19 @@ def hybrid_forward(model, batch_data, trt_subnet: TrtSubnet,
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--engine", default=None,
-                   help="TRT engine path; required unless --force-fallback")
+                   help="single-agent TRT engine path (record_len=[1] samples)")
+    p.add_argument("--engine-collab", default=None,
+                   help="collab N=2 TRT engine path (record_len=[2] samples, Phase A.5)")
+    p.add_argument("--wrapper-pytorch", action="store_true",
+                   help="Use PyramidCollabSubnetN2 PyTorch wrapper for N=2 (sanity isolation)")
     p.add_argument("--force-fallback", action="store_true",
                    help="Skip TRT engine, force all samples through PyTorch — sanity baseline")
     p.add_argument("--input-shape", default="1,64,256,256",
                    help="TRT engine input shape (B,C,H,W). OPV2V: 1,64,256,256. DAIR: 1,64,128,256")
+    p.add_argument("--collab-spatial-shape", default="2,64,128,256",
+                   help="collab engine spatial input shape (DAIR default)")
+    p.add_argument("--collab-tego-shape", default="2,2,3",
+                   help="collab engine t_ego input shape")
     p.add_argument("--tag", required=True)
     p.add_argument("--model-dir", default="/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12")
     p.add_argument("--n-samples", type=int, default=2170)
@@ -205,12 +269,14 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if not args.force_fallback and args.engine is None:
-        raise SystemExit("--engine required unless --force-fallback")
+    if not args.force_fallback and not args.wrapper_pytorch and args.engine is None and args.engine_collab is None:
+        raise SystemExit("--engine, --engine-collab, --wrapper-pytorch, or --force-fallback required")
     # Resolve relative paths BEFORE the cwd switch above (which already happened
     # at module import). Re-anchor against REPO_ROOT.
     if args.engine and not os.path.isabs(args.engine):
         args.engine = str(REPO_ROOT / args.engine)
+    if args.engine_collab and not os.path.isabs(args.engine_collab):
+        args.engine_collab = str(REPO_ROOT / args.engine_collab)
     if args.report is None:
         args.report = str(REPO_ROOT / f"results/m4_8_hybrid_ap_{args.tag}.json")
     elif not os.path.isabs(args.report):
@@ -242,20 +308,37 @@ def main():
     loader = DataLoader(dataset, batch_size=1, num_workers=2,
                         collate_fn=dataset.collate_batch_test, shuffle=False)
 
+    trt_subnet = None
+    trt_collab = None
     if args.force_fallback:
         print(f"[3/4] FORCE FALLBACK — no TRT engine, all samples go through PyTorch")
-        trt_subnet = None
+    elif args.wrapper_pytorch:
+        print(f"[3/4 SANITY] using PyramidCollabSubnetN2 PyTorch wrapper (no TRT)")
+        sys.path.insert(0, str(REPO_ROOT))
+        from tools.export_onnx_pyramid_collab import PyramidCollabSubnetN2
+        wrapper_module = PyramidCollabSubnetN2(model, align_corners=False).cuda().eval()
+        class WrapperAsTrt:
+            def __call__(self, spatial, t_ego):
+                return wrapper_module(spatial, t_ego)
+        trt_collab = WrapperAsTrt()
     else:
-        print(f"[3/4] load TRT engine: {args.engine}")
-        in_shape = tuple(int(x) for x in args.input_shape.split(","))
-        trt_subnet = TrtSubnet(args.engine, input_shape=in_shape)
+        if args.engine:
+            print(f"[3/4a] load single-agent TRT engine: {args.engine}")
+            in_shape = tuple(int(x) for x in args.input_shape.split(","))
+            trt_subnet = TrtSubnet(args.engine, input_shape=in_shape)
+        if args.engine_collab:
+            print(f"[3/4b] load collab N=2 TRT engine: {args.engine_collab}")
+            sshape = tuple(int(x) for x in args.collab_spatial_shape.split(","))
+            tshape = tuple(int(x) for x in args.collab_tego_shape.split(","))
+            trt_collab = TrtCollabN2(args.engine_collab, spatial_shape=sshape, tego_shape=tshape)
 
     print(f"[4/4] run inference + eval ({args.n_samples} samples)")
     result_stat = {0.3: {"tp": [], "fp": [], "gt": 0, "score": []},
                    0.5: {"tp": [], "fp": [], "gt": 0, "score": []},
                    0.7: {"tp": [], "fp": [], "gt": 0, "score": []}}
     n_done = 0
-    n_trt = 0
+    n_trt_single = 0
+    n_trt_collab = 0
     n_fb = 0
     lat_acc = []
     t0 = time.time()
@@ -269,12 +352,15 @@ def main():
 
             torch.cuda.synchronize()
             t_a = time.time()
-            output_dict = hybrid_forward(model, batch_data, trt_subnet)
+            output_dict = hybrid_forward(model, batch_data, trt_subnet, trt_collab)
             torch.cuda.synchronize()
             lat_acc.append((time.time() - t_a) * 1000)
 
-            if output_dict["_path"] == "trt":
-                n_trt += 1
+            path = output_dict["_path"]
+            if path == "trt_single":
+                n_trt_single += 1
+            elif path == "trt_collab":
+                n_trt_collab += 1
             else:
                 n_fb += 1
 
@@ -290,8 +376,8 @@ def main():
             n_done += 1
             if (n_done % 100) == 0:
                 elapsed = time.time() - t0
-                print(f"  {n_done:4d}/{args.n_samples}  trt={n_trt} fb={n_fb}  "
-                      f"elapsed={elapsed:.1f}s")
+                print(f"  {n_done:4d}/{args.n_samples}  trt_single={n_trt_single} "
+                      f"trt_collab={n_trt_collab} fb={n_fb}  elapsed={elapsed:.1f}s")
 
     elapsed = time.time() - t0
     out_dir = REPO_ROOT / f"results/m4_8_eval_{args.tag}"
@@ -301,8 +387,11 @@ def main():
     rep = {
         "tag": args.tag,
         "engine": args.engine,
+        "engine_collab": args.engine_collab,
         "n_samples": n_done,
-        "n_trt_path": n_trt,
+        "n_trt_single_path": n_trt_single,
+        "n_trt_collab_path": n_trt_collab,
+        "n_trt_path": n_trt_single + n_trt_collab,
         "n_pytorch_fallback": n_fb,
         "ap30": float(ap30),
         "ap50": float(ap50),

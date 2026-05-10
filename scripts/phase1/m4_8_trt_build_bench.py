@@ -44,25 +44,46 @@ TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 # ---------------------------------------------------------------------------
 
 def _make_calibrator_class(base_cls):
-    """Build a calibrator subclass on top of the chosen TRT base class."""
+    """Build a calibrator subclass on top of the chosen TRT base class.
+
+    Now supports multi-input engines: pass calib_npy as a dict
+    {input_name: npy_path} for engines with >1 input (Phase A.5 collab).
+    Single-input legacy: calib_npy is a str path → uses 'auto' name detection.
+    """
 
     class _NumpyCalib(base_cls):  # type: ignore[misc, valid-type]
-        def __init__(self, calib_npy: str, batch_size: int = 1, cache_path: str | None = None):
+        def __init__(self, calib_npy, batch_size: int = 1, cache_path: str | None = None):
             super().__init__()
             self._init_data(calib_npy, batch_size, cache_path)
 
         def _init_data(self, calib_npy, batch_size, cache_path):
-            data = np.load(calib_npy).astype(np.float32)
-            assert data.ndim == 4, f"calib data must be (N,C,H,W), got {data.shape}"
-            self.data = data
+            # Normalize: dict {name: path} or single str path
+            if isinstance(calib_npy, dict):
+                self.npy_map = calib_npy
+            else:
+                # Single-input legacy
+                self.npy_map = {"_auto": calib_npy}
+
+            self.arrays = {}
+            self.devs = {}
+            n_total = None
+            for k, p in self.npy_map.items():
+                a = np.load(p).astype(np.float32)
+                assert a.ndim >= 2
+                self.arrays[k] = a
+                self.devs[k] = torch.zeros(
+                    (batch_size, *a.shape[1:]), dtype=torch.float32, device="cuda"
+                )
+                if n_total is None:
+                    n_total = a.shape[0]
+                else:
+                    assert a.shape[0] == n_total, "calib datasets must have same N"
             self.batch_size = batch_size
             self.idx = 0
-            self.n = data.shape[0]
-            self.device_input = torch.zeros(
-                (batch_size, *data.shape[1:]), dtype=torch.float32, device="cuda"
-            )
+            self.n = n_total
             self.cache_path = cache_path
-            print(f"[calib:{base_cls.__name__}] {self.n} samples shape={data.shape}")
+            print(f"[calib:{base_cls.__name__}] {self.n} samples, "
+                  f"inputs={list(self.arrays.keys())}")
 
         def get_batch_size(self):
             return self.batch_size
@@ -70,10 +91,28 @@ def _make_calibrator_class(base_cls):
         def get_batch(self, names):
             if self.idx + self.batch_size > self.n:
                 return None
-            batch = self.data[self.idx : self.idx + self.batch_size]
+            batch_addrs = []
+            # If single-input legacy, ignore names and just feed the one array
+            if "_auto" in self.arrays:
+                arr = self.arrays["_auto"]
+                self.devs["_auto"].copy_(
+                    torch.from_numpy(arr[self.idx : self.idx + self.batch_size])
+                )
+                batch_addrs = [int(self.devs["_auto"].data_ptr())]
+            else:
+                for nm in names:
+                    if nm not in self.arrays:
+                        raise RuntimeError(
+                            f"calibrator: no data for input '{nm}', "
+                            f"have {list(self.arrays.keys())}"
+                        )
+                    a = self.arrays[nm]
+                    self.devs[nm].copy_(
+                        torch.from_numpy(a[self.idx : self.idx + self.batch_size])
+                    )
+                    batch_addrs.append(int(self.devs[nm].data_ptr()))
             self.idx += self.batch_size
-            self.device_input.copy_(torch.from_numpy(batch))
-            return [int(self.device_input.data_ptr())]
+            return batch_addrs
 
         def read_calibration_cache(self):
             if self.cache_path and Path(self.cache_path).exists():
@@ -220,10 +259,13 @@ def build_engine(
 
 def benchmark_engine(
     engine_path: str,
-    input_shape: tuple[int, int, int, int] = (1, 64, 256, 256),
+    input_shape=(1, 64, 256, 256),
+    extra_input_shapes: dict[str, tuple] | None = None,
     n_warmup: int = 200,
     n_measure: int = 200,
 ):
+    """input_shape: shape for the *first* input. extra_input_shapes: optional dict
+    {name: shape} for additional inputs (Phase A.5 collab engine has 2 inputs)."""
     runtime = trt.Runtime(TRT_LOGGER)
     with open(engine_path, "rb") as f:
         engine = runtime.deserialize_cuda_engine(f.read())
@@ -232,10 +274,19 @@ def benchmark_engine(
     # Bind tensors
     n_io = engine.num_io_tensors
     tensor_names = [engine.get_tensor_name(i) for i in range(n_io)]
-    input_name = next(n for n in tensor_names if engine.get_tensor_mode(n) == trt.TensorIOMode.INPUT)
+    input_names = [n for n in tensor_names if engine.get_tensor_mode(n) == trt.TensorIOMode.INPUT]
     output_names = [n for n in tensor_names if engine.get_tensor_mode(n) == trt.TensorIOMode.OUTPUT]
 
-    context.set_input_shape(input_name, input_shape)
+    # Set shapes: first input gets input_shape, rest from extra_input_shapes
+    context.set_input_shape(input_names[0], input_shape)
+    extra = extra_input_shapes or {}
+    for nm in input_names[1:]:
+        if nm not in extra:
+            raise ValueError(f"engine has multi-input ({input_names}); "
+                             f"missing shape for '{nm}' in extra_input_shapes")
+        context.set_input_shape(nm, extra[nm])
+
+    input_name = input_names[0]  # for backwards-compat (first input)
 
     # Allocate buffers
     bufs: dict[str, torch.Tensor] = {}
@@ -250,9 +301,10 @@ def benchmark_engine(
         bufs[name] = torch.empty(shape, dtype=torch_dtype, device="cuda")
         context.set_tensor_address(name, int(bufs[name].data_ptr()))
 
-    # Fill input with deterministic data
+    # Fill all inputs with deterministic random data (multi-input safe)
     torch.manual_seed(42)
-    bufs[input_name].copy_(torch.randn_like(bufs[input_name].float()).to(bufs[input_name].dtype))
+    for nm in input_names:
+        bufs[nm].copy_(torch.randn_like(bufs[nm].float()).to(bufs[nm].dtype))
 
     stream = torch.cuda.Stream()
     start_evt = torch.cuda.Event(enable_timing=True)
@@ -306,12 +358,17 @@ def parse_args():
     p.add_argument("--report", required=True)
     p.add_argument("--workspace-mb", type=int, default=4096)
     p.add_argument("--calib-data", default=None, help="numpy (N,C,H,W) for INT8")
+    p.add_argument("--calib-multi", action="append", default=[],
+                   help="multi-input calib spec 'input_name:path.npy' (repeatable). "
+                        "Use --calib-multi for engines with >1 input (Phase A.5).")
     p.add_argument("--calib-cache", default=None, help="cache file for calibrator")
     p.add_argument("--calibrator", choices=["minmax", "entropy"], default="minmax",
                    help="INT8 calibrator (minmax=IInt8MinMaxCalibrator, entropy=IInt8EntropyCalibrator2)")
     p.add_argument("--n-warmup", type=int, default=200)
     p.add_argument("--n-measure", type=int, default=200)
     p.add_argument("--input-shape", default="1,64,256,256")
+    p.add_argument("--extra-input-shape", action="append", default=[],
+                   help="additional input shape, format 'name:1,2,3,4' (repeatable)")
     p.add_argument("--skip-build", action="store_true", help="reuse existing engine")
     return p.parse_args()
 
@@ -319,10 +376,17 @@ def parse_args():
 def main():
     args = parse_args()
     if not args.skip_build:
+        # Support multi-input calibration data via --calib-multi name:path
+        calib_arg = args.calib_data
+        if args.calib_multi:
+            calib_arg = {}
+            for spec in args.calib_multi:
+                nm, p = spec.split(":", 1)
+                calib_arg[nm.strip()] = p.strip()
         engine_path, build_secs = build_engine(
             args.onnx, args.precision, args.engine,
             workspace_mb=args.workspace_mb,
-            calib_npy=args.calib_data, calib_cache=args.calib_cache,
+            calib_npy=calib_arg, calib_cache=args.calib_cache,
             calibrator_kind=args.calibrator,
         )
     else:
@@ -330,7 +394,12 @@ def main():
         build_secs = None
 
     shape = tuple(int(x) for x in args.input_shape.split(","))
+    extra: dict[str, tuple] = {}
+    for spec in args.extra_input_shape:
+        name, dims = spec.split(":", 1)
+        extra[name.strip()] = tuple(int(x) for x in dims.split(","))
     stats = benchmark_engine(engine_path, input_shape=shape,
+                             extra_input_shapes=extra,
                              n_warmup=args.n_warmup, n_measure=args.n_measure)
     stats["precision"] = args.precision
     stats["onnx"] = args.onnx
