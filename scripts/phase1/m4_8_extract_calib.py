@@ -39,6 +39,9 @@ def parse_args():
     p.add_argument("--n-samples", type=int, default=100, help="N feature maps to capture")
     p.add_argument("--out", default=str(REPO_ROOT / "calibration/pyramid_calib.npy"))
     p.add_argument("--range", default="102.4,102.4")
+    p.add_argument("--expected-shape", default=None,
+                   help="Expected (C,H,W), comma-separated, e.g. '64,256,128'. "
+                        "If unset, inferred from first sample.")
     return p.parse_args()
 
 
@@ -110,10 +113,15 @@ def main():
                 idx = counting[m]
                 heter_list.append(modality_feature_dict[m][idx])  # (64, 256, 256)
                 counting[m] += 1
-            heter_feat_2d = torch.stack(heter_list)  # (sum_cav, 64, 256, 256)
+            heter_feat_2d = torch.stack(heter_list)  # (sum_cav, C, H, W)
 
-            assert heter_feat_2d.shape[1:] == (64, 256, 256), \
-                f"unexpected shape {heter_feat_2d.shape}"
+            if args.expected_shape is None:
+                exp = tuple(heter_feat_2d.shape[1:])
+                print(f"[infer] auto-detected feature shape (C,H,W) = {exp}")
+                args.expected_shape = ",".join(str(x) for x in exp)
+            expected = tuple(int(x) for x in args.expected_shape.split(","))
+            assert heter_feat_2d.shape[1:] == expected, \
+                f"unexpected shape {heter_feat_2d.shape}, expected (B,{expected})"
             for k in range(heter_feat_2d.shape[0]):
                 captured.append(heter_feat_2d[k].cpu().float().numpy())
                 if len(captured) >= args.n_samples:

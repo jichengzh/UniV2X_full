@@ -113,7 +113,9 @@ def export(args):
 
     print(f"[2/4] PyTorch forward sanity check")
     torch.manual_seed(42)
-    dummy = torch.randn(1, 64, 256, 256, device="cuda")
+    shape = tuple(int(x) for x in args.input_shape.split(","))
+    dummy = torch.randn(*shape, device="cuda")
+    print(f"  input shape: {shape}")
     with torch.no_grad():
         cls_pt, reg_pt, dir_pt = subnet(dummy)
     print(f"  cls={tuple(cls_pt.shape)} reg={tuple(reg_pt.shape)} dir={tuple(dir_pt.shape)}")
@@ -182,6 +184,8 @@ def parse_args():
     p.add_argument("--hypes", default=default_hypes)
     p.add_argument("--out", default=str(REPO_ROOT / "models/pyramid_m1_subnet_fp32.onnx"))
     p.add_argument("--opset", type=int, default=17)
+    p.add_argument("--input-shape", default="1,64,256,256",
+                   help="ONNX input shape (B,C,H,W). OPV2V: 1,64,256,256. DAIR: 1,64,128,256")
     return p.parse_args()
 
 

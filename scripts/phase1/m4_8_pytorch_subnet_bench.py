@@ -26,8 +26,9 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from tools.export_onnx_pyramid import build_pyramid_from_ckpt, PyramidSubnet  # noqa: E402
 
-CKPT = "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12/net_epoch_bestval_at23.pth"
-HYPES = "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12/config.yaml"
+import argparse
+CKPT_DEFAULT = "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12/net_epoch_bestval_at23.pth"
+HYPES_DEFAULT = "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12/config.yaml"
 
 
 def bench(name: str, fn, n_warmup=200, n_measure=500) -> dict:
@@ -63,11 +64,19 @@ def bench(name: str, fn, n_warmup=200, n_measure=500) -> dict:
 
 
 def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--ckpt", default=CKPT_DEFAULT)
+    p.add_argument("--hypes", default=HYPES_DEFAULT)
+    p.add_argument("--input-shape", default="1,64,256,256")
+    p.add_argument("--out", default=str(REPO_ROOT / "results/m4_8_pytorch_subnet_bench.json"))
+    args = p.parse_args()
+    shape = tuple(int(x) for x in args.input_shape.split(","))
+
     torch.manual_seed(42)
-    print("[1] building model + subnet")
-    full = build_pyramid_from_ckpt(HYPES, CKPT, device="cuda")
+    print(f"[1] building model + subnet (input shape {shape})")
+    full = build_pyramid_from_ckpt(args.hypes, args.ckpt, device="cuda")
     subnet_fp32 = PyramidSubnet(full).cuda().eval()
-    x = torch.randn(1, 64, 256, 256, device="cuda")
+    x = torch.randn(*shape, device="cuda")
 
     results = []
 
@@ -88,10 +97,10 @@ def main():
     with torch.inference_mode():
         results.append(bench("pytorch_fp16_half", lambda: subnet_fp16(x_h)))
 
-    out = REPO_ROOT / "results/m4_8_pytorch_subnet_bench.json"
+    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w") as f:
-        json.dump({"anchors": results, "input_shape": [1, 64, 256, 256]}, f, indent=2)
+        json.dump({"anchors": results, "input_shape": list(shape)}, f, indent=2)
     print(f"\n  -> {out}")
 
     # Summary table

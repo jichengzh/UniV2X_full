@@ -1,0 +1,14 @@
+{
+  "tag": "dair_trt_int8",
+  "engine": "/home/jichengzhi/UniV2X/models/pyramid_dair_m1_subnet_int8.engine",
+  "n_samples": 1789,
+  "n_trt_path": 171,
+  "n_pytorch_fallback": 1618,
+  "ap30": 0.8083410173108792,
+  "ap50": 0.723610011927864,
+  "ap70": 0.5397501811059093,
+  "elapsed_secs": 289.6232032775879,
+  "mean_per_sample_lat_ms": 23.949464517575258,
+  "p50_per_sample_lat_ms": 20.35069465637207,
+  "p99_per_sample_lat_ms": 39.10940170288086
+}

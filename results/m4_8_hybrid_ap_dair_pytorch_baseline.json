@@ -1,0 +1,14 @@
+{
+  "tag": "dair_pytorch_baseline",
+  "engine": null,
+  "n_samples": 1789,
+  "n_trt_path": 0,
+  "n_pytorch_fallback": 1789,
+  "ap30": 0.8327203375405446,
+  "ap50": 0.790724668926931,
+  "ap70": 0.6313505565489262,
+  "elapsed_secs": 235.70739483833313,
+  "mean_per_sample_lat_ms": 14.085818429843483,
+  "p50_per_sample_lat_ms": 12.105464935302734,
+  "p99_per_sample_lat_ms": 31.95911407470701
+}

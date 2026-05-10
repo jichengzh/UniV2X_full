@@ -59,7 +59,7 @@ class TrtSubnet:
         cls_preds (1, 2, 256, 256), reg_preds (1, 14, ...), dir_preds (1, 4, ...)
     """
 
-    def __init__(self, engine_path: str):
+    def __init__(self, engine_path: str, input_shape: tuple = (1, 64, 256, 256)):
         runtime = trt.Runtime(TRT_LOGGER)
         with open(engine_path, "rb") as f:
             self.engine = runtime.deserialize_cuda_engine(f.read())
@@ -73,7 +73,7 @@ class TrtSubnet:
             if self.engine.get_tensor_mode(self.engine.get_tensor_name(i)) == trt.TensorIOMode.OUTPUT
         ]
         # alloc buffers (fixed shape engine)
-        self.context.set_input_shape(self.input_name, (1, 64, 256, 256))
+        self.context.set_input_shape(self.input_name, input_shape)
         self.bufs: dict[str, torch.Tensor] = {}
         for name in [self.input_name, *self.output_names]:
             shape = tuple(self.context.get_tensor_shape(name))
@@ -191,10 +191,14 @@ def parse_args():
                    help="TRT engine path; required unless --force-fallback")
     p.add_argument("--force-fallback", action="store_true",
                    help="Skip TRT engine, force all samples through PyTorch — sanity baseline")
+    p.add_argument("--input-shape", default="1,64,256,256",
+                   help="TRT engine input shape (B,C,H,W). OPV2V: 1,64,256,256. DAIR: 1,64,128,256")
     p.add_argument("--tag", required=True)
     p.add_argument("--model-dir", default="/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12")
     p.add_argument("--n-samples", type=int, default=2170)
     p.add_argument("--range", default="102.4,102.4")
+    p.add_argument("--dataset", choices=["opv2v", "dair"], default="opv2v",
+                   help="affects calibrator behaviour and TRT subnet input shape")
     p.add_argument("--report", default=None)
     return p.parse_args()
 
@@ -243,7 +247,8 @@ def main():
         trt_subnet = None
     else:
         print(f"[3/4] load TRT engine: {args.engine}")
-        trt_subnet = TrtSubnet(args.engine)
+        in_shape = tuple(int(x) for x in args.input_shape.split(","))
+        trt_subnet = TrtSubnet(args.engine, input_shape=in_shape)
 
     print(f"[4/4] run inference + eval ({args.n_samples} samples)")
     result_stat = {0.3: {"tp": [], "fp": [], "gt": 0, "score": []},
