@@ -6,14 +6,14 @@
 > - 反思与设计纪律: `paper_learning/2. AAAI最终故事/reflection_mistakes.md`(尤其 #19-#31)
 > - 整体实验路线: `paper_learning/2. AAAI最终故事/00_故事评估与实验路线_v1.md`
 >
-> **当前版本**: v1.0 (2026-05-12)
-> **状态**: 实施计划已落地, 待批准启动
+> **当前版本**: v1.1 (2026-05-13) — 加 §〇.5 旧数据可用性诊断 + §〇.6 ABCD 推进现状审计
+> **状态**: P0.1 (8 ckpt 库) + P0.2 (144 anchor 主网格) 已完成, **Class A 缺口 176 anchor, B/C/D 未启动**
 
 ---
 
 ## 〇、为什么要做这份计划
 
-当前真测数据 ~345 行覆盖搜索空间 ~562,666 cell, **覆盖率 0.06%**, 且严重不均衡:
+当前"345 行真测"覆盖搜索空间 ~562,666 cell, **覆盖率 0.06%**, 且严重不均衡:
 
 | 缺口 | 严重度 | 影响 |
 |------|--------|------|
@@ -29,6 +29,114 @@
 - **closed_loop demo 必须用 random_search + LGB**, 不是 enumeration
 
 → 必须**有目的地**补一批高质量真测数据.
+
+---
+
+## 〇.5、关于"345 行旧数据可用性"的严肃诊断 (新增 2026-05-13)
+
+> 不能再含糊说"已有 345 真测". 用户问及"这些旧数据本来含 AP 吗", 答案是**绝大多数没有**. 必须明确列出每个 parquet 的可用范围, 否则后续 LGB 训练会重蹈"用 lat-only 数据骗自己有 AP 真值"的坑.
+
+### 〇.5.1 按"对 LGB 多目标 (lat+AP+throughput+resource) 训练的有效性"分级
+
+| 文件 | 行数 | 有 AP 真测? | AP 可用? | lat 可用? | 跨硬件? | 给 LGB 的角色 |
+|------|------|------------|----------|-----------|---------|--------------|
+| `data/stage_a_ap_real.parquet` | 8 | ✅ 是 (DAIR 1789) | **✅ 唯一完整 AP 真值** | ✅ | 4090 | **AP predictor 唯一可信训练源**, 但 8 行不足以单独训练 |
+| `data/stage_b_ap_real.parquet` | 4 | ✅ 是 但 AP≈0.06 | ❌ negative (finetune 不足导致崩塌) | ✅ | 4090 | 仅作"未收敛 ckpt → AP 崩"的负样本, **不进主训练集** |
+| `data/pyramid_random_bench.parquet` | 100 | ❌ | NaN | ✅ | 4090 (单 D) | 仅 lat predictor 可用 (AP 列必须 NaN) |
+| `data/perstage_quant_bench.parquet` | 18 | ❌ | NaN | ✅ | 4090 (mixed Q) | 仅 lat predictor 可用 |
+| `data/4090_dspace_bench.parquet` | 48 | ❌ | NaN | ✅ | 4090 (5 tactic × workspace) | 仅 lat predictor 可用 |
+| `data/orin_dspace_bench.parquet` | 72 | ❌ | NaN | ✅ (含 32 fail) | Orin | 仅 Orin lat predictor 可用 |
+| `results/orin_multi_engine_batch.json` | 10 | ❌ | NaN | ✅ | Orin (双 IP) | 仅 lat predictor, 仅 Orin |
+| `results/orin_3ip_*.json` | 2 | ❌ | NaN | ✅ | Orin (三 IP) | 仅 lat predictor, 仅 Orin |
+| `data/baseline_4090.parquet` | 83 | ❌ AP / ✅ amota 跨模型 | **amota ≠ DAIR AP, 不可混用** | ✅ | 4090 | 仅"跨模型 amota predictor"训练, **不喂主 Pyramid AP** |
+| **小计** | **345** | **AP 真测: 12 行 (8 可用 + 4 negative)** | **337 行无 AP** | | | |
+
+### 〇.5.2 严肃结论 (用户原意复述)
+
+> **"如果不含有 AP 指标, 这些数据就没有用了才对啊"** — 用户
+
+**部分正确**:
+- 对 **AP predictor**: 345 行里只有 8 行 (2.3%) 真可用. 这是为什么 plan §1.1 必须新做 320 anchor (Class A) 来给 AP predictor 训练样本.
+- 对 **lat predictor**: 337 行 lat-only 数据仍可用 — 训练时 LGB v5 支持 multi-task, lat 头吃完整 345 行, AP 头只吃 8+320=328 行. **但前提是 schema 里 AP 列必须显式 NaN, 严禁用 fp16 等价或 baseline AP 填充** (反思 #2 教训).
+- 对 **throughput predictor**: 345 行中所有 build_success=True 的行 throughput=1000/lat_mean 派生可用 (单 IP 时), 双/三 IP 需独立测.
+- 对 **resource predictor (engine_size / peak_gpu_mem / params)**: 部分行已有, 但 peak_gpu_mem 在多个老 parquet 里缺. P0.4 整合时必须显式标 NaN, 不补估.
+
+**实操规则 (写进 P0.4)**:
+1. `data/unified_bench.parquet` 必须按 §3 schema 每行 18+ 列, **缺测列填 NaN + `fail_reason` 字段标原因**, 不允许"猜值".
+2. LGB v5 训练时按列 NaN 自动 mask, lat 头 ~1065 样本可训, AP 头只用 ~330 (8 stage_a + 320 Class A + 待补).
+3. 论文 §C Pareto 主表上的每个数据点必须可追溯到 unified_bench 中具体行号 + source 列, 不允许出现"345 行"这种含糊表述. 报告时口径用 "AP 真测 N 行 / lat 真测 M 行", **不再讲合并行数**.
+
+### 〇.5.3 跟"720 anchor 完整测试"的关系
+
+720 anchor 计划保留, 但要点修订:
+- 720 anchor 是**完整 4 类指标 (lat+AP+throughput+resource) 真测**的目标行数 (Class A 320 + B 120 + C 170 + D 100, 不依赖 345 旧行).
+- 345 旧行不计入"720 完整 anchor", 但 lat-only 部分仍喂 lat predictor (作为额外样本).
+- **总样本池修正**: lat predictor 训练 ≤ 720 + 337 = **1057 行可用**(其中 720 完整 + 337 lat-only); AP predictor 训练 ≤ 320 + 8 = **328 行可用**.
+
+---
+
+## 〇.6、ABCD 推进现状审计 (新增 2026-05-13)
+
+> 用户原话: **"我看好像还没有完成 AB 子集的构建"** — 完全正确, 现状如下.
+
+### 〇.6.1 P0.1/P0.2 实际产出 vs 计划
+
+| 计划目标 | 状态 | 实际产出 | 偏差 |
+|----------|------|----------|------|
+| P0.1 8 triplet 充分训练 (Class A ckpt 库) | ✅ 完成 (2026-05-13 上午) | 8 ckpt 全过 AP gate (AP50 0.74-0.79) | 0 |
+| P0.2 Class A 4090 主网格 (8×6×3=144) | ✅ 完成 (2026-05-13 10:32, 60.7 min) | 144 anchor | 第一批 |
+| **P0.2.b 补 4090 Class A 176 anchor (4 新 Q + 1 新 D)** | **✅ 完成 (2026-05-13, 79.3 min wall, 0 fail)** | **176/176 OK, 合并 → 320 完整 4090 anchor** | **0** |
+| P0.3 Class A Orin 250 anchor | 🔲 未启动 | 0 | -250 |
+| P0.4 整合旧数据到 unified_bench | 🔲 未启动 | 0 | -345 (待整理) |
+| P1 Class B 4090 D-space 120 | 🔲 未启动 | 0 | -120 (实际 48 旧 lat-only 已有, 待补 72 + AP) |
+| P1 Class C Orin D-space 170 | 🔲 未启动 | 0 | -170 (实际 72 旧 lat-only 已有, 待补 98) |
+| P2 Class D 跨模型 100 | 🔲 未启动 | 0 | -100 |
+| **完整 4 指标 anchor 累计** | | **320 + 8 (stage_a) = 328** | **缺 392** |
+
+### 〇.6.2.b P0.2.b 完成后 Q 维度新发现
+
+10 Q × 4 D × 8 T 全笛卡尔覆盖后, AP spread 维持 76.69pp, 但 Q 维度结构性发现:
+
+| Q 类型 | mean AP50 | 现象 |
+|-------|-----------|------|
+| Q_fp32 / Q_fp16 / Q_int8_mm | 0.75-0.76 | **安全路径**, AP 保 99% baseline |
+| Q_int8_ent | 0.31 | **entropy 校准崩塌**: T7/T8/T1 触发, T6 稳 |
+| Q_mix_s0..s12 (6 个混合) | 0.29-0.36 | **混合 INT8 路径全受 entropy 拖累** |
+
+→ paper §C "搜索空间 ≠ Pareto frontier" 直接证据: 10 Q 中 **7 Q 含 AP<0.1 anchor**, ~63% Q 子空间有崩塌 cell. minmax + FP16 是真正"可信路径".
+
+### 〇.6.2 P0.2 的 cell 缩水分析
+
+P0.2 (`scripts/phase2/dataset_a_main_grid_4090.py`) 实际跑的是 6 Q × 3 D = 18 cell/triplet, 不是计划的 10 Q × 4 D = 40 cell/triplet, 原因:
+- Q 只覆盖 6 个 (Q_fp16, Q_int8_ent, Q_int8_mm, Q_mix_s0, Q_mix_s2, Q_mix_s01), 缺 Q_int8_pc, Q_fp16_pc, Q_int8_wa_pt, Q_fp16_pt (per-channel × W+A 组合)
+- D 只覆盖 3 个 workspace (1/4/8 GB), 缺 16GB + tactic 维度 (no_cudnn, all_enabled)
+- **缩水合理性**: 主网格优先快出 AP 多样性证据 (76.69pp spread 已证), 但**论文 §C 主表需要完整 320 anchor 才能给 LGB 训练充分覆盖 §2.2 全部 10 Q**.
+
+→ **必须补 176 anchor (P0.2.b 任务)** 才算 Class A 完成.
+
+### 〇.6.3 修订后的 ABCD 进度看板 (锁定到 〇.5 重定义)
+
+| Class | 计划行 | 完成 | 缺口 | 下一步 |
+|-------|--------|------|------|--------|
+| **A** Pyramid 4090 + Orin (B×Q×D × AP) | **320 + 250 = 570** | **320 (4090 完整 ✓)** + 0 (Orin) = **320** | **250** (仅 Orin) | P0.3 Orin 250 (~24h Orin 独占) |
+| **B** 4090 D-space lat 扩展 | **120** | 0 | 120 | P1.a (旧 48 lat-only 整入 NaN-AP, P0.4 处理) + 72 新 random_search anchor |
+| **C** Orin D-space lat 扩展 | **170** | 0 | 170 | P1.b (旧 72 lat-only 整入 + 98 新) |
+| **D** UniAD-tiny + UniV2X | **100** | 0 | 100 | P2 (UniAD-tiny 60 + UniV2X 40 cross-model) |
+| **合计完整 4-指标 anchor** | **720** | **328** (含 stage_a 8) | **392** | 见 §〇.6.4 |
+| 旧 lat-only 数据 (并行 P0.4 整入) | — | 337 (NaN-AP) + 4 (stage_b negative) | — | P0.4 schema 统一 |
+
+### 〇.6.4 修订 P 级任务执行优先级 (Day-1 ~ Day-N)
+
+| 任务 | 工时估 | 完成则解锁 |
+|------|--------|-----------|
+| ~~P0.2.b~~ 补 4090 Class A 176 anchor | **✅ 完成 (79.3 min, 0 fail)** | 4090 Class A 320 完整 ✓ |
+| ~~P0.4~~ 整合 337 lat-only + 4 negative + 83 amota 到 unified_bench schema | **✅ 完成 (10 min, 660 rows, schema 0 errors)** | LGB 三 head 训练源全部就绪 ✓ |
+| **P0.3** Orin Class A 8 T × 6 Q × 9 single-IP D = 432 potential (trtexec, 跳 D7-D9 多 IP 留 P1.b) | **🟡 跑中 (Orin PID 146250)** ~3-7h wall | Class A 跨硬件完整 |
+| **P1.a** 4090 D-space 扩 72 anchor (workspace 16GB + 2:4 sparse + edge_only tactic) | 4h | B-class 120 完成 |
+| **P1.b** Orin D-space 扩 98 anchor (workspace 4/8GB + 双 IP × 4 + 三 IP × 4 + fallback policy) | 12h Orin | C-class 170 完成 |
+| **P2** Class D cross-model 100 anchor | 8h (4090 8GPU) | D-class 100 完成 |
+| **P3** LGB v5 重训 + Pareto demo | 2h | 论文 §C 数据就绪 |
+| **剩余 wall (P0.3 串行 + P0.4/P1/P2 并行 + P3)** | ~36h ≈ 1.5 工作日 (Orin 24h 是瓶颈, 4090 闲时可干 P0.4/P1.a/P2) | |
 
 ---
 
@@ -533,25 +641,30 @@ def build_anchor(triplet, prec, d_cfg):
 
 ---
 
-## 十、当前已有的真测 anchor 资产清单(起点)
+## 十、当前已有的真测 anchor 资产清单(起点, 2026-05-13 更新)
 
 按 §6 schema 整理后的现有数据:
 
 | 文件 | 行数 | 必测指标完整度 | 备注 |
 |------|------|---------------|------|
-| stage_a_ap_real | 8 | lat ✓ / thr ✓ / AP ✓ / 资源 ✓ | **paper-grade**, 充分微调 |
-| stage_b_ap_real | 4 | lat ✓ / thr ✓ / AP (≈0.06) / 资源 ✓ | **negative data**, 1-4 epoch finetune 不足 |
-| pyramid_random_bench | 100 | lat ✓ / thr (派生) / AP ✗ / 资源 部分 | 4090 单 D, 需补 AP 真测 |
-| perstage_quant_bench | 18 | lat ✓ / thr (派生) / AP ✗ / 资源 部分 | 4090 mixed Q, 需补 AP |
-| 4090_dspace_bench | 48 | lat ✓ / thr (派生) / AP ✗ / 资源 ✓ | 4090 D, 需补 AP |
-| orin_dspace_bench | 72 | lat ✓ / thr (派生) / AP ✗ / 资源 部分 | Orin D, 含 32 fail |
-| orin_multi_engine_batch | 10 | lat ✓ / thr ✓ / AP ✗ / 资源 ✗ | Orin 双 IP |
-| orin_3ip_* | 2 | lat ✓ / thr ✓ / AP ✗ / 资源 ✗ | Orin 三 IP |
-| baseline_4090 | 83 | lat ✓ / amota ✓ (跨模型) / 资源 部分 | 跨模型, 不是 Pyramid |
+| **class_a_pyramid_full** (P0.2 新出) | **144** | lat (待重读 build JSON key) / thr (派生) / **AP ✓ (500 sample)** / 资源 ✓ | **P0.2 产出**, 8 triplet × 6 Q × 3 D, AP spread 77pp |
+| stage_a_ap_real | 8 | lat ✓ / thr ✓ / **AP ✓ (1789 full)** / 资源 ✓ | **paper-grade**, 充分微调 (基准锚) |
+| stage_b_ap_real | 4 | lat ✓ / thr ✓ / AP (≈0.06) / 资源 ✓ | **negative**, 1-4 epoch finetune 不足, 不喂 AP 头 |
+| pyramid_random_bench | 100 | lat ✓ / thr (派生) / **AP ✗** / 资源 部分 | 4090 单 D, lat 头可用, AP 列必须 NaN |
+| perstage_quant_bench | 18 | lat ✓ / thr (派生) / **AP ✗** / 资源 部分 | 4090 mixed Q, 同上 |
+| 4090_dspace_bench | 48 | lat ✓ / thr (派生) / **AP ✗** / 资源 ✓ | 4090 D, 同上 |
+| orin_dspace_bench | 72 | lat ✓ / thr (派生) / **AP ✗** / 资源 部分 | Orin D, 含 32 fail, 同上 |
+| orin_multi_engine_batch | 10 | lat ✓ / thr ✓ / **AP ✗** / 资源 ✗ | Orin 双 IP, 仅 lat 头 |
+| orin_3ip_* | 2 | lat ✓ / thr ✓ / **AP ✗** / 资源 ✗ | Orin 三 IP, 仅 lat 头 |
+| baseline_4090 | 83 | lat ✓ / **amota ✓ 跨模型** / 资源 部分 | 跨模型 amota, **不混入 Pyramid AP** |
 
-**当前真测 anchor 池**: ~345 行, 其中 **AP 真测仅 12 行**(8 paper-grade + 4 negative).
+**当前真测 anchor 池修订**:
+- **完整 4 指标 (lat+AP+throughput+resource) anchor**: **152 行** = 8 (stage_a 1789) + 144 (Class A 500 sample). 仅作 AP predictor 训练源.
+- **lat-only 可喂 lat predictor**: 337 行 (pyramid_random + perstage_quant + 4090_dspace + orin_dspace + multi_engine + 3ip).
+- **跨模型 amota**: 83 行 (baseline_4090), 不混 Pyramid AP, 单独跨模型头.
+- **negative 池**: 4 行 (stage_b, AP≈0.06), 仅作"未收敛 ckpt 负样本".
 
-新增目标 720 行, 总池 ~1065 行, 满足 §九 验收标准.
+→ **离 §1.1 的 720 完整 anchor 目标缺 568 行**, 必须按 §〇.6.4 推进 P0.2.b/P0.3/P1/P2.
 
 ---
 
@@ -577,6 +690,111 @@ scripts/phase2/
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | v1.0 | 2026-05-12 | 初版, 综合 搜索空间一览 + result/ + reflection_mistakes + 00_故事路线 |
+| v1.1 | 2026-05-13 | + §〇.5 旧 345 数据可用性诊断 (AP 真测仅 8 行) + §〇.6 ABCD 推进现状审计 (Class A 144/320 缺 176, BCD 全未启动, 总进度 152/720) |
+| v1.2 | 2026-05-13 | + §十三 当前执行进度快照 (P0.1/P0.2/P0.2.b/P0.4 完成, P0.3 Orin 跑中 280/432 OK=89, BCD 未启动) |
+
+---
+
+## 十三、当前执行进度快照 (2026-05-13 完整审计)
+
+> **目的**: 用户要求重新评估实验路径正确性, 本节冻结当前真实状态, 不做评价.
+
+### 13.1 任务级完成情况
+
+| 任务 | 计划目标 | 实际产出 | 状态 | wall time | 关键产出文件 |
+|------|----------|----------|------|-----------|--------------|
+| P0.1 | 4 NEW Pyramid triplet × 25 epoch 训练 (T3/T5/T7/T8) | 4 ckpt 全过 AP gate (AP50 0.74-0.79) | ✅ 完成 | ~12h (2026-05-13 上午) | `models/dataset_a_cache/ft_{sig}/net_epoch_bestval_at33.pth` × 4 |
+| P0.2 | 4090 Class A 主网格 (8×6 Q×3 D=144 anchor) | 144/144 OK, AP spread 76.69pp | ✅ 完成 | 60.7 min | `data/_by_class/class_a_pyramid_full.parquet` (初版) + `results/dataset_a_main/*.json` × 144 |
+| P0.2.b | 4090 Class A 补充 (4 NEW Q × 4 D + 6 OLD Q × 1 NEW D = 176 anchor) | 176/176 OK, 合并 → 320 完整 4090 anchor | ✅ 完成 | 79.3 min | `data/_by_class/class_a_pyramid_full.parquet` (合并 320 行 = 10 Q × 4 D × 8 T 全笛卡尔) |
+| P0.4 | 整合 9 旧数据源到 unified_bench schema | 660 rows × 34 cols, schema 0 errors | ✅ 完成 | ~10 min | `data/unified_bench.parquet` + `data/unified_bench.csv` + `data/schema_spec.json` |
+| P0.3 | Orin Class A 8 T × 6 Q × 9 single-IP D = 432 anchor (lat-only) | **🟡 跑中 280/432 (65%), OK=89, fail=191** | 进行中 | ~7h wall 已耗 (cum) | `/home/jichengzhi/orin_class_a/results/*.json` (89 OK + 191 fail) |
+| P1.a | Class B 4090 D-space 扩展 72 new anchor | 0 | 🔲 未启动 | — | — |
+| P1.b | Class C Orin D-space 扩展 98 new anchor (workspace 4/8GB + 双 IP + 三 IP + fallback policy) | 0 | 🔲 未启动 | — | — |
+| P2 | Class D 跨模型 (UniAD-tiny 60 + UniV2X 40 = 100 anchor) | 0 | 🔲 未启动 | — | — |
+| P3 | LGB v5 重训 + 5-fold CV + 5D Pareto demo | 0 | 🔲 未启动 | — | — |
+
+### 13.2 真实数据资产盘点 (绝对真测行数)
+
+**A. 完整 4 指标 (lat + AP + throughput + resource) Pyramid anchor**:
+- **Class A 4090**: **320 行** (P0.2 + P0.2.b 合并, AP eval 500-sample DAIR val)
+- **Stage A paper-grade**: **8 行** (1789-sample full DAIR val, FP32/FP16 baseline 各 4)
+- **Stage B negative**: **4 行** (AP≈0.06, finetune 不足, 仅作 LGB negative pool, **不入主 AP head**)
+- → **完整 4 指标 anchor 累计**: **328 行** (320 + 8, 不含 negative)
+
+**B. lat-only (AP=NaN, 仅 LGB lat head 可用)**:
+- `pyramid_random_bench.parquet`: 100 行 (4090, 单 D)
+- `perstage_quant_bench.parquet`: 18 行 (4090, mixed Q)
+- `4090_dspace_bench.parquet`: 48 行 (4090, D 维度)
+- `orin_dspace_bench.parquet`: 72 行 (Orin, D 维度, 含 32 build_fail)
+- `orin_multi_engine_batch.json`: 10 行 (Orin, 双 IP)
+- `orin_3ip_*.json`: 2 行 (Orin, 三 IP)
+- **P0.3 Orin (跑中)**: **89 行 OK** + 191 fail (lat-only, 主要 INT8 因 cache 跨版本崩) ← 持续累积中
+- → **lat-only 累计 (含 P0.3 当前)**: **339 行** (250 旧 + 89 新)
+
+**C. 跨模型 amota (不混 Pyramid AP)**:
+- `baseline_4090.parquet`: 83 行 (跨 3 model_class, amota 指标)
+- → **跨模型 amota**: **83 行**
+
+**D. 总计真测行数 (2026-05-13 当前)**: **750 行** = 328 完整 + 339 lat-only + 83 amota
+- 距 §1.1 "720 完整 anchor" 目标: 完整 4 指标只 328, **缺 392** (B/C/D 完整真测全未启动)
+- lat-only LGB lat head 可训样本数: 660 (P0.4 unified) + 89 (P0.3 当前) = **749 lat 样本**
+
+### 13.3 Orin P0.3 当前结果分布 (280/432 已完成)
+
+| Q 类型 | 完成数 | OK 数 | fail 数 | 主要失败原因 |
+|-------|-------|-------|---------|--------------|
+| Q_fp32 | 48 (6 triplet × 8 D) | 42 | 6 | D12 dla0_strict 无 fallback fail |
+| Q_fp16 | 48 | 42 | 6 | 同上 |
+| Q_int8_mm | 48 | 0 | 48 | **TRT cache 跨版本 (4090=10.13 vs Orin=8.5) 不兼容** |
+| Q_int8_ent | 48 | 0 | 48 | 同上 |
+| Q_best | 48 | 0 | 48 | 同上 (需 calib) |
+| Q_int8_nofallback | 40 (T1-T5) | 0 | 40 | 同上 |
+| **小计** | **280** | **84 (30%)** | **196** | |
+
+> 注: T6 段 Q_fp16 仍在跑, 数字会再增. INT8 全失败属已知 gap, 待 P0.3.b 补救 (patched cache magic TRT-101300 → TRT-8502).
+
+### 13.4 关键工程产出 (脚本 / 文档)
+
+**脚本** (`scripts/phase2/`):
+- `dataset_a_prepare_ckpts.py` — P0.1 4 triplet 训练
+- `dataset_a_main_grid_4090.py` — P0.2 主网格
+- `dataset_a_main_grid_4090_supplement.py` — P0.2.b 补充网格
+- `dataset_unify_and_clean.py` — P0.4 9-source schema 合并
+- `validate_dataset_schema.py` — P0.4 schema 校验
+- `orin_class_a_bench_trtexec.py` — P0.3 Orin trtexec 版本 (无 pycuda 依赖)
+- `orin_class_a_int8_sweep.py` — P0.3.b INT8 补救 (patched cache, 待启动)
+- `build_inspect_csv.py` — 最终 720 anchor CSV 聚合器
+
+**文档** (`paper_learning/2. AAAI最终故事/`):
+- `数据集制作_plan.md` (本文件, v1.2)
+- `搜索空间一览.md` (4090 25 / Orin 96 + 5 维 D)
+- `Pyramid_架构与剪枝边界_audit.md` — Pyramid 7 子模块完整解剖 + 剪枝可达边界 + 速度瓶颈 (B1 NMS 60% / B2 PointPillar 30% / B3 backbone 9%)
+- `00_故事评估与实验路线_v1.md` (v2.5)
+
+### 13.5 ⚠️ 已知重大限制 (需用户决策实验路径前知悉)
+
+1. **ONNX subnet 仅占 e2e ~9-10%** (Pyramid 架构 audit 实证): 剪 backbone 50% 在 e2e 上仅 6.5% 加速; **paper §C "剪枝 + 量化 Pareto 主表" 数据仅反映 9% e2e 的优化**, 不是 e2e 整体加速
+2. **prune 30-37% 区间 lat 反向变慢** (T2/T3 实证): 非 32/64 对齐 channel → TRT 内核反优化, 搜索空间内"可行但崩"cell 实证
+3. **Orin INT8 完全失败 (cache 跨版本)**: 当前 280/432 OK=84 仅含 FP32+FP16+DLA, 缺整个 INT8 Q 维度. P0.3.b 已准备 patched cache 但未启动
+4. **Class B/C/D 完整真测全未启动**: 当前 328 完整 anchor 仅来自 Class A, 距 720 目标差 392 行 (61% 工作量未做)
+5. **跨硬件 AP 假设未验证**: Class A 4090 AP 真测, Orin 不做 AP eval, 假设 "INT8 跨 HW ±1pp" 是 §4.1.3 caveat, **未实证**
+6. **真实速度瓶颈不在我们的搜索空间**: NMS (60% e2e) + PointPillar encoder (30%) 都不在剪枝量化范围, 协同框架的 Q 维度天花板就是 ~1.1× e2e
+
+### 13.6 下一步候选路径 (待用户决策)
+
+> **本节不预设, 仅列出可走选项**.
+
+| 路径 | 实质 | 工作量 | 价值 |
+|------|------|-------|------|
+| **A. 当前路径加速** | 等 P0.3 跑完 (~3-4h), 启 P0.3.b INT8 补救 (~4h), 然后 P1.a Class B 72 anchor, P1.b Orin D 扩展 98 anchor, P2 跨模型 100 anchor, P3 LGB 重训 | ~30h wall | 完成 720 anchor 计划, 维持 paper §C "剪枝量化 Pareto" 叙事 |
+| **B. 重新定位 paper §C** | 承认 ONNX subnet 仅 9% e2e, 重写 §C 为 "**框架感知硬件 + D 调度** 是 Pareto 主轴, 剪枝量化是 Q 子维度". 数据上停止扩 720, 重点跑 D 维度对比 (GPU vs DLA vs 多 IP) | ~15h wall + paper 重写 | 故事更诚实, 但 paper 主表换结构 |
+| **C. 攻 e2e 真瓶颈** | 改 NMS 为 CUDA kernel (~5 人日工程), 或换 encoder 为 dense (失精度), 真拿 e2e 2-3× 加速. **抛弃当前剪枝量化路径** | ~10 工作日 + 训练验证 | 风险高, 但 e2e 数字漂亮 |
+| **D. 数据集回炉 — 加 e2e timing breakdown** | 把现 320 anchor + 后续 anchor 每个补 cudaEvent encoder/subnet/postproc 三段时间, paper 直接报 breakdown | ~3h 加 instrumentation + 重跑 320 anchor | 数据可信度大幅提升, paper 可承认 ONNX subnet 仅 10% e2e 同时给 D 维度证据 |
+| **E. 混合 (B+D)** | 重定位 §C 故事 + 补 e2e timing breakdown | ~10h wall + paper 重写 | 推荐 — 数据可信 + 故事诚实 |
+
+---
+
+*快照时间: 2026-05-13. 之后由用户重新评估实验路径决定下一步.*
 
 ---
 

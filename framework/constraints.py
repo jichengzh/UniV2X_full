@@ -139,17 +139,95 @@ def _check_k_dim_for_2to4(cfg: Config, hw: HardwareCapability) -> tuple[bool, st
     return True, ""
 
 
-def _check_cross_layer_gradient(cfg: Config, hw: HardwareCapability) -> tuple[bool, str]:
-    """跨模块剪枝率梯度 < 30% (避免打断 fusion).
+def _check_no_entropy_calibrator(cfg: Config, hw: HardwareCapability) -> tuple[bool, str]:
+    """禁用 INT8 entropy 校准 (KL散度) — 在 self-trained ckpt 上触发 AP 崩塌.
 
-    v1.5 §0.3 列为经验硬约束,Phase 1B.6 + Stage 1.3 拐点验证后可能改判.
+    决议背景 (2026-05-15, 见 paper_learning/2. AAAI最终故事/data/问题.md §问题 1):
+        - 4 个自训 Pyramid ckpt (T3/T5/T7/T8) 用 trt.IInt8EntropyCalibrator2 后 AP50 = 0.02
+        - 同 ckpt 用 trt.IInt8MinMaxCalibrator 后 AP50 = 0.62-0.65 (正常)
+        - 根因: 自训 ckpt 的 shrink_conv 输出激活分布比官方 ckpt 宽 2-3×, entropy KL
+          算法对宽分布过敏, 算出的 clip 过宽 → INT8 量化 step 过粗 → cls head 精度崩塌
+        - 实测确认: 多训 30 epoch 不能修复 (方案 3 已验证无效)
+        - 决议: 论文主路径用 minmax; entropy 节点禁用 (或仅作 LGB 负样本对照)
+
+    Config.q_calibrator 默认空 dict, 此时该函数返回通过 (fallback 到 minmax).
+    显式指定 "entropy" 才拒绝.
     """
-    rates = list(cfg.prune_rate.values())
-    if len(rates) < 2:
+    for m, calib in cfg.q_calibrator.items():
+        if calib == "entropy":
+            return False, (
+                f"模块 {m} 选用 INT8 entropy 校准 — 在自训 ckpt 上触发 AP 崩塌 "
+                f"(见问题.md §问题 1). 主路径使用 minmax, 备选 percentile_99_99."
+            )
+    return True, ""
+
+
+def _check_cross_layer_gradient(cfg: Config, hw: HardwareCapability) -> tuple[bool, str]:
+    """跨**已剪枝**模块的剪枝率梯度 < 30% (避免打断 fusion).
+
+    v1.5 §0.3 列为经验硬约束. M4.9 v2 修正: 只在多个模块同时被剪枝时检查
+    它们之间的差异 (避免单模块 backbone-only 剪枝被错误拒绝).
+
+    Phase 1B.6 + Stage 1.3 拐点验证后可能改判.
+    """
+    pruned_rates = [r for r in cfg.prune_rate.values() if r > 0.0]
+    if len(pruned_rates) < 2:
+        # 全 0 或单模块剪枝 — 不存在跨层 gradient
         return True, ""
-    max_jump = max(abs(rates[i] - rates[i - 1]) for i in range(1, len(rates)))
-    if max_jump > 0.30:
-        return False, f"相邻模块剪枝率梯度 {max_jump:.2f} 超过 0.30"
+    spread = max(pruned_rates) - min(pruned_rates)
+    if spread > 0.30:
+        return False, f"已剪枝模块间率差 {spread:.2f} 超过 0.30"
+    return True, ""
+
+
+# ResNeXt32x4d backbone (Pyramid_m1) baseline planes per stage.
+# planes -> width = int(planes * 4 / 64) * 32, groups = 32
+# width_per_group = width / 32 = int(planes * 4 / 64)
+# IMMA fast-path requires width_per_group ∈ {1, 2, 4, 8, 16, 32}
+RESNEXT_BASE_PLANES = (64, 128, 256)
+_POW2 = {1, 2, 4, 8, 16, 32, 64}
+
+
+def _check_resnext_width_pow2(cfg: Config, hw: HardwareCapability) -> tuple[bool, str]:
+    """ResNeXt32x4d grouped-conv width_per_group 必须是 2 的幂 (Tensor Core IMMA fast-path).
+
+    实证 (M4.9 v2 Pyramid_DAIR_m1, RTX 4090):
+        prune  baseline_planes  new_planes  width  width_per_group  hit_fast_path  lat_p50
+        0%     64,128,256       64,128,256  128,256,512  4,8,16    ✓             0.81 ms
+        25%    64,128,256       48,96,192   96,192,384   3,6,12    ✗             2.71 ms (3.35× 慢!)
+        50%    64,128,256       32,64,128   64,128,256   2,4,8     ✓             0.78 ms
+
+    width_per_group=3/6/12 出 cuDNN/TRT 优化的 IMMA grouped-conv 路径,
+    fall back 到通用 group conv kernel, 实测 3× 慢 — 算法 -27.8% FLOPs 反而 lat 变长.
+
+    本约束: 只对带 Tensor Core 的硬件激活, 只对 backbone 模块的 channel 剪枝有意义.
+    """
+    # 没 TC 的硬件不关心 (CPU / DLA per-tensor only)
+    has_tc = bool(getattr(hw.features, "tensor_core", False) or
+                  any(ip.tensor_core_gen for ip in hw.ips.values() if ip.tensor_core_gen))
+    if not has_tc:
+        return True, ""
+    if cfg.prune_object != "channel":
+        return True, ""
+
+    # 只检查 ResNeXt backbone 的剪枝率 (兼容 1-module Pyramid 用 "model" 名,
+    # 也兼容 5-module UniV2X 用 "backbone" 名). M4.9 v2 反思 #21.
+    rate = float(cfg.prune_rate.get("model",
+                                     cfg.prune_rate.get("backbone", 0.0)))
+    if rate == 0.0:
+        return True, ""
+
+    for planes_base in RESNEXT_BASE_PLANES:
+        new_planes = max(8, round(planes_base * (1.0 - rate)))
+        # snap to nearest 8-multiple (consistent with HEAL conventions)
+        new_planes = (new_planes // 8) * 8
+        wpg = int(new_planes * 4 / 64)
+        if wpg not in _POW2:
+            return False, (
+                f"backbone prune_rate={rate:.3f} → planes={new_planes} → "
+                f"width_per_group={wpg} 不是 2 的幂 (IMMA fast-path 要求 ∈ "
+                f"{sorted(_POW2)}); 实测 3× 慢"
+            )
     return True, ""
 
 
@@ -157,6 +235,8 @@ EMPIRICAL_CONSTRAINTS: list[Constraint] = [
     Constraint("channel_align_32", "empirical", _check_channel_alignment),
     Constraint("k_dim_ge_64", "empirical", _check_k_dim_for_2to4),
     Constraint("cross_layer_gradient_30pct", "empirical", _check_cross_layer_gradient),
+    Constraint("resnext_width_pow2", "empirical", _check_resnext_width_pow2),
+    Constraint("no_entropy_calibrator", "empirical", _check_no_entropy_calibrator),
 ]
 
 
@@ -277,6 +357,15 @@ def build_constraints_for_hardware(hw: HardwareCapability) -> list[Constraint]:
     constraints.append(
         Constraint("cross_layer_gradient_30pct", "empirical", _check_cross_layer_gradient)
     )
+
+    # ResNeXt grouped-conv width_per_group power-of-2 — TC 硬件硬约束
+    # M4.9 v2 实证 (Pyramid prune25): 违反时 lat 3.35× 慢于不违反
+    has_tc = bool(getattr(hw.features, "tensor_core", False) or
+                  any(ip.tensor_core_gen for ip in hw.ips.values() if ip.tensor_core_gen))
+    if has_tc:
+        constraints.append(
+            Constraint("resnext_width_pow2", "empirical", _check_resnext_width_pow2)
+        )
 
     # 软约束 (跨硬件通用)
     constraints.extend(SOFT_CONSTRAINTS)

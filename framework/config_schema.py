@@ -21,12 +21,21 @@ import yaml
 # UniV2X 标准模块名 (来自 1.1 / 1.2 实验报告)
 UNIV2X_MODULES = ("backbone", "encoder", "decoder", "heads", "v2x_comm")
 
+# Pyramid_DAIR_m1 简化模块声明 (M4.9 v2 反思 #21):
+# heads (cls/reg/dir) 量化不敏感 (实证 A7 vs A2 -0.07pp), 占 0.09% params,
+# 与 backbone (99.9% params) 合并为单一 "model" 模块, 简化搜索空间从 10^5 → ~432.
+# 用法: random_search(hw=..., modules=PYRAMID_M1_MODULES)
+PYRAMID_M1_MODULES = ("model",)
+
 # 取值范围 (与 v1.5 §0.2 对齐)
 PRUNE_OBJECT_VALUES = ("channel", "head", "2:4", "element", "none")
 PRUNE_CRITERION_VALUES = ("L1", "Taylor", "FPGM", "Wanda", "none")
 Q_BITS_VALUES = ("INT8", "FP16", "FP32")
 Q_GRAN_VALUES = ("per-tensor", "per-channel", "none")
 Q_OBJ_VALUES = ("W-only", "W+A", "none")
+# Q4 校准器 (paper_learning §问题 1 决议 2026-05-15):
+# minmax 是主路径; percentile_99_99 备选; entropy 禁用 (自训 ckpt 触发 AP 崩塌).
+Q_CALIBRATOR_VALUES = ("minmax", "percentile_99_99", "entropy", "none")
 ROUTING_VALUES = ("GPU", "DLA0", "DLA1", "CPU")
 
 
@@ -47,6 +56,9 @@ class Config:
     q_bits: dict[str, str] = field(default_factory=dict)
     q_granularity: dict[str, str] = field(default_factory=dict)
     q_object: dict[str, str] = field(default_factory=dict)
+    # Q4 校准器 (per-module, INT8 时生效; 不指定时 fallback 到 "minmax").
+    # 详见 paper_learning §问题 1 决议 (2026-05-15) — entropy 在自训 ckpt 上触发 AP 崩塌.
+    q_calibrator: dict[str, str] = field(default_factory=dict)
 
     # D 部署路由 (按模块)
     d_routing: dict[str, str] = field(default_factory=dict)

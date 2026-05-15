@@ -1,0 +1,14 @@
+{
+  "tag": "T2_p25_int8_mm_e2e",
+  "engine": "/home/jichengzhi/UniV2X/models/e2e_cache/T2_p25_Q_int8_mm.engine",
+  "ckpt_dir": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_pruned25_2026_05_10",
+  "n_samples": 500,
+  "n_skipped": 20,
+  "ap30": 0.7004909312334618,
+  "ap50": 0.6415373090598969,
+  "ap70": 0.47722366041224484,
+  "lat_mean_ms": 12.279912948608398,
+  "lat_p50_ms": 9.948134422302246,
+  "lat_p99_ms": 14.878051280975338,
+  "elapsed_secs": 48.07706332206726
+}

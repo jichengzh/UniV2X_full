@@ -1,0 +1,14 @@
+{
+  "tag": "T5_p62_int8_mm_e2e",
+  "engine": "/home/jichengzhi/UniV2X/models/e2e_cache/T5_p62_Q_int8_mm.engine",
+  "ckpt_dir": "/home/jichengzhi/UniV2X/models/dataset_a_cache/ft_024_056_128",
+  "n_samples": 500,
+  "n_skipped": 20,
+  "ap30": 0.6980028533476872,
+  "ap50": 0.6329748135017891,
+  "ap70": 0.42085884225062703,
+  "lat_mean_ms": 10.452329158782959,
+  "lat_p50_ms": 8.301138877868652,
+  "lat_p99_ms": 9.501194953918455,
+  "elapsed_secs": 48.898481369018555
+}
