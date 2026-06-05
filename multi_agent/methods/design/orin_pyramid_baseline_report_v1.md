@@ -3,13 +3,13 @@
 > 2026-06-05–06 | Task #11 + Task #12 (用户授权实验) 详细报告 + D1v2 全链路真测(含NMS+wallclock)
 > 原始数据: `results/E7_orin_e2e_baseline_vs_best.csv`(TRT body) + `results/E8_orin_e2e_fullchain.csv`(PyTorch全链v2)
 > 执行: hw-optimizer(Task#11 body+NMS; Task#12 D1v2 PyTorch全链含NMS) → team-lead 亲测收尾(Task#11 fp16/int8复测)
-> 状态: §3 TRT body 双执行者真测 ✅; §4 D1v2 全链含NMS真测 ✅; v1.3 2026-06-06
+> 状态: §3 TRT body 双执行者真测 ✅; §4 D1v2 全链含NMS真测 ✅; **v1.4 结论级修订 2026-06-06**(ISS-039 #3: enc+bb估算被推翻)
 
 ---
 
 ## §0 摘要
 
-Orin AGX 30W 模式下, Pyramid(DAIR m1) 双层真测: ①**TRT body 子网**: FP32 131.33ms → p75+INT8 20.02ms = 6.56× (双执行者 drift ≤0.15%); ②**PyTorch FP32 全链路 v2**(Task#12 D1v2, 含3D NMS+双轨wallclock): B=1 单agent e2e_wallclock_p50=**152.85ms**, B=2 双agent=**260.61ms**(含mmcv GPU旋转NMS 8.54ms)。e2e 对比: **原生 PyTorch FP32 B=2 超预算 30%**; 混合链(TRT p75+INT8)合成 **~108ms 余92ms**。⇒ **压缩优化是 200ms 预算的必要条件**, 全链路真测(含真 3D NMS, 双轨 wallclock)完整支撑。
+Orin AGX 30W 模式下, Pyramid(DAIR m1) 双层真测: ①**TRT body**: FP32 131.33ms → p75+INT8 20.02ms = 6.56×; ②**PyTorch FP32 全链路 v2**: B=2 e2e_wallclock=**260.61ms > 200ms** (首次真测坐实"未优化不可达"); ③**混合链合成(B=2)**: base FP16 **~136ms** ✅, p75+INT8 **~108ms** ✅。⚠️ **结论级勘误(ISS-039 #3)**: 旧估 enc+bb 10-25ms → 真测 B=2 **68.94ms(>3×差距)**; 可达性矩阵翻转 — **base FP16+LTE≈236ms ❌, p75+INT8+LTE≈208ms ⚠️临界**; 旧"最悲观情形仍可达"不再成立, 压缩必要性维持但须诚实标注 LTE 情形下的临界状态。
 
 ---
 
@@ -62,7 +62,7 @@ base/p50/p75 × FP16/INT8 共 6 个(6/3 build) + 本次新增 base_fp32(23MB)。
 
 ### 4.1 D1 v2 PyTorch FP32 全链路真测 (含NMS, 2026-06-06, 真测)
 
-**测量口径**: CUDA Event v2协议, 分段计时 + 独立外层wallclock双轨; mmcv GPU旋转NMS; warmup=30, n=30; GR3D 0%实查; 首帧encoder JIT冷启(B=1~40ms/B=2~112ms)由warmup覆盖, p50为稳态值。
+**测量口径**: CUDA Event v2协议, 分段计时 + 独立外层wallclock双轨; mmcv GPU旋转NMS; warmup=30, n=30; GR3D 0%实查。**冷启注意**: 首测量帧(第1/30帧)encoder仍显JIT冷启spike(B=1 ~40ms/B=2 ~112ms vs稳态17/33ms); p50(中位)不受1/30离群点影响, mean略偏高; wallclock权威值取p50。
 
 | 段 | B=1 单agent p50 | B=2 双agent p50 | 性质 | 来源 |
 |----|-----------------|-----------------|------|------|
@@ -90,23 +90,37 @@ pre-body(B=2 D1v2真测): vox(10.02)+enc(33.49)+bb(35.45)=**78.96ms**; NMS使用
 
 **口径声明**: D2 为组件合成(pre-body+NMS=D1v2真测 + TRT body=E7真测); 张量接口开销未独立实测(<1ms估算); 三分量均为 Orin MODE_30W 真测值。
 
+#### 4.2.1 V2X通信延迟叠加可达性矩阵 ⚠️(ISS-039 #3 结论翻转)
+
+通信延迟取固定加法模型: C-V2X≈20ms, LTE≈100ms(典型值, 见 edge_latency_budget_v1.md §2)
+
+| 通信情形 | base FP16 合成 136ms | p75+INT8 合成 108ms | 备注 |
+|---------|---------------------|---------------------|------|
+| 无通信  | **136ms ✅** 余64ms | **108ms ✅** 余92ms | 两档均安全 |
+| +C-V2X 20ms | **156ms ✅** 余44ms | **128ms ✅** 余72ms | 两档均安全 |
+| **+LTE 100ms** | **236ms ❌ 超36ms** | **208ms ⚠️ 超8ms 临界** | **旧结论翻转** |
+
+> **⚠️ 结论翻转说明**: 旧报告估算 enc+bb≈10-25ms 导致混合链 base FP16≈66-84ms, 配 LTE 后仍预测"最悲观 184ms 仍可达"。真测 enc+bb=68.94ms, base FP16 混合链=136ms, 配 LTE 后 236ms ❌。**旧"最悲观仍可达"不再成立。**
+
 ### 4.3 结论
 
-①**原生 PyTorch FP32 e2e wallclock(B=2, 含3D NMS): 260.61ms > 200ms** — 无优化部署超预算30%; ②**最优方案(TRT p75+INT8): 合成 ~108ms**, 余92ms; ③"压缩优化是 200ms 预算必要条件"由全链路真测(含真3D NMS, 双轨wallclock)完整支撑, 叙事支点②数据质量显著提升。
+①**原生 PyTorch FP32 e2e wallclock(B=2, 含3D NMS): 260.61ms > 200ms** — 无优化部署超预算30%; ②**最优方案(TRT p75+INT8): 合成 ~108ms**, 余92ms; ③**压缩优化是 200ms 预算必要条件**, 但 LTE 情形下 p75+INT8 临界(208ms, 超8ms), 并非"任意通信条件稳过" — **base FP16+LTE超线, p75+INT8+LTE临界**; ④叙事须诚实标注: 只有无通信或 C-V2X 情形下两档均可达, LTE 情形下即便最优压缩仍在红线附近。
 
 ## §5 与历史数据对账
 
-- #9 估算 "base FP16 RSU≈84ms" → 本次分段合成 61–97ms, 84 落在区间内 ✓
-- #9 "p75+INT8 RSU≈36ms" → 本次 37–54ms 下沿吻合 ✓
-- E6 body 历史值 → 本次复测偏差 ≤1.5% ✓
+- ~~#9 估算 "base FP16 RSU≈84ms" → 本次分段合成 61–97ms, 84 落在区间内 ✓~~ **[ISS-039 #3 勘误]**: 真测 enc+bb=68.94ms → base FP16 混合链合成=**136ms**, 旧估 84ms 低估 **1.6×**; 旧区间 "61-97ms" **不再有效**; 该估算被真测推翻, 勘误痕保留。
+- ~~#9 "p75+INT8 RSU≈36ms" → 本次 37–54ms 下沿吻合 ✓~~ **[ISS-039 #3 勘误]**: 真测 p75+INT8 混合链合成=**108ms**, 旧估 36ms 低估 **3×**; 旧区间同样失效。
+- E6 body 历史值 → 本次复测偏差 ≤1.5% ✓ (TRT body 段本身精度不变; 误差来源是 enc+bb 段估算, 非 body 段)
+- **根因**: M2 f 函数在 TRT body 段标定(R²>0.995), 对 PyTorch eager enc+bb 外推无效 — 见 §6 ISS-039 #3 机制说明。
 
 ## §6 caveats 与欠账
 
 1. **AP**: p75+INT8 的 AP50≈0.74-0.75(近无损)为 **4090 参考值**; Orin 端 AP 未验(ISS-017: INT8 跨 TRT 版本输出发散)。
-2. ~~encoder/voxelize 段为估算~~ → **已由 Task#12 D1 真测替换**(见§4.1); NMS 仍为 2D CUDA proxy(≠HEAL 3D NMS, 量级代表性成立)。
-3. **流程欠账**: Task#11 Step3 复测由 team-lead 一手完成, 欠 supervisor 独立复核; dataset_v2 未入库(新 latency_kind 待定义)。Task#12 D1 由 hw-optimizer 单执行者完成, 欠第二执行者交叉确认。
+2. ~~encoder/voxelize 段为估算~~ → **已由 Task#12 D1v2 真测替换**(见§4.1); NMS 已替换为真3D mmcv GPU旋转NMS真测(8.54ms), 旧2D proxy(4.27ms)作废。
+3. **流程欠账**: Task#11 Step3 复测由 team-lead 一手完成, 欠 supervisor 独立复核; dataset_v2 未入库(新 latency_kind 待定义)。Task#12 D1v2 由 hw-optimizer 单执行者完成, 欠第二执行者交叉确认。
 4. Task#12 D2 混合链为组件合成(非全链真测); 张量传递接口耗时未独立实测(估计<1ms)。
-5. ~~TRT FP32 代理是唯一"未优化"数据点~~ → Task#12 D1 已提供 **PyTorch FP32 全链路真测基准**(B=2 e2e 251ms)。
+5. ~~TRT FP32 代理是唯一"未优化"数据点~~ → Task#12 D1v2 已提供 **PyTorch FP32 全链路真测基准**(B=2 e2e wallclock p50=**260.61ms**, 含3D NMS, 双轨计时)。
+6. **[ISS-039 #3] enc+bb估算失效机制(结论级勘误痕)**: 旧估 enc+bb≈3.17ms(4090 M2 f 函数外推)严重低估。根因: **M2 f 函数在 TRT body 段标定**(GPU kernel优化路径, R²>0.995), **对 PyTorch eager 阶段外推无效**。PyTorch eager 在 Orin 上开销极大: head 段 Orin eager=29.8ms vs 4090 TRT=1.48ms = **20× 倍率差**, 远超 TRT body 比值(~6.56×); encoder/backbone 各~33-35ms(B=2)同属 eager 低效区。M2 f 函数仅对 TRT 引擎跨平台预测有效, **切勿外推至 PyTorch eager 段**。今后跨平台估算: TRT 段用 M2 f, eager 段须真测或标注"估算无效"。
 
 ---
 
@@ -140,18 +154,21 @@ pre-body(B=2 D1v2真测): vox(10.02)+enc(33.49)+bb(35.45)=**78.96ms**; NMS使用
 5. (可选) FP16: `model.half()` 或 autocast, 标 `e2e_pytorch_fp16_orin`。
 6. (可选, 高价值) **AP eval**: 跑 DAIR val 1789 → **Orin 端 PyTorch FP32 AP 真测**, 与 4090 AP 对账 → 建立"Orin 端精度基准", 后续可扩展到喂 TRT 引擎输出做 Orin INT8 AP 实测, **关闭 ISS-017 缺口**。
 
-### 7.4 实测性能 [Task#12 D1 真测更新, 粗估已替换]
+### 7.4 实测性能 [Task#12 D1**v2** 真测更新, v1已废弃]
 
-Task#12 D1 已完成 Orin PyTorch FP32 全链路真测(2026-06-06):
+Task#12 D1v2 (v2协议, 含NMS+独立wallclock双轨)已完成 Orin PyTorch FP32 全链路真测(2026-06-06):
 
-| 指标 | B=1 p50 | B=2 p50 | 原粗估 | 实测 vs 粗估 |
-|------|---------|---------|--------|------------|
-| body(fusion+head) | 102.60ms | 172.53ms | 350-550ms | **实测比粗估低 2-3×** |
-| e2e(无NMS) | 143.05ms | 251.02ms | 400-600ms | **实测比粗估低 1.6-2.4×** |
+| 指标 | B=1 p50 | B=2 p50 | v1旧值(无NMS) | 口径差 |
+|------|---------|---------|--------------|-------|
+| e2e_wallclock (含3D NMS, 权威) | **152.85ms** | **260.61ms** | 143.05 / 251.02 (无NMS, 已废弃) | +NMS 8.54ms + glue 0.57ms |
+| body(fusion+head) | 102.60ms | 172.45ms | 同 | 分段Σ |
+| enc+bb(Orin eager真测) | 35.95ms | **68.94ms** | M2估算3.17ms(无效) | **>3× 估算低估 ISS-039 #3** |
 
-**修正**: TRT FP32 body(131.33ms) vs PyTorch FP32 body(172.53ms) ≈ 1.31× TRT 加速; TRT 加速比低于预期(粗估 3.4×), 因为 Orin 上 TRT 对 PointPillar 型网络的优化效果受 memory-bound 限制。
+**v1废弃声明**: D1_B1/B2_FP32_v1 缺NMS+缺独立wallclock, 已在 E8 CSV 中标注 `_SUPERSEDED`; 本行所有引用以 **v2 权威值**为准。
 
-**结论不变**: **原生 PyTorch B=2 e2e=251ms > 200ms 红线** — 部署目标无法满足; 混合链(TRT p75+INT8)合成 103ms 稳过。
+**修正**: TRT FP32 body(131.33ms) vs PyTorch FP32 body(~172ms B=2) ≈ 1.31× TRT 加速; TRT 加速比低于预期, 因 Orin 上 TRT 对 PointPillar 型网络的优化效果受 memory-bound 限制。
+
+**结论**: **原生 PyTorch B=2 e2e wallclock=260.61ms > 200ms 红线** — 无优化部署超预算30%; 混合链(TRT p75+INT8)合成 108ms, 余92ms。
 
 ### 7.5 风险清单
 
