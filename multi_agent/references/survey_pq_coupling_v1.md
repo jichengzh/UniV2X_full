@@ -49,7 +49,7 @@
 量化会扰乱权重大小的相对排序，使后续剪枝错误地移除量化后看起来"小"但实际重要的权重。理论上 P → Q 优于 Q → P。
 
 [文献声称] Harma et al. ICLR 2025 (arXiv 2405.20935): 首次数学证明稀疏化与量化非正交，Q before P 破坏权重重要性排序 → P before Q 为最优排序。  
-[文献声称] Kim et al. ICLR 2026 (arXiv 2603.18426): Progressive Intensity Hypothesis (PIH)，量化排序优势在 4-bit 下可达 −49.9 perplexity。
+[文献声称] Kim et al. ICLR 2026 (arXiv 2603.18426): Progressive Intensity Hypothesis (PIH)，量化排序优势在 4-bit 下可达 −49.9 perplexity [待核:正文]。
 
 #### 主线 D: 异常权重是两者的共同瓶颈
 
@@ -83,11 +83,14 @@ LLM 中的异常权重 (outliers) 既难以剪枝（大幅值 → 保留），�
 
 **ISS-014: 内核切换悬崖** [我方实证, profile-verified]
 
-| 配置 | stage0 通道数 | stage0 conv2 延迟(3层和) | 内核类型 | INT8 加速比 |
+| 配置 | stage0 通道数 | stage0 conv2 延迟(3层和) | 内核类型 | INT8 加速比 (同级 FP16→INT8) |
 |------|--------------|------------------------|---------|-----------|
+| base (dense) | 64→128→256ch (%32=0) | — | `direct_group` | **1.57×** |
 | p25 | 48→96ch (非32对齐) | 0.770 ms | `implicit_gemm_g1` (FP32 fallback) | ~1.06× |
-| p50 | 32→64ch (%32=0) | 0.143 ms | `direct_group` (专用) | ~1.25× |
-| p75 | 16→32ch (%32=0) | <0.143 ms | grouped kernel | ~1.57× |
+| p50 | 32→64ch (%32=0) | 0.143 ms | `direct_group` (专用) | **1.27×** |
+| p75 | 16→32ch (%32=0) | <0.143 ms **[推断]** | grouped kernel | **1.25×** |
+
+**趋势**: INT8 加速比随剪枝深度单调下降 (base 1.57× → p50 1.27× → p75 1.25×)，即**剪枝削弱了 INT8 的独立收益**。这是 P×Q 次乘法交互的结构性根因，而非独立叠加。
 
 数据出处: `multi_agent/methods/progress/issues_log_v1.md` §ISS-014 (IEngineInspector TacticValue 核验)
 
@@ -122,7 +125,13 @@ LLM 中的异常权重 (outliers) 既难以剪枝（大幅值 → 保留），�
 | **P75 INT8** | **[16,32,64]** | **INT8-auto** | **0.6124** | **0.7537** | **2.08×** | **−0.0373** |
 
 **关键发现**:
-- 延迟收益近似乘法叠加: P50×1.25 + INT8×1.57 → 实测 1.60× (≈乘法预期)
+- 延迟收益**次乘法叠加(P50) / 近似乘法叠加(P75)** — INT8 增益随剪枝级衰减是核心耦合证据:
+  - **P50+INT8 = 1.60×** < 乘法预期 **1.96×** (= P50剪枝加速 1.25× × base INT8加速 1.57×): **次乘法(sub-multiplicative)**
+    根因: INT8 在 P50 剪枝模型上的独立加速**从 1.57× 衰减至 1.27×** (P50-FP16→P50-INT8: 1.0138→0.7956ms); 若以衰减后的 INT8 增益 1.27× 计: 1.25×1.27≈1.59≈1.60 — 但这恰恰说明 INT8 的边际收益被剪枝结构变化所抑制，是不可加性的直接证据
+  - **P75+INT8 = 2.08×** ≈ 乘法预期 **2.07×** (= P75剪枝加速 1.655× × P75-FP16→INT8 增益 1.254×): **近似乘法** [P75 conv2 profile 数据不足→1.25× 为 **[推断]**]
+  - 延迟联合收益对比 — **4090 与 Orin 口径必须分开标注**:
+    - **RTX 4090** (body-subnet collab2): dense-FP16 1.2715ms → P75+INT8 0.6124ms = **2.08×** [我方实证, `results/perstage_quant_AP_real_v2.csv`, CUDA Event p50, FP16基线对比]
+    - **Orin MODE_30W 612MHz** (body-subnet collab2): FP32-base 131.33ms → P75+INT8 20.02ms = **6.56×** [我方实证, `results/E7_orin_e2e_baseline_vs_best.csv`, trtexec loadEngine GPU_Compute_median warmup=200/runs=200; 注: 此为 FP32→INT8+P75 跨精度基线对比]
 - AP 代价**超加性** (P50: −0.0266, INT8: −0.0005, 加法预期: −0.0271, 实测: −0.0388)
   → 量化施加在已剪枝模型上的 AP 惩罚比原始模型更大 → 不可独立优化
 - P75 反而 AP cost 略小于 P50 (−0.0373 vs −0.0388) → INT8 在过参数化模型上的精度代价与剪枝率非单调
@@ -172,9 +181,14 @@ P50 三元组 (T_prune50p) Pareto 分析:
 - 4090 FP16: 462.45 mJ/帧 (NVML GPU 卡级)
 - 口径注: Orin VIN_SYS_5V0 = 整模组; 4090 NVML = GPU 卡, 不同测量域
 
+[我方实证] RTX 4090 INT8 能效实测 (`results/E4_energy_4090.csv`, NVML GPU 卡级, B=1):
+- T1_base FP16: **291.16 mJ/帧** → T1_base INT8: **141.02 mJ/帧** = **−51.6%** 能量削减
+- (T1_base_fp16.engine n=218 runs; T1_base_int8.engine n=216 runs; doe6 源; idle_power=28.89W 已剔除)
+
 [文献声称] DLA INT8 优势: `quantization_x_hardware.md` §2.1: "DLA INT8 卷积 ~15× FP16 (sparse 30×)"  
-[文献声称] HAQ (CVPR'19): 能量削减 1.9× vs 固定 8-bit  
-[推断] INT8 30–52% 节能 (CLAUDE.md §E4 引用) — 具体实验文件 E4 未在本次扫描范围内，标为待核实
+⚠️ **与我方实测冲突**: ISS-007 记录 Pyramid 模型 0/12 DLA build 均失败（不兼容算子）。**DLA INT8 ~15× 优势在我方模型上不可达**。[文献声称] 优势适用于 NVIDIA 标准 CNN 结构，非 HEAL/SpVoxelNet 算子集。
+
+[文献声称] HAQ (CVPR'19): 能量削减 1.9× vs 固定 8-bit
 
 出处: `issues_log_v1.md` §ISS-016; `paper_learning/survey_raw_2/quantization_x_hardware.md` §2.1
 
@@ -206,7 +220,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 | 11 | SLiM | Mozaffari et al. | 2025 | ICML | [2410.09615](https://arxiv.org/abs/2410.09615) | 顺序 Q→2:4→LoRA补偿 | +5.66% acc vs 先前最佳; 4.3× GPU加速 |
 | 12 | GETA | Qu et al. | 2025 | CVPR | [2502.16638](https://arxiv.org/abs/2502.16638) | 量化感知依赖图+联合训练 | CNN+Transformer 超越全部先前 joint P×Q |
 | 13 | OBR | Guo, Li, Benini | 2025 | arXiv | [2509.11177](https://arxiv.org/abs/2509.11177) | Hessian联合误差补偿 (闭合解) | W4A4KV4+50%稀疏: 4.72× 加速, 6.4× 内存削减 |
-| 14 | Kim et al. (PIH) | Kim et al. | 2026 | ICLR | [2603.18426](https://arxiv.org/abs/2603.18426) | 理论: 通用压缩排序框架 | 4-bit P-before-Q 优势 −49.9 perplexity |
+| 14 | Kim et al. (PIH) | Kim et al. | 2026 | ICLR | [2603.18426](https://arxiv.org/abs/2603.18426) | 理论: 通用压缩排序框架 | 4-bit P-before-Q 优势 −49.9 perplexity [待核:正文] |
 | 15 | SparseGPT | Frantar, Alistarh | 2023 | ICML | [2301.00774](https://arxiv.org/abs/2301.00774) | 共享Hessian顺序 P→Q (OBC) | LLM 50%稀疏近无损; 与GPTQ组合 |
 | 16 | 硬件感知 joint MPQ+P | Motetti et al. | 2024 | IEEE Trans. | [2407.01054](https://arxiv.org/abs/2407.01054) | 梯度通道联合MPQ+剪枝+硬件cost | 首个 one-shot 硬件感知 channel-wise MPQ+剪枝 |
 
@@ -318,11 +332,11 @@ P50 三元组 (T_prune50p) Pareto 分析:
 
 ### 5.9 Kim et al. (PIH) — 通用压缩排序理论
 
-[文献声称] Kim et al. "When to Prune, When to Quantize, and When to Do Both." ICLR 2026. arXiv:2603.18426.
+[文献声称] Kim et al. "Prune-then-Quantize or Quantize-then-Prune? Understanding the Impact of Compression Order on Model Compression." [待核:正文—摘要标题] ICLR 2026. arXiv:2603.18426.
 
 **Progressive Intensity Hypothesis (PIH)**: 弱扰动应先于强扰动施加。剪枝 (归零部分权重) 通常弱于量化 (扰动所有权重)，因此 P before Q 是一般规律，而非特例。
 
-**排序优势量化**: 4-bit 量化下，"量化先"→"剪枝先"的 perplexity 优势可达 −49.9 点（SparseGPT 对比）。
+**排序优势量化**: 4-bit 量化下，"量化先"→"剪枝先"的 perplexity 优势可达 −49.9 点（SparseGPT 对比）[待核:正文]。
 
 **扩展性**: 适用于多阶段压缩、混精量化、LoRA 增强管线，语言和视觉模型。
 
@@ -388,7 +402,7 @@ https://arxiv.org/abs/1811.08886
 CVPR 2020. arXiv:2006.08509
 https://arxiv.org/abs/2006.08509
 
-[Wang2020-DJPQ] Wang, Diwen and Lu, Weng-Tai and Blankevoort, Babak.
+[Wang2020-DJPQ] Wang, Ying and Lu, Yadong and Blankevoort, Tijmen.
 "Differentiable Joint Pruning and Quantization for Hardware Efficiency."
 ECCV 2020. arXiv:2007.10463
 https://arxiv.org/abs/2007.10463
@@ -425,7 +439,7 @@ GitHub: https://github.com/uanu2002/JSQ
 IEEE Transactions on Computers, 2024. arXiv:2407.01054
 https://arxiv.org/abs/2407.01054
 
-[Harma2025] Harma, Andrei et al.
+[Harma2025] Harma, Simla Burcu et al.
 "Effective Interplay Between Sparsity and Quantization."
 ICLR 2025. arXiv:2405.20935
 https://arxiv.org/abs/2405.20935
@@ -436,19 +450,19 @@ Project: https://sq-interplay.github.io/
 CVPR 2025. arXiv:2502.16638
 https://arxiv.org/abs/2502.16638
 
-[Mozaffari2025-SLiM] Mozaffari, Jafar and Yazdanbakhsh, Amir and Dehnavi, Maryam.
+[Mozaffari2025-SLiM] Mozaffari, Mohammad et al.  [待核:正文—一作名原记录为"Jafar"存疑, 已据supervisor指示改为"Mohammad"]
 "SLiM: One-Shot Quantization and Sparsity with Low-Rank Approximation."
 ICML 2025. arXiv:2410.09615
 https://arxiv.org/abs/2410.09615
 
-[Guo2025-OBR] Guo, Chuanshuai and Li, Menghao and Benini, Luca.
+[Guo2025-OBR] Guo, Hang and Li, Yawei and Benini, Luca.
 "OBR: Optimal Brain Restoration for Extreme LLM Compression via Joint Sparse-Quantized Error Compensation."
 arXiv:2509.11177, 2025.
 https://arxiv.org/abs/2509.11177
 GitHub: https://github.com/csguoh/OBR
 
 [Kim2026-PIH] Kim, Jeonghoon et al.
-"When to Prune, When to Quantize, and When to Do Both: Progressive Intensity Hypothesis for Model Compression."
+"Prune-then-Quantize or Quantize-then-Prune? Understanding the Impact of Compression Order on Model Compression." [待核:正文—摘要标题待确认]
 ICLR 2026. arXiv:2603.18426
 https://arxiv.org/abs/2603.18426
 ```
@@ -468,6 +482,8 @@ https://arxiv.org/abs/2603.18426
 | round_to=32 约束 | `multi_agent/methods/design/dims_pruning_v1.md` §3, §D4 | [我方实证] |
 | INT8 DLA 能效 | `paper_learning/survey_raw_2/quantization_x_hardware.md` §2.1 | [文献声称] |
 | Orin 能量数据 | `multi_agent/methods/progress/issues_log_v1.md` §ISS-016 | [我方实证] |
+| INT8 能效 −51.6% (4090) | `results/E4_energy_4090.csv` (T1_base_fp16/int8, NVML, B=1) | [我方实证] |
+| 联合延迟 4090 2.08× + Orin 6.56× | `results/perstage_quant_AP_real_v2.csv` + `results/E7_orin_e2e_baseline_vs_best.csv` | [我方实证] |
 | 文献空白定位 | `paper_learning/survey_raw_2/hw_aware_nas_and_joint_search.md` §10.2 | [文献声称+我方推断] |
 | APQ 对比增益 | `paper_learning/survey_raw_2/pruning_x_hardware.md` §6.3 | [文献声称] |
 
