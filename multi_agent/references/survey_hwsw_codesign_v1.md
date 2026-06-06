@@ -116,7 +116,7 @@
 | **nn-Meter** | B(代理) | 内核级latency预测器(算子融合感知) | 目标设备kernel-level profiling | CPU/GPU预测精度**99%+**; Best Paper MobiSys'21 | MobiSys'21 |
 | **Ansor** | C(编译器) | 层次化搜索空间 + HW实测训练代价模型 + task调度器 | 硬件实测样本训练代价模型 | vs AutoTVM: **Intel CPU 3.8×, ARM 2.6×, GPU 1.7×** | OSDI'20 |
 | **TensorRT** | C(编译器) | Build-time tactic profiling + layer fusion | 目标GPU实跑每种candidate | vs CPU: **>40× 更快**; workspace控制tactic可用集 | NVIDIA产品 |
-| **NACOS: Neural Architecture and Compiler Optimization co-Search** | D(联合) | NAS+ACO联合框架; 明确独立优化次优 | 联合HW-SW搜索空间 | "**sub-optimal when performed independently**" — 综述级定论 | arXiv:2408.04116, 2024 |
+| **NACOS: Neural Architecture and Compiler Optimization co-Search** | D(联合) | NAS+ACO联合框架; 明确独立优化次优 | 联合HW-SW搜索空间 | "demonstrate their sub-optimality when performed independently" — 综述级定论 | arXiv:2408.04116, 2024 |
 | **Survey (arXiv:2311.17815)** | D | 异构架构加速综述; 需多学科协同 | 架构级设计空间探索 | "requires a multidisciplinary approach combining ML to computer architecture" | 2023 |
 | **Survey Quant (arXiv:2103.13630)** | A | 量化综述; HW实现差距系统分析 | 理论vs实际gap分析 | FP32→INT4理论16×, 实际**4-8×**; 2-4×实现差距 | 2021 |
 
