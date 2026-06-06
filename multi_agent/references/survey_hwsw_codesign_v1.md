@@ -208,7 +208,7 @@ f(G₁ ⊕ G₂)  ≠  f(G₁) ⊕ f(G₂)
 
 **软硬耦合逻辑**: SW-optimizer 和 HW-optimizer 若各自只盯"body 网络"(历史最大延迟项), 在 body 被压缩 6.56× 后继续优化 body 几乎零收益 — 因为他们都不知道瓶颈已经漂移到 pre-body。协同优化的核心价值之一是**实时共享全链路 Amdahl 视图**, 在瓶颈漂移时立刻改变优化目标。
 
-[我方实证] **pre-body Amdahl 73% 漂移**: body FP32 131.33ms → TRT p75+INT8 **20.02ms**(6.56×压缩); 混合链 pre-body=78.96ms + body=20.02ms + NMS=8.54ms ≈ 107.5ms; **pre-body 占 73%**。此时再压 body 50% 仅省 ~10ms(<10%); 将 pre-body enc+bb 从 PyTorch eager 换到 TRT 则潜在节省 >50ms(>46%)。优化杠杆位置发生根本性转移。[`results/E7_orin_e2e_baseline_vs_best.csv`; `results/E8_orin_e2e_fullchain.csv`]
+[我方实证] **pre-body Amdahl 73% 漂移**: body FP32 131.33ms → TRT p75+INT8 **20.02ms**(6.56×压缩); 混合链 pre-body=78.96ms + body=20.02ms + NMS=8.54ms ≈ 107.5ms; **pre-body 占 73%**。此时再压 body 50% 仅省 ~10ms(<10%)。[推断/估算] 将 pre-body enc+bb 从 PyTorch eager 换到 TRT 则潜在节省 >50ms(>46%) — eager→TRT 加速比未实测, 此为方向性投影非已测值。优化杠杆位置发生根本性转移。[`results/E7_orin_e2e_baseline_vs_best.csv`; `results/E8_orin_e2e_fullchain.csv`]
 
 ---
 
