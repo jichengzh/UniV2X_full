@@ -186,7 +186,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 - (T1_base_fp16.engine n=218 runs; T1_base_int8.engine n=216 runs; doe6 源; idle_power=28.89W 已剔除)
 
 [文献声称] DLA INT8 优势: `quantization_x_hardware.md` §2.1: "DLA INT8 卷积 ~15× FP16 (sparse 30×)"  
-⚠️ **与我方实测冲突**: ISS-007 记录 Pyramid 模型 0/12 DLA build 均失败（不兼容算子）。**DLA INT8 ~15× 优势在我方模型上不可达**。[文献声称] 优势适用于 NVIDIA 标准 CNN 结构，非 HEAL/SpVoxelNet 算子集。
+⚠️ **与我方实测冲突**: ISS-007 记录 0/12 INT8 build 失败 (kDIRECT_IO + bank 超限, **非算子不兼容** — FP16 同模型 8/12 可 build 恰证明算子兼容); **DLA INT8 ~15× 优势在我方模型上不可达**。[文献声称] 优势适用于满足 DLA 资源/IO 约束的网络。
 
 [文献声称] HAQ (CVPR'19): 能量削减 1.9× vs 固定 8-bit
 
@@ -332,7 +332,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 
 ### 5.9 Kim et al. (PIH) — 通用压缩排序理论
 
-[文献声称] Kim et al. "Prune-then-Quantize or Quantize-then-Prune? Understanding the Impact of Compression Order on Model Compression." [待核:正文—摘要标题] ICLR 2026. arXiv:2603.18426.
+[文献声称] Kim et al. "Prune-then-Quantize or Quantize-then-Prune? Understanding the Impact of Compression Order in Joint Model Compression." ICLR 2026. arXiv:2603.18426.
 
 **Progressive Intensity Hypothesis (PIH)**: 弱扰动应先于强扰动施加。剪枝 (归零部分权重) 通常弱于量化 (扰动所有权重)，因此 P before Q 是一般规律，而非特例。
 
@@ -462,7 +462,7 @@ https://arxiv.org/abs/2509.11177
 GitHub: https://github.com/csguoh/OBR
 
 [Kim2026-PIH] Kim, Jeonghoon et al.
-"Prune-then-Quantize or Quantize-then-Prune? Understanding the Impact of Compression Order on Model Compression." [待核:正文—摘要标题待确认]
+"Prune-then-Quantize or Quantize-then-Prune? Understanding the Impact of Compression Order in Joint Model Compression."
 ICLR 2026. arXiv:2603.18426
 https://arxiv.org/abs/2603.18426
 ```
