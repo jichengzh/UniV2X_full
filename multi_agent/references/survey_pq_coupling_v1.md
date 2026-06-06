@@ -1,4 +1,4 @@
-# 剪枝 × 量化 耦合机理调研 (P×Q Coupling Survey v1)
+# 剪枝 × 量化 耦合机理调研 (P×Q Coupling Survey v1.3)
 
 **任务**: #14-①  
 **日期**: 2026-06-06  
@@ -14,8 +14,9 @@
 3. [内部实证对照表](#3-内部实证对照表)  
 4. [文献方法谱系表](#4-文献方法谱系表)  
 5. [方法详细摘要](#5-方法详细摘要)  
-6. [我方框架定位](#6-我方框架定位)  
-7. [完整文献索引](#7-完整文献索引)  
+6. [**融合加速的实现机制分类学** ★v1.3新增](#6-融合加速的实现机制分类学)  
+7. [我方框架定位](#7-我方框架定位)  
+8. [完整文献索引](#8-完整文献索引)  
 
 ---
 
@@ -24,6 +25,30 @@
 ### Q1: 为什么要融合剪枝与量化而非独立串行?
 
 **短答**: 剪枝决策改变网络结构，结构变化直接影响量化的硬件收益和精度代价——两者的最优解空间**不可分解**。独立串行优化会在两个维度都次优，甚至互相破坏对方的收益。
+
+### Q1-0. 多策略融合的优势汇总（逐条带引用） [v1.2 增补]
+
+> ★[2026-06-06 team-lead 增补] 本节为集中回答"为什么做多策略融合、优势是什么"，**全部数字来自本文档其他节已核验的引用**（文献编号见 §7 索引；我方数字见附录数据文件索引），无新声称。
+
+**为什么必须融合 — 因果链三句话**:
+1. 单一策略有收益天花板: 剪枝只减计算量、量化只降精度位宽，各自收益上限受模型冗余形态限制（[我方实证] Pyramid 剪枝单独最高 1.65×、INT8 单独 1.57×，见 §3.2 表）。
+2. 两者收益**近似乘法叠加**而 AP 代价**不按比例叠加**（过参数化域），联合空间存在单策略到不了的 Pareto 区域（[我方实证] P75+INT8 = 2.08×@4090 / 6.56×@Orin-FP32基线，AP 代价仅 −0.037，§3.2）。
+3. 但耦合是双刃: 不联合优化时，剪枝会**摧毁**量化的硬件收益（[我方实证] ISS-014 内核悬崖，等计算量 2.57× 差异，§3.1）——所以"融合"不仅是为了叠加收益，更是为了**避免互相破坏**。
+
+**优势量化对比表（联合 vs 独立串行，全部带引用）**:
+
+| 优势维度 | 证据（联合 vs 串行/单策略） | 来源 |
+|---------|---------------------------|------|
+| 压缩率 | CLIP-Q 并行联合 AlexNet **51×** vs Deep Compression 顺序串行 **35×** | [文献声称] [Tung2018]; [Han2016] |
+| 精度（同延迟预算） | APQ 联合搜索 **+2.3% ImageNet top-1** vs ProxylessNAS+AMC+HAQ 三阶段串行 | [文献声称] [Wang2020-APQ] |
+| 搜索成本 | APQ 联合 **600× 更少 GPU 时** vs 三阶段串行 | [文献声称] [Wang2020-APQ] |
+| 计算量（iso-acc） | DJPQ 可微联合 ResNet18 **53× BOPs 削减**，超独立 P+Q 基线 | [文献声称] [Wang2020-DJPQ] |
+| LLM 极限压缩 | OBR 联合误差补偿(W4A4KV4+50%稀疏): 系统级 **4.72× 加速, 6.4× 内存削减**(摘要已证); vs SparseGPT+GPTQ 串行的 ppl/zero-shot 增益见 §5.8【待核:正文】 | [文献声称] [Guo2025-OBR] |
+| 延迟（我方） | P75+INT8 联合 **2.08×**@4090（vs 单 INT8 1.57× / 单 P75 1.65×）; Orin 上 vs FP32 基线 **6.56×** | [我方实证] §3.2; E7 |
+| 能耗（我方） | INT8 叠加在剪枝模型上仍省 **29.6%** J/frame（279.78→196.88 mJ; base 上省 51.6%） | [我方实证] §3.5; E4_energy_4090.csv T_prune75 fp16/int8 行(cudagraph 源, batch=2, supervisor 复算确认) |
+| 避免收益蒸发 | 联合感知对齐约束可避免内核悬崖（不联合: 等计算量下慢 **2.57×**，INT8 增益从 1.57× 跌到 ~1.06×） | [我方实证] §3.1; ISS-014 |
+
+**优势的边界（诚实声明）**: 联合收益并非处处乘法——P50+INT8 实测 1.60× **低于**乘法预期 1.96×（次乘法，§3.2），且 AP 代价超加性（−0.039 > −0.027，§3.2）。这恰恰说明：**联合空间必须搜索而非按独立收益外推**——这正是做联合优化框架（而非手工串行调参）的根本理由。
 
 **长答**（四条主线）:
 
@@ -184,6 +209,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 [我方实证] RTX 4090 INT8 能效实测 (`results/E4_energy_4090.csv`, NVML GPU 卡级, B=1):
 - T1_base FP16: **291.16 mJ/帧** → T1_base INT8: **141.02 mJ/帧** = **−51.6%** 能量削减
 - (T1_base_fp16.engine n=218 runs; T1_base_int8.engine n=216 runs; doe6 源; idle_power=28.89W 已剔除)
+- **INT8 叠加在剪枝模型上仍省能** [v1.2 增补, supervisor 复算确认]: T_prune75 FP16 **279.78 mJ/帧** → INT8 **196.88 mJ/帧** = **−29.6%**(E4 csv T_prune75 fp16/int8 行, cudagraph 源, batch=2)— 即 P×Q 联合下能耗收益保留(虽较 base 上的 −51.6% 衰减, 与延迟侧"INT8 增益随剪枝衰减"方向一致且**非独立证据**: 能耗≈功率×延迟, 延迟侧衰减直接传导至能耗侧)
 
 [文献声称] DLA INT8 优势: `quantization_x_hardware.md` §2.1: "DLA INT8 卷积 ~15× FP16 (sparse 30×)"  
 ⚠️ **与我方实测冲突**: ISS-007 记录 0/12 INT8 build 失败 (kDIRECT_IO + bank 超限, **非算子不兼容** — FP16 同模型 8/12 可 build 恰证明算子兼容); **DLA INT8 ~15× 优势在我方模型上不可达**。[文献声称] 优势适用于满足 DLA 资源/IO 约束的网络。
@@ -326,7 +352,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 
 **方法**: 训练无关的 Hessian 联合误差补偿（闭合解），显式补偿 P 和 Q 的相互误差扩大。
 
-**证据**: LLaMA2-7B W4A4KV4+2:4 稀疏: 比 SparseGPT+GPTQ 串行基线降低 perplexity 18.8 点, zero-shot 精度提升 5.86%。系统级 4.72× 加速, 6.4× 内存削减。
+**证据**: LLaMA2-7B W4A4KV4+2:4 稀疏: 比 SparseGPT+GPTQ 串行基线降低 perplexity 18.8 点, zero-shot 精度提升 5.86%【待核:正文 — 摘要无此两数, 摘要已证为系统级 4.72× 加速 + 6.4× 内存削减】。
 
 ---
 
@@ -342,9 +368,255 @@ P50 三元组 (T_prune50p) Pareto 分析:
 
 ---
 
-## 6. 我方框架定位
+## 6. 融合加速的实现机制分类学
 
-### 6.1 我方 vs 文献方法对应关系
+> **v1.3 新增章节** — 回答"具体怎么把 P 和 Q 融合起来实现加速"，从实现机制而非耦合原理角度分类。  
+> **引用纪律同前**: [文献声称] = 原文/WebFetch核查; [我方实证] = 真测含文件出处; [待核:正文] = 摘要/HTML未见、正文待确认; [推断] = 逻辑推断。
+
+---
+
+### 6.1 顺序流水实现 (Sequential Pipeline)
+
+**代表方法**: Deep Compression (Han et al. ICLR 2016), SparseGPT + GPTQ
+
+#### Deep Compression 三阶段管线 [文献声称]
+
+三个独立阶段严格顺序执行，每段均有 finetune：
+
+**阶段①: 剪枝 (Pruning)**
+- 按权重幅值排序, 低于阈值的连接置零 (unstructured sparsity)
+- 剪后再训练 (retrain with L2 regularization on remaining connections)
+- 压缩效果: AlexNet 9×, VGG-16 13× 参数削减 [文献声称, arXiv:1510.00149 摘要]
+
+**阶段②: 量化 (Trained Quantization)**
+- 对每层非零权重做 **K-means 聚类**, 得到 k 个中心点 codebook（每连接 2–8 bit）[待核:正文—k选择标准]
+- 前向: 每权重用最近中心点代替
+- 反向: 梯度**累积**到其所属的 centroid（非个别权重），更新 centroid 值
+
+**阶段③: Huffman 编码**
+- 对 codebook 索引做 Huffman 编码进一步压缩存储（高频 index 用短码）
+- 最终压缩比: AlexNet 35× (240MB→6.9MB), VGG-16 49× (552MB→11.3MB) [文献声称]
+
+**顺序耦合的隐式形式**: 剪枝后权重向零聚集 → 量化动态范围缩小 → 低 bit codebook 更精确表示 → 这是 P→Q 的隐式依赖，后续方法将其**显式化**。
+
+---
+
+#### SparseGPT + GPTQ 共享 Hessian 复用 [文献声称]
+
+**核心创新: 同一层的 Hessian H 可被 P 和 Q 两阶段复用**
+
+- Hessian 估计: **H = 2·X·Xᵀ** (X 为层输入激活矩阵，~128 calibration samples) [待核:正文—精确系数和样本数]
+- **SparseGPT 剪枝更新** (OBS, Optimal Brain Surgeon):
+  移除权重 w_q 后，对残余权重的补偿:
+  `Δw_R = −w_q · H⁻¹_{R,q} / H⁻¹_{q,q}` (对每个保留权重 R，按 Hessian 逆矩阵插值) [待核:正文]
+- **GPTQ 量化** 使用同一 H:
+  每权重量化后，对同行其余权重补偿量化舍入误差，公式形式相同 [待核:正文]
+- **Hessian 复用的收益**: 计算一次 H⁻¹ 分摊到 P 和 Q 两步 → 顺序串行的**计算成本被均摊**
+- 适用场景: LLM 一次性压缩（不再训练），需 calibration 数据无需梯度
+
+---
+
+### 6.2 联合可微实现 (Joint Differentiable)
+
+**代表方法**: DJPQ (Wang, Lu, Blankevoort. ECCV 2020), CLIP-Q (Tung, Mori. CVPR 2018)
+
+#### DJPQ 统一损失函数 [文献声称, arXiv:2007.10463 摘要核查]
+
+将 VIB 剪枝和混精量化嵌入**单一可微损失**，梯度同时更新两类变量:
+
+```
+L_total = L_task + α·L_prune_VIB + β·L_quant_bit
+```
+
+**L_prune_VIB** (变分信息瓶颈剪枝项) [待核:正文—精确公式]:
+- z ∈ {0,1}^C 为通道级重要性门控变量; q(z|W) = 变分后验; p(z) = ∏Bernoulli(π_target) 为稀疏先验
+- 正则项 = KL[q(z|W) || p(z)], 鼓励通道被关闭
+- 训练时用 RelaxedBernoulli (Hard Concrete) 参数化, 使梯度可通过离散掩码流过 ∂L/∂θ_z
+
+**L_quant_bit** (量化位宽代价项) [待核:正文—精确公式]:
+- 每层位宽 B_l 从 {1,2,4,8} bit 候选中软选择 (Gumbel-Softmax 离散松弛)
+- 代价 = 期望位宽 E[B_l], 鼓励选低 bit
+- 温度退火: 训练末期 τ→0, 软选择收敛为 hard one-hot
+
+**梯度同时更新两类变量**:
+- ∂L/∂θ_z: 通过 RelaxedBernoulli 的 STE 反传 → 更新剪枝门控
+- ∂L/∂θ_B: 通过 Gumbel-Softmax 梯度 → 更新位宽选择分布
+- **联合优化意义**: 位宽选择会影响哪些通道值得保留; 通道是否被剪影响量化误差的分布 → 两者互相反馈
+
+**2^k 位宽约束** [文献声称, GitHub 核查]:
+- 位宽强制为 2 的幂次 (1/2/4/8 bit), 天然满足 TRT INT8 内核 %32 对齐要求
+
+---
+
+#### CLIP-Q 并行联合 (P ∥ Q ∥ finetune) [文献声称, CVF PDF 核查]
+
+不分阶段, P 和 Q **在每次 mini-batch 迭代中同时执行**:
+- 每步前向: 对当前权重 (i) 查找最近 codebook centroid (量化), (ii) 根据重要性决策是否置零 (剪枝)
+- 每步反向: 梯度对 centroid 和剪枝掩码同时更新
+- **消除"过早剪枝"问题**: 被 P 移除的连接 Q 无法补偿; 并行允许两者互相修正, 可撤销早期错误决策
+- 效果: AlexNet **51×** 压缩比 vs Deep Compression 顺序串行 **35×** (+46%) [文献声称]
+
+---
+
+### 6.3 统一参数化实现 (Unified Parameterization)
+
+**代表方法**: Bayesian Bits (van Baalen et al. NeurIPS 2020)
+
+**核心思想: 0-bit 量化 = 剪枝**, 将 P 和 Q 统一到同一参数空间
+
+#### 级联残差量化分解 [文献声称, GitHub + NeurIPS 摘要核查]
+
+**分解式**: b-bit 量化 = k 个独立的 1-bit 量化残差级联叠加:
+```
+x_quant = Σ_{j=1}^{k} z_j · quant_{1-bit}(residual_j)
+```
+其中 residual_j = x − Σ_{i<j}(之前各级量化值), z_j ∈ {0,1} 为门控变量 [待核:正文—精确公式符号]
+
+**门控精度选择**:
+- z_j 由 learnable stochastic gate 控制, 受稀疏先验正则 KL[q(z_j)||p(z_j)]
+- 有效精度 = 2^(Σ z_j): z=(1,0,0,...) → 1-bit; z=(1,1,0,...) → 2-bit; ...
+- **z_j=0 for all j → 有效精度=0 → 权重完全被抑制 = 剪枝**
+
+**统一优化**:
+- 单一损失: L_task + λ·Σ KL[q(z_j)||Bernoulli(π_target)]
+- 优化变量: 模型权重 W + 门控参数 θ_z (同时优化)
+- 硬件对齐: 位宽限制在 2^k 形式, 满足 Tensor Core 要求
+
+**意义**: 业界首次将"剪枝"和"量化"统一为同一优化变量的不同取值, 无人为阶段边界 [文献声称]
+
+---
+
+### 6.4 预测器/搜索实现 (Accuracy Predictor + Evolutionary Search)
+
+**代表方法**: APQ (T. Wang et al. CVPR 2020)
+
+#### 量化感知精度预测器训练 [文献声称, arXiv:2006.08509 摘要核查]
+
+**阶段①: FP32 精度预测器**
+- 从 OFA (Once-for-All) 超网随机采样子网 → 直接在 ImageNet val 子集评估精度 (无需重新训练, 利用超网权重共享)
+- 样本数: [待核:正文—原文约 160K 子网]
+- 训练 MLP 回归器: 输入 = 网络配置向量 (架构/剪枝率/量化位宽), 输出 = 预测精度
+
+**阶段②: INT8 精度预测器迁移**
+- FP32 预测器已习得网络结构先验 → INT8 预测器只需少量 QAT 样本做知识迁移 (~1000 samples) [待核:正文]
+- 收益: 避免对每个 INT8 候选做完整 QAT (极大降低搜索成本)
+
+**进化搜索编码三维配置** [文献声称]:
+- 染色体 = [per-layer 架构配置, per-layer 剪枝比例, per-layer 量化位宽] 拼接向量 [待核:正文—精确编码格式]
+- 搜索约束: 延迟/能量预算 (LUT 查找或在线实测)
+- 进化: 候选种群, top 保留交叉变异, 多代后收敛 [待核:正文—种群大小和代数]
+- **三维不可分解性 (§1 APQ 引证)**: 最优 Q 依赖 P 结果, 最优 P 依赖 Q 误差放大模式; 进化搜索在联合空间找最优, 比串行独立优化每维效率高 **600×** [文献声称]
+
+---
+
+### 6.5 训练无关补偿实现 (Training-Free Compensation)
+
+**代表方法**: OBR (Guo, Li, Benini. 2025), SLiM (Mozaffari et al. 2025)
+
+#### OBR Hessian 联合误差补偿 (闭合解) [文献声称, arXiv:2509.11177 HTML 核查 ✓]
+
+**目标函数** (输出扰动最小化):
+```
+min ΔL ≈ (1/2) · Σᵢ E[Δwᵢ · H · Δwᵢᵀ]
+H = 2·X·Xᵀ  (X 为层输入激活, 128 samples from WikiText2, seq_len=2048)
+```
+
+**闭合解** — 对每行权重, 分"保留集 R"和"驱逐集 E":
+```
+ΔwR* = −H_RR⁻¹ · H_RE · e_E
+```
+- **剪枝补偿**: e_E = w_E (被剪权重本身), 补偿传递信息到保留权重
+- **量化补偿**: e_E = w̄_E − quant(w̄_E) (量化舍入误差), 同一公式形式
+- **两种误差共享同一闭合解框架** — 这是"联合"的数学本质
+
+**特性**: 训练无关 (calibration-only, 无梯度更新); 应用于 Llama2-7B W4A4KV4+50%稀疏, 实现 4.72× 加速/6.4× 内存削减 [文献声称]
+
+---
+
+#### SLiM one-shot Q → 2:4 → LoRA 补偿管线 [文献声称, arXiv:2410.09615 HTML 核查 ✓]
+
+严格顺序三步, 均为 one-shot (无迭代再训练):
+
+**步骤①: SLiM-Quant 均匀量化**
+- 概率优化框架: 将量化表述为最小化期望平方误差; 对权重分布做数值积分求最优截断 α
+- 多格点精化 (multi-grid refinement): 先粗搜范围 (0, max|W|) 10均匀点, 迭代细化误差最小区域
+- 输出: 量化后权重 W_q
+
+**步骤②: 2:4 半结构化稀疏**
+- 对已量化权重 W_q 调用现成 one-shot 剪枝方法 (如 Wanda)
+- 施加 2:4 pattern: 每连续 4 个权重中保留 2 个非零 → 满足 NVIDIA Sparse Tensor Core 要求
+
+**步骤③: SLiM-LoRA 闭合解适配器**
+- saliency 函数: **F(W) = diag(x̄)·W** (x̄ = 校准集平均绝对激活, 衡量权重对输出的贡献)
+- LoRA 适配器权重 A,B 通过 SVD 分解 saliency 矩阵得到闭合解 (无反向传播)
+- 需要校准数据计算 x̄; rank 为可调超参数 [文献声称]
+
+**关键顺序**: Q first → 2:4 on top of quantized weights → LoRA compensates joint Q+P error
+
+---
+
+### 6.6 部署级融合实现 (Deployment-Level Pipeline)
+
+**最贴近我方工作的实现形态**: DepGraph 结构剪枝 → ONNX → TRT INT8 MinMax 校准 → Engine build
+
+#### 我方管线 [我方实证, 完整口径]
+
+**步骤①: DepGraph 结构化剪枝**
+- 工具: `tools/configurable/depgraph_pyramid.py`
+- 准则: L1/FPGM/Taylor/Wanda (可配置); DepGraph 全网依赖图确保剪枝不破坏结构一致性 (backbone+neck+deblock 全可剪)
+- **关键约束**: `round_to=32` — 剪枝后通道数须 %32==0, 确保后续 INT8 Tensor Core 选快速内核
+- 输出: flat state_dict 格式 checkpoint (非包裹格式, 否则 HEAL load 时 key missing)
+- finetune: 剪枝后必须 finetune 才算有效 AP 数据 (未 finetune 必崩)
+
+**步骤②: ONNX 导出**
+- 已剪枝模型导出为 ONNX (真结构化重建, 非 mask-based)
+- 关键: **必须是真结构剪枝** — mask-based 的稀疏 (权重=0 但矩阵形状不变) 被 TRT 视为 dense, 无延迟收益且浪费 24h 实验 (已排查, nouse)
+
+**步骤③: TRT INT8 MinMax 校准**
+- 校准策略: **MinMax calibrator** (Entropy calibrator 在我方模型上 AP 崩塌, ISS-017/ISS-023)
+- 数据: DAIR val 子集作为校准集
+- TRT-auto 混精: TRT 逐层自动选 INT8/FP16 (延迟驱动), 不手工指定 per-stage
+
+**步骤④: Engine build + 延迟验证**
+- trtexec loadEngine; warmup=200/runs=200; CUDA Event 或 GPU_Compute_median 计时
+- 验证文件: `results/E7_orin_e2e_baseline_vs_best.csv` (Orin p75+INT8=20.02ms)
+  `results/perstage_quant_AP_real_v2.csv` (4090 p75+INT8=0.6124ms)
+
+**实现约束验证** [我方实证, ISS-014]:
+- 剪枝通道不对齐 (p25: 48→96ch, 非%32) → TRT 选慢速 `implicit_gemm_g1` kernel → INT8 增益从 1.57×→~1.06×
+- 因此: DepGraph 的 `round_to=32` 是 P 和 Q 的**实现层耦合点** — 剪枝阶段必须感知量化的对齐约束
+
+---
+
+#### 2:4 Sparse Tensor Core + INT8 硬件级复合融合 [文献声称]
+
+NVIDIA Ampere/Hopper 上可同时启用结构化 2:4 稀疏和 INT8 量化:
+- 先做 2:4 结构化剪枝 (每 4 个权重保留 2), 再 INT8 量化
+- 稀疏 Tensor Core 自动处理非零权重的 INT8 运算
+- 理论叠加: INT8 alone (约 2×) × 2:4 sparse (约 2×) ≈ 4× over FP16-dense [文献声称, `pruning_x_hardware.md` §1.1]
+- 我方状态: **未实测** (模型未做 2:4 剪枝); DLA INT8 路径已知不可达 (ISS-007, §3.5)
+- 实现门槛: Pyramid/SpVoxelNet 卷积层需确认是否满足 2:4 pattern 约束
+
+---
+
+### 6.7 实现层对比表
+
+| 实现范式 | 代表方法 | 训练成本 | 是否需要数据 | 硬件感知程度 | 典型适用场景 |
+|---------|---------|---------|------------|------------|------------|
+| **顺序流水** | Deep Compression, SparseGPT+GPTQ | 低-中 (分段 finetune/无梯度) | 需要 (finetune 或 calibration) | 低 (无在线硬件反馈) | 有完整训练集; 精度优先; LLM 一次性压缩 |
+| **联合可微** | DJPQ, CLIP-Q | 高 (联合全程训练) | 需要 (完整训练集) | 中 (通过 HW-cost proxy 损失项) | CNN 中小模型; 精度极致优化 |
+| **统一参数化** | Bayesian Bits | 高 (统一训练) | 需要 (完整训练集) | 中 (2^k 位宽硬件友好) | 位宽+稀疏率联合搜索; 研究工具 |
+| **预测器搜索** | APQ | 中 (预测器+进化搜索) | 需要 (OFA 超网+少量 QAT) | 高 (LUT/实测延迟约束) | NAS+P+Q 联合; 大规模产品搜索 |
+| **训练无关补偿** | OBR, SLiM | 极低 (闭合解, 无梯度) | 需要 (校准集 ~128–1000 samples) | 低-中 (结构不变) | LLM 快速部署; 无训练资源场景 |
+| **部署级融合** | **我方管线** (TRT) | 低 (校准无梯度; finetune 仅在 P 后) | 需要 (DAIR val 校准集) | **高** (真实硬件 latency 反馈, CUDA Event 实测) | **边缘部署 (Orin/4090); 真实 Pareto 测量** |
+
+**我方管线的独特性**: 是上表中唯一以**真实硬件延迟**（非 LUT 估算）作为 Pareto 反馈的范式，且覆盖 B1(剪枝)×B2(量化)×D(部署配置) 三维联合搜索空间（§7.2 文献空白）。
+
+---
+
+## 7. 我方框架定位
+
+### 7.1 我方 vs 文献方法对应关系
 
 | 文献现象 | 我方实测 | 差异/共同点 |
 |---------|---------|-----------|
@@ -355,7 +627,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 | OBR: P×Q 分布冲突 | [推断] Pyramid 过参数化使冲突弱化 (INT8 near-lossless) | 在过参数化域冲突被模型冗余吸收 |
 | JSQ: Outlier 是共同瓶颈 | `dims_quantization_v1.md`: INT8 SNR <1，无显著 outlier | Pyramid 无 outlier 问题 — 冗余充足 |
 
-### 6.2 我方框架的独特性 (文献空白)
+### 7.2 我方框架的独特性 (文献空白)
 
 [我方实证] 来源: `paper_learning/survey_raw_2/hw_aware_nas_and_joint_search.md` §10.2
 
@@ -366,7 +638,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 
 我方 sw-hw-cooptim 框架的独特定位：**在 V2X 协同感知场景下，B1（通道剪枝）× B2（混精量化）× D（部署配置：platform, precision, kernel）联合搜索**，且以**真实硬件延迟（非 LUT 估算）** 作为 Pareto 维度，是文献中已识别的空白区。
 
-### 6.3 已获得的关键联合证据 (P×Q 联合优于串行的具体论据)
+### 7.3 已获得的关键联合证据 (P×Q 联合优于串行的具体论据)
 
 1. **内核切换悬崖** [我方实证, ISS-014]: P 后通道数必须与 Q 内核粒度共同约束，否则 Q 收益蒸发（2.57× 等计算量差异）→ 这是"P 必须感知 Q"的硬约束
 2. **AP 超加性惩罚** [我方实证, perstage_quant_AP_real_v2.csv]: P50+INT8 的 AP 代价 (−0.039) > P50-only (−0.027) + INT8-only (−0.0005) → 独立串行高估了联合精度
@@ -375,7 +647,7 @@ P50 三元组 (T_prune50p) Pareto 分析:
 
 ---
 
-## 7. 完整文献索引
+## 8. 完整文献索引
 
 按年份排序。[文献声称] 均经过 WebFetch 核查摘要/paper page（由 web-agent 完成）。
 
