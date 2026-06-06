@@ -1,6 +1,7 @@
-# hw-optimizer 实验宣告自查 SOP v1.1
+# hw-optimizer 实验宣告自查 SOP v1.2
 > 2026-06-06 | ISS-042 整改输出 | Task#12 终清第 4 条件  
-> v1.1: 补全收件人(+team-lead)、授权原文、板卡快照、"未送达不开跑"硬规则
+> v1.1: 补全收件人(+team-lead)、授权原文、板卡快照、"未送达不开跑"硬规则  
+> v1.2: ISS-043 后追加 Step 0 — 引用数据前先查冻结清单(supervisor 明确建议)
 
 ---
 
@@ -17,6 +18,12 @@
 ## 宣告检查清单 (GPU 实验开跑前必做, 逐项勾选)
 
 ```
+[ ] Step 0: 【v1.2新增】任何引用内部数据前先查冻结清单
+            - 冻结数据集: Phase H (H1/H2/H3-5全冻结, Task#1 FROZEN占位)
+            - 可用替代: ISS-014 canonical (P0_1_p25_*); data/tactic_workspace_bench.csv
+            - 冻结数据可"标注透明"但标注不豁免冻结 — 必须替换为非冻结替代源
+            - 无非冻结替代 → 标"Phase H 冻结中, 待用户裁定"且不给数值
+
 [ ] Step 1: 查 nvidia-smi (4090) 或 GR3D sysfs (Orin) 确认设备空闲
             - 4090: GPU util 0%, mem ≤50MiB, 截取 nvidia-smi 输出备用
             - Orin: cat /sys/devices/gpu.0/load = 0, tegrastats 确认 GR3D@0%
