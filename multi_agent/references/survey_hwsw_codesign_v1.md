@@ -1,5 +1,6 @@
-# 软硬协同优化机理调研 v1.0
-> Task #14-② | hw-optimizer | 2026-06-06  
+# 软硬协同优化机理调研 v1.1
+> Task #14-② | hw-optimizer | v1.1 修订 2026-06-06  
+> 打回修改: H2 冻结引用(7处)→ ISS-014 canonical / tactic_workspace_bench.csv 替代; channels%32 规则误述 → 非解析断崖 ISS-014 表述; NACOS 全称补全  
 > 双源: A. 内部实证(本项目真测 7 条) + B. 最新文献(WebFetch 核原文)  
 > 纪律: [文献声称]/[我方实证]/[推断]严格分层; WebFetch 已核原文; subnet ≠ e2e 口径已标
 
@@ -42,7 +43,7 @@
 
 [文献声称] TensorRT build-time tactic selection: 对每个 layer 枚举多种 cuDNN/CUBLAS/CUDA-core/Tensor-core 候选 kernel, **在目标 GPU 上实跑计时**, 保留最快者。workspace 大小直接控制哪些 tactic 可用("larger workspace allows TensorRT to pick any algorithm available")。Layer fusion (Conv+BN+ReLU → 单 kernel) 消除中间内存往返。(来源: NVIDIA TensorRT Developer Guide)
 
-[我方实证] TRT **workspace 影响 INT8 tactic 覆盖**(H2 真测, `results/H2_workspace_scan_4090_final.csv`): 同一 p50_int8 网络, ws256→ws4096 时 INT8 层数从 23 层升至 **47 层**, latency 0.855ms → **0.815ms** (-5%)。workspace 是纯硬件资源参数, 但直接决定 TRT 能否为各层选出 INT8 kernel。[我方实证] **opt-level=5 消除 3 个 FP32 fallback 层**, base_fp16 **21% 提速**(1.599ms → 1.250ms)。
+[我方实证] TRT **workspace 影响 tactic 选择**(真测, `data/tactic_workspace_bench.csv`, 8 行 fp16/int8×tactic×ws): workspace 改变 TRT 候选 kernel 集合, 实测幅度 **~3-4%**(含反直觉情形: 更大 workspace 反而更慢, 因候选中有 overhead 更大的算法)。workspace 是纯硬件资源参数, 但直接决定 TRT build 时能枚举哪些候选 kernel。[注: opt-level 效应数字来自 Phase H 冻结数据, 待用户裁定后方可引用具体数值。]
 
 #### 机制 D: 联合搜索空间 (Joint Search Space)
 
@@ -52,7 +53,7 @@
 
 [文献声称] OFA (ICLR'20) 训练一个支持弹性宽度/深度/核大小的超网络, 部署时用**设备专属延迟预测器**搜索满足 latency 预算的子网络。在 Samsung Note10/Google Pixel1/1080Ti 等不同设备上提取出不同的最优子网配置: 比 MobileNetV3 **+4.0% accuracy + 1.5× faster**; 比 EfficientNet **2.6× faster**。不同设备的最优子网架构不同, 证明 **"同一模型在所有设备上次优"**。(来源: OFA arXiv:1908.09791)
 
-[文献声称] NACOS survey (arXiv:2408.04116, 2024) 明确指出: NAS(软件架构搜索)和 ACO(自动编译器优化)各自独立进行时 **"sub-optimal when performed independently"**, 联合优化是下一步前沿。(来源: arXiv:2408.04116)
+[文献声称] NACOS (Neural Architecture and Compiler Optimization co-Search, arXiv:2408.04116, 2024) 明确指出: NAS(软件架构搜索)和 ACO(自动编译器优化)各自独立进行时 **"sub-optimal when performed independently"**, 联合优化是下一步前沿。(来源: arXiv:2408.04116)
 
 ---
 
@@ -62,7 +63,7 @@
 软件决策(S)                     硬件响应(H)
 ─────────────────────────────────────────────────────────────────────
 网络结构 ──────────────────────→ 决定可用 TRT kernel 集合
- (通道数/对齐)                    (必须 channels%32==0 才有 INT8 kernel)
+ (通道数/对齐)                    (非解析 kernel 选择断崖; 简单对齐规则无法预测, 96=3×32 仍掉坑 → 必须真测)
 
 量化精度档位 ──────────────────→ 激活不同硬件路径
  (FP16/INT8)                     (Tensor Core INT8路径, 功耗-30~52%)
@@ -90,9 +91,9 @@
 
 | # | 实证名称 | 具体现象 | 软件侧 | 硬件侧 | 耦合类别 | 数据来源 |
 |---|---------|---------|--------|--------|---------|--------|
-| **①** | **INT8 kernel 32-对齐悬崖** | p25_trap (48/96/192非对齐通道): 5-6 INT8层, 2.720ms; p50 (64/128/256对齐): 47 INT8层, 0.815ms — 相差 **3.3×**, 同一 pruning level | 剪枝决定通道数, 通道数决定TRT能否选 INT8 kernel(需 channels%32==0) | GPU INT8 Tensor Core kernel只接受对齐通道 | D(联合搜索)+ C(编译器内化) | `results/H2_workspace_scan_4090_final.csv`; `dims_hardware_v2.md §B2`; (Phase H FROZEN, 设计文档参考) |
+| **①** | **INT8 kernel 选择断崖** | p25_trap: **2.7331ms**; p50: **0.7956ms** — 相差 **3.4×**, 同一 pruning level; 断崖非简单对齐规则可解析(96=3×32 是32倍数仍掉坑 — ISS-014 canonical) | 剪枝决定通道数, 通道数触发 TRT 非解析 kernel 选择断崖(简单对齐预测失效, 必须真测) | GPU INT8 tactic 选择路径非线性, 不可仅凭通道对齐预判 | D(联合搜索)+ C(编译器内化) | `results/P0_1_p25_layer_profile.csv`; `results/P0_1_p25_tactic_inspect.json` (ISS-014 canonical, profile+tactic verified) |
 | **②** | **DLA INT8 0/12 全失败 vs GPU INT8 正常** | Orin DLA0/DLA1 INT8 build: 0/12成功(fail: kDIRECT_IO + bank>16); GPU INT8: 12/12成功 (20.55ms) | 同一网络/同一量化配置(INT8) | DLA v2的 IO conformance + bank限制使PyramidFusion INT8 无法build; GPU则正常 | D(联合搜索): SW配置 × 硬件单元交叉决定可达性 | `results/orin_dspace_bench.parquet`; `dims_hardware_v2.md §D类实测` |
-| **③** | **TRT tactic延迟驱动非精度驱动** | base_fp16: ws1024=1.258ms vs ws4096=1.599ms — **更多workspace反而更慢**; opt5消除3个FP32 fallback层(21%提速) | 软件模型结构/精度固定 | TRT build时在GPU上实跑候选kernel, workspace大小决定候选集 → latency驱动选择 | C(编译器内化) | `results/H2_workspace_scan_4090_final.csv`; `dims_hardware_v2.md §B2/B3`; (Phase H FROZEN) |
+| **③** | **TRT tactic延迟驱动非精度驱动** | workspace 改变 TRT 候选 kernel 集, 幅度 **~3-4%**(非单调: 更大 ws 不一定更快, 取决于候选算法 overhead); opt-level 效应[Phase H 冻结, 待用户裁定] | 软件模型结构/精度固定 | TRT build 时在 GPU 上实跑候选 kernel, workspace 大小决定候选集 → latency 驱动选择, 非资源单调 | C(编译器内化) | `data/tactic_workspace_bench.csv` (8 行真测, ~3-4%); `dims_hardware_v2.md §B2` |
 | **④** | **单GPU流水1.08× vs GPU∥DLA双进程1.34×** | E_pipeline 4090单GPU stage流水峰值 **1.08×**(3流); E3 Orin DLA0∥DLA1进程内 **1.00×**(完全串行); 双进程 **1.34×** (真硅片并行) | 同一流水调度方案 | GPU时间复用: stage共享SM → 1.08×; DLA进程内TRT 8.5序列化提交 → 1.00×; 双进程不相交物理资源 → 1.34× | D+A(硬件在环): 物理资源拓扑决定调度上限 | `results/E_pipeline_singlegpu_4090.csv`; `results/E3_orin_dla_pipeline.csv` |
 | **⑤** | **pre-body Amdahl 73%**(软件优化目标随硬件瓶颈漂移) | body从FP32 131.33ms压到TRT p75+INT8 20.02ms(6.56×); 混合链pre-body=78.96ms → **pre-body占73%** (108ms中的79ms) | body软件优化(剪枝+量化)极其成功 | body不再是瓶颈; 此时软件优化目标必须从body转到pre-body(enc+bb=68.94ms); 若各管各的则优化错目标 | A(在环反馈): 硬件执行结果改变软件优化方向 | `results/E7_orin_e2e_baseline_vs_best.csv`; `results/E8_orin_e2e_fullchain.csv` |
 | **⑥** | **INT8 真省能耗 30-52%**(精度档位即能耗档位) | T_baseline INT8 141mJ vs FP16 291mJ = **52%节省**; T_prune75 INT8 197mJ vs FP16 280mJ = **30%节省** | 软件量化精度选择(FP16 vs INT8) | INT8路径: 更高吞吐(Tensor Core利用率) + 更低功率复合 → J/frame降幅超过latency降幅 | A(在环反馈): 软件精度选择 → 硬件功耗路径 | `results/E4_energy_4090.csv`; `dims_hardware_v2.md §E类` |
@@ -115,7 +116,7 @@
 | **nn-Meter** | B(代理) | 内核级latency预测器(算子融合感知) | 目标设备kernel-level profiling | CPU/GPU预测精度**99%+**; Best Paper MobiSys'21 | MobiSys'21 |
 | **Ansor** | C(编译器) | 层次化搜索空间 + HW实测训练代价模型 + task调度器 | 硬件实测样本训练代价模型 | vs AutoTVM: **Intel CPU 3.8×, ARM 2.6×, GPU 1.7×** | OSDI'20 |
 | **TensorRT** | C(编译器) | Build-time tactic profiling + layer fusion | 目标GPU实跑每种candidate | vs CPU: **>40× 更快**; workspace控制tactic可用集 | NVIDIA产品 |
-| **NACOS survey** | D(联合) | NAS+ACO联合框架; 明确独立优化次优 | 联合HW-SW搜索空间 | "**sub-optimal when performed independently**" — 综述级定论 | arXiv:2408.04116, 2024 |
+| **NACOS: Neural Architecture and Compiler Optimization co-Search** | D(联合) | NAS+ACO联合框架; 明确独立优化次优 | 联合HW-SW搜索空间 | "**sub-optimal when performed independently**" — 综述级定论 | arXiv:2408.04116, 2024 |
 | **Survey (arXiv:2311.17815)** | D | 异构架构加速综述; 需多学科协同 | 架构级设计空间探索 | "requires a multidisciplinary approach combining ML to computer architecture" | 2023 |
 | **Survey Quant (arXiv:2103.13630)** | A | 量化综述; HW实现差距系统分析 | 理论vs实际gap分析 | FP32→INT4理论16×, 实际**4-8×**; 2-4×实现差距 | 2021 |
 
@@ -135,11 +136,11 @@
 
 **[我方实证]** 单GPU stage流水(先做硬件侧调度): 基于roofline余量0.53-0.63的乐观推断, 预期pipeline有大收益; 但实跑 E_pipeline 峰值仅 **1.08×**, 甚至低于data并行的1.13×。根因: occupancy槽位≠可并发吞吐空隙; L2/DRAM带宽墙; eager串行调度。不结合软件执行特征(memory-bound kernel共享L2)的纯硬件调度设计走了弯路。(`results/E_pipeline_singlegpu_4090.csv`)
 
-**[文献声称]** TensorRT如果只用"更大workspace总是更好"的硬件资源策略, 会出现base_fp16 ws4096(1.599ms)比ws1024(1.258ms)慢的反直觉结果 — 因为更大workspace允许TRT尝试的tactic中有更多overhead更大的算法。纯硬件资源堆叠不等于性能提升。(TensorRT Dev Guide; `results/H2_workspace_scan_4090_final.csv`)
+**[我方实证]** TensorRT workspace 策略非单调: 更大 workspace 允许 TRT 尝试 overhead 更大的候选 kernel, 可导致更大 ws 反而更慢(幅度 ~3-4%, 真测)。纯硬件资源堆叠不等于性能提升。(`data/tactic_workspace_bench.csv`, 8 行 fp16/int8×tactic×ws 真测)
 
 #### 模式 F3: SW层面"优化"抹消HW收益
 
-**[我方实证]** 通道数不对齐导致INT8 kernel退化(kernel cliff): p25_trap剪枝保留了48/96/192通道(非32倍数), TRT无法为这些层选INT8 kernel → 47层变5层 INT8 → latency比p50 INT8慢**3.3×**, 甚至慢于FP16的2.720ms vs 1.258ms。SW剪枝的"通道选择"直接抹消了HW量化收益。(`results/H2_workspace_scan_4090_final.csv`)
+**[我方实证]** SW 剪枝决定的通道配置触发 TRT INT8 kernel 非解析选择断崖: ISS-014 canonical — p25_trap **2.7331ms** vs p50 **0.7956ms**, 相差 **3.4×**, 同一 pruning level。断崖非简单对齐规则可预测(96=3×32 仍掉坑), 体现 SW 剪枝通道配置直接抹消 HW INT8 量化收益, 必须真测。(`results/P0_1_p25_layer_profile.csv`; `results/P0_1_p25_tactic_inspect.json`)
 
 **[文献声称]** Survey (arXiv:2103.13630): FP32→INT4理论16×压缩比, 实际只有4-8×, gap来自"内存对齐、kernel支持、计算图调度"等硬件实现细节 — 这些是纯SW优化无法预知的HW约束。
 
@@ -215,7 +216,8 @@
 | `results/E3_orin_dla_pipeline.csv` | ④ DLA0∥DLA1: 进程内1.00× / 双进程1.34× |
 | `results/E_pipeline_singlegpu_4090.csv` | ④ 单GPU stage流水峰值1.08× |
 | `results/m2_latency_mapping_f.json` | ⑦ M2 f函数: TRT R²>0.995; eager失效 |
-| `results/H2_workspace_scan_4090_final.csv` | ①③ workspace×opt×precision: INT8 kernel cliff; opt5 21% |
+| `data/tactic_workspace_bench.csv` | ③ workspace×tactic ~3-4%幅度真测(8行fp16/int8×tactic×ws); 替代H2冻结引用 |
+| `results/P0_1_p25_layer_profile.csv` + `results/P0_1_p25_tactic_inspect.json` | ① INT8 kernel cliff ISS-014 canonical: p25_trap 2.7331ms vs p50 0.7956ms (3.4×) |
 | `results/orin_dspace_bench.parquet` | ② DLA INT8 0/12 vs GPU INT8 12/12 |
 | `multi_agent/methods/design/dims_hardware_v2.md` | 全D维度分析 + 调度实验汇总 |
 | `paper_learning/survey_raw_2/pruning_x_hardware.md` | 剪枝×硬件深度调研 |
@@ -227,9 +229,9 @@
 
 | 声称数字 | 类型 | 来源文件/位置 |
 |---------|------|-------------|
-| INT8 kernel cliff: p25_trap 2.720ms vs p50 0.815ms | [我方实证] Phase H FROZEN | `results/H2_workspace_scan_4090_final.csv` + `dims_hardware_v2.md §B2` |
+| INT8 kernel cliff: p25_trap 2.7331ms vs p50 0.7956ms (3.4×) | [我方实证] ISS-014 canonical | `results/P0_1_p25_layer_profile.csv`; `results/P0_1_p25_tactic_inspect.json` |
 | DLA INT8 0/12; DLA FP16 8/12; GPU INT8 12/12 | [我方实证] 真测 | `results/orin_dspace_bench.parquet` + `dims_hardware_v2.md §D类` |
-| opt5 21%提速; 消除3个FP32 fallback层 | [我方实证] Phase H FROZEN | `results/H2_workspace_scan_4090_final.csv` §B3 |
+| workspace效应 ~3-4%幅度(非单调) | [我方实证] 真测 | `data/tactic_workspace_bench.csv` (8行) |
 | 单GPU流水1.08×; DLA进程内1.00×; 双进程1.34× | [我方实证] 真测 | `E_pipeline_singlegpu_4090.csv`; `E3_orin_dla_pipeline.csv` |
 | pre-body 78.96ms / body 20.02ms / pre-body占73% | [我方实证] 合成 | `E7`+`E8 D2_B2_FP16_synth` 行 |
 | T_baseline INT8 141mJ vs FP16 291mJ (-52%) | [我方实证] 真测 | `E4_energy_4090.csv` 第3行 |
