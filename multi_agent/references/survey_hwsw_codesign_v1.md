@@ -53,7 +53,7 @@
 
 [文献声称] OFA (ICLR'20) 训练一个支持弹性宽度/深度/核大小的超网络, 部署时用**设备专属延迟预测器**搜索满足 latency 预算的子网络。在 Samsung Note10/Google Pixel1/1080Ti 等不同设备上提取出不同的最优子网配置: 比 MobileNetV3 **+4.0% accuracy + 1.5× faster**; 比 EfficientNet **2.6× faster**。不同设备的最优子网架构不同, 证明 **"同一模型在所有设备上次优"**。(来源: OFA arXiv:1908.09791)
 
-[文献声称] NACOS (Neural Architecture and Compiler Optimization co-Search, arXiv:2408.04116, 2024) 明确指出: NAS(软件架构搜索)和 ACO(自动编译器优化)各自独立进行时 **"sub-optimal when performed independently"**, 联合优化是下一步前沿。(来源: arXiv:2408.04116)
+[文献声称] NACOS (Neural Architecture and Compiler Optimization co-Search, arXiv:2408.04116, 2024) 明确指出: NAS(软件架构搜索)和 ACO(自动编译器优化)各自独立进行时 **"demonstrate their **sub-optimality** when performed independently"**, 联合优化是下一步前沿。(来源: arXiv:2408.04116)
 
 ---
 
@@ -242,5 +242,5 @@
 | HAWQ-V2 Inception-V3 +5.92% Top-1 | [文献声称] | arXiv:1911.03852 Table 2 |
 | Ansor vs AutoTVM: CPU 3.8×, GPU 1.7× | [文献声称] | arXiv:2006.06762 §Evaluation |
 | OFA vs MobileNetV3: +4% acc + 1.5× faster | [文献声称] | arXiv:1908.09791 Table 1 |
-| NACOS: "sub-optimal when performed independently" | [文献声称] | arXiv:2408.04116 Abstract |
+| NACOS: "demonstrate their **sub-optimality** when performed independently" | [文献声称] | arXiv:2408.04116 Abstract |
 | HAWQv3: INT4/INT8最高50%加速 vs INT8 | [文献声称] | arXiv:2011.10680 (via survey arXiv:2103.13630 §IV-C) |
