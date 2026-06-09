@@ -17,7 +17,7 @@ Orin AGX 30W 模式下, Pyramid(DAIR m1) 双层真测: ①**TRT body**: FP32 131
 
 - 用户问题: "Pyramid 在 Orin 上端到端优化前速度是多少, 最优方案能优化到多少?"
 - 授权: 用户拍板 + team-lead 授权原文(Task #11), Orin 密码本 session 已向用户确认。
-- 关联: 补 `edge_latency_budget_v1.md`(#9) 的估算缺口; 支撑 200ms 闭环验证故事(#8)。
+- 关联: 补 `../../real_test/edge_latency_budget_v1.md`(#9) 的估算缺口; 支撑 200ms 闭环验证故事(#8)。
 
 ## §2 测量环境与协议
 
@@ -92,7 +92,7 @@ pre-body(B=2 D1v2真测): vox(10.02)+enc(33.49)+bb(35.45)=**78.96ms**; NMS使用
 
 #### 4.2.1 V2X通信延迟叠加可达性矩阵 ⚠️(ISS-039 #3 结论翻转)
 
-通信延迟取固定加法模型: C-V2X≈20ms, LTE≈100ms(典型值, 见 edge_latency_budget_v1.md §2)
+通信延迟取固定加法模型: C-V2X≈20ms, LTE≈100ms(典型值, 见 ../../real_test/edge_latency_budget_v1.md §2)
 
 | 通信情形 | base FP16 合成 136ms | p75+INT8 合成 108ms | 备注 |
 |---------|---------------------|---------------------|------|
