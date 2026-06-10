@@ -151,6 +151,65 @@ CUDA_VISIBLE_DEVICES=<gpu> bash scripts/eval_driving_e2e.sh 0 40000 smoke 0 codr
 
 ---
 
+## §7 ★SSH 远程到目标服务器跑测试代码 (8 卡 H800)
+
+> 2026-06-10 实测连接 + 探测。**目标服务器是全新裸机, 需从零装。**
+
+### 7.1 连接
+```bash
+ssh jichengzhi@222.95.84.215 -p 30001     # host=zs-nj-tap-gpu18
+# 密码: ★用户口头提供, 每会话向用户确认, 勿写入文档/勿进 git
+# 非交互(AI 用): sshpass -p '<密码>' ssh -p 30001 -o StrictHostKeyChecking=no jichengzhi@222.95.84.215 '<命令>'
+```
+
+### 7.2 H800 服务器现状 (实测 2026-06-10)
+| 项 | 值 | 影响 |
+|----|----|----|
+| GPU | 8× NVIDIA H800 80GB (Hopper **sm90**) | ⚠️ 见 7.4 torch 兼容 |
+| 驱动 | 535.54.03 (= CUDA 12.2, **原生支持 sm90**) | 新版 torch(cu121/cu118)原生可跑 |
+| nvcc/CUDA toolkit | 无 | 需 conda 带或自装 |
+| python(系统) | 3.10.12, **无 numpy** | 跑任何测试都得先建环境 |
+| 工具 | git ✓ wget ✓ curl ✓ gcc ✓, **conda 无** | 装机用 |
+| conda/代码/CARLA | **全无** | 从零 |
+| 磁盘 `/` (家目录) | 1.8T, **仅剩 49G** | ⚠️ 别在家目录装大东西 |
+| 磁盘 **`/data`** | 7T, **剩 269G**, `/data/jichengzhi` 可写 | ★**conda/CARLA/代码都装这** |
+
+### 7.3 从零部署步骤 (★都装到 `/data/jichengzhi/`)
+```bash
+WORK=/data/jichengzhi
+# 1. miniconda 装到 /data (家目录放不下)
+wget -P $WORK https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash $WORK/Miniconda3-latest-Linux-x86_64.sh -b -p $WORK/miniconda3
+source $WORK/miniconda3/etc/profile.d/conda.sh
+# 2. clone 代码 (用户 fork)
+cd $WORK
+git clone -b feature/l1-trajectory-tracker git@github.com:jichengzh/V2Xverse.git
+git clone -b hw-deploy-d-space git@github.com:jichengzh/UniV2X_full.git V2X
+#    ↑ SSH clone 需 H800 上配 GitHub deploy key/token; 或用 https + PAT
+# 3. 建 v2xverse 环境 (见 §3.1, 但 torch 见 7.4 兼容警告)
+# 4. CARLA 装到 /data (16G): setup_carla.sh 或从旧服务器 scp 到 /data
+# 5. CoDriving ckpt (51M): scp 旧服务器 或 HF 下 → $WORK/V2Xverse/checkpoints/codriving/
+```
+
+### 7.4 ⚠️ H800(Hopper sm90) torch 兼容 — 关键风险, 部署前必读
+- 旧 v2xverse 栈 = **torch 1.10.1+cu113**(2021)。其 arch_list 最高 sm_86 + compute_37 PTX。**H800 sm90 无 cubin**。
+- 4090(sm89) 上靠 compute_37 **PTX-JIT** 前向兼容跑通了(首算子暖机~1.6s)。H800(sm90) + 驱动 535 理论上也能 JIT, **但 cu113(CUDA11.3)运行时库在 Hopper 上能否初始化未实测**, 风险比 4090 大。
+- **部署策略(按序试)**:
+  1. 先按 §3.1 装老栈, 跑一句 `python -c "import torch;print(torch.cuda.is_available());torch.zeros(4).cuda()"` 试。通 → 直接用。
+  2. 若老栈在 Hopper 报 "no kernel image"/CUDA init 失败 → **升级 torch 到 cu118/cu121**(如 torch 2.x), 但**会与 opencood/spconv-cu113 2.3.6 冲突**, 需同步升级 spconv(spconv-cu118/cu120)+ 验 opencood 兼容。这是真移植工作量, `[需用户确认]` 是否投入。
+  3. CARLA 本身是 UE4 二进制, 不依赖 torch CUDA, H800 上能跑(只要 GL/驱动 OK)。
+
+### 7.5 在 H800 上跑测试 (环境就绪后)
+```bash
+# V0 纯数学 (无 GPU/CARLA, 先验代码): 任意带 numpy 的 conda 环境
+sshpass -p '<pwd>' ssh -p 30001 jichengzhi@222.95.84.215 \
+  'source /data/jichengzhi/miniconda3/etc/profile.d/conda.sh && conda activate v2xverse && cd /data/jichengzhi/V2Xverse && python simulation/leaderboard/team_code/closedloop/test_l1_trajectory_controller.py'
+# CARLA 闭环/L1: 同 §4.2/4.3, H800 单卡显存 80G 充裕, 可分卡(CARLA一卡+推理一卡)甚至多实例并行
+# ★H800 是共享服务器(/data 有他人目录), 跑前 nvidia-smi 确认卡空闲
+```
+
+---
+
 ## §6 接手 AI 的行为约定 (重申)
 1. **遇到 §2 `[需用户确认]` 项, 先问用户怎么获取/传输, 别假设存在、别擅自下几十 GB。**
 2. **V2Xverse 代码不在云端**(§1.2): 接手第一件事确认用户选了哪种传输方案, 拿到代码再动。
