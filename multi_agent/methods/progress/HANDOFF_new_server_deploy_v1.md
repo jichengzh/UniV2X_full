@@ -208,6 +208,21 @@ sshpass -p '<pwd>' ssh -p 30001 jichengzhi@222.95.84.215 \
 # ★H800 是共享服务器(/data 有他人目录), 跑前 nvidia-smi 确认卡空闲
 ```
 
+### 7.6 ⚠️ H800 网络受限 — 装机 blocker (实测 2026-06-10) + 4 个待用户决策
+**实测**: `wget repo.anaconda.com` = **失败(rc=4, 0 字节)** → anaconda 被墙(服务器南京, 国内受限网络); github curl rc=0(可能可达)。⇒ 不能直接从 anaconda 下 miniconda。
+
+**4 个待用户拍板的决策(新会话接手先问用户)**:
+1. **下载源**: anaconda 墙了 → 用**清华镜像** `https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-x86_64.sh` 装 miniconda + 配 conda/pip 国内镜像; **或从旧服务器 scp** 安装包。
+2. **代码传输**: 从 fork `git@github.com:jichengzh/V2Xverse.git` clone 需 H800 配 GitHub 认证(deploy key/PAT); **或从旧服务器 scp** 整仓(排除 carla/results)。旧→新网络是否互通需测。
+3. **★Hopper torch 兼容(最大技术风险)**: 老栈 torch1.10/cu113 在 sm90 上靠 PTX-JIT, cu113 运行时在 Hopper 上未必能 init。策略: 先试老栈→不行升级 torch cu121(但与 opencood/spconv-cu113 冲突=真移植量)。**用户是否接受先试老栈、不行再投入移植?**
+4. **CARLA 16GB**: 旧服务器 scp(局域网快) vs H800 重下(CDN 可能也受限)。
+> **team-lead 建议**: 下载/代码/CARLA 都**从旧服务器 scp**(绕墙+GitHub认证), 先装 conda + 跑 V0 纯数学测试验通, 再啃 CARLA + Hopper torch。
+
+### 7.7 旧服务器(4090, /home/jichengzhi)当前运行状态 — 新会话需知
+- **有一个运行中的 multi-agent team `sim-closedloop-sweep`**(sim-integrator/supervisor/sw-optimizer 三个后台 agent, tmux teammate-mode)。L1 工作是它们做的。新会话若不续用可 TeamDelete 或让其 idle。
+- **★item4 I-1 L1 的最后验证 V1(Fix-D) staged 待命未跑**: 旧服务器 GPU 紧张(只 GPU4 空), L1 代码已全部 commit+push(`dff86d5` @ feature/l1-trajectory-tracker)。V1 验收: d0_l1 DS≥90 无 layout 碰 / norsu RC=100 / d500≤d0。**新会话可在 H800(显存充裕)上重跑这个 V1 验证**(环境就绪后), 比在旧 4090 等卡更顺。
+- V0-1~V0-9 纯数学测试全过(无需 GPU), 是验代码完整性的第一关。
+
 ---
 
 ## §6 接手 AI 的行为约定 (重申)
