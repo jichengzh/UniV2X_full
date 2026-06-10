@@ -10,7 +10,7 @@
 | 内容 | 在云端吗? | 处置 |
 |------|----------|------|
 | **V2X 主仓** (`hw-deploy-d-space` 分支) | ✅ 已 push 到 `git@github.com:jichengzh/UniV2X_full.git` | 可直接 clone。**但有 1132 个未提交改动**(多为既有论文/模型工作)未上云, 见 §1.1 |
-| **V2Xverse 仿真仓 — 我们写的全部闭环/L1 代码** | ❌ **从未 push!** | ⚠️**最大风险**。official remote 只读, 两个工作分支(`sim-closedloop` 29c + `feature/l1-trajectory-tracker` 33c)只在**当前这台服务器本地**。**新服务器必须靠 §1.2 的方式拿到, 不然没有仿真代码。** |
+| **V2Xverse 仿真仓 — 我们写的全部闭环/L1 代码** | ✅ **已 push 到用户 fork `git@github.com:jichengzh/V2Xverse.git`** (2026-06-10) | `sim-closedloop`(29c) + `feature/l1-trajectory-tracker`(33c, L1 全部工作) 已上云。新服务器从这个 fork clone, 见 §1.2。 |
 | **CARLA 0.9.10.1** (16GB) | ❌ 不能进 git | §2-A `[需用户确认]` |
 | **CoDriving / HEAL checkpoints** | ❌ 不能进 git | §2-B/C `[需用户确认]` |
 | **DAIR/OPV2V 数据集** (71GB) | ❌ 不能进 git | §2-D `[需用户确认]` |
@@ -28,18 +28,20 @@
 - ⚠️ **1132 个未提交改动**(`git status`): 多为既有 `paper_learning/`、`models/`、`framework/` 工作 + 本次 `multi_agent/` 文档。**这些不在云端**。若新服务器需要它们 → `[需用户确认]` 是否要我先 commit+push 这批(量大、含多类文件, 需用户决定哪些要上云)。
 - 本次会话已 push 的: `07821e5`(闭环仿真文档整合) — 在云端 ✅。
 
-### 1.2 ★V2Xverse 仿真仓 (闭环仿真 + 我们写的 L1/时延回灌) — 必须解决传输
+### 1.2 ★V2Xverse 仿真仓 (闭环仿真 + 我们写的 L1/时延回灌) — 已上云
 - 路径(旧服务器): `/home/jichengzhi/V2Xverse`
-- remote: `https://github.com/CollaborativePerception/V2Xverse.git` (**官方上游, 用户无写权限, 不能 push**)
-- 工作分支:
-  - **`feature/l1-trajectory-tracker`** (33 commit, ★当前最新, 含 L1 控制器全部工作) — HEAD `dff86d5`
+- remote:
+  - `origin` = `https://github.com/CollaborativePerception/V2Xverse.git` (官方上游, 只读)
+  - **`myfork` = `git@github.com:jichengzh/V2Xverse.git` (用户 fork, 可读写, 我们的代码在这)**
+- 工作分支(**已 push 到 myfork, 2026-06-10**):
+  - **`feature/l1-trajectory-tracker`** (33 commit, ★最新, 含 L1 控制器全部工作) — HEAD `dff86d5`
   - `sim-closedloop` (29 commit, 时延回灌 + 探针 + 闭环改造基础)
-- **这两个分支从未推送到任何可访问云端。新服务器拿不到 = 没有仿真代码。**
-- **传输方案(三选一, `[需用户确认]` 选哪个)**:
-  1. **用户创建 V2Xverse fork** → 提供 fork URL → 我 `git remote add myfork <url>` + `git push myfork sim-closedloop feature/l1-trajectory-tracker` → 新服务器从 fork clone。**(推荐, 真上云)**
-  2. **git bundle**: `git bundle create v2xverse_work.bundle sim-closedloop feature/l1-trajectory-tracker` → 把 bundle 文件传到新服务器 → `git clone` 官方 + `git fetch v2xverse_work.bundle`。
-  3. **整仓 scp/rsync**(排除 16GB carla/ 和 results/): `rsync -av --exclude carla --exclude results --exclude dataset /home/jichengzhi/V2Xverse/ newserver:/path/V2Xverse/`。
-- ⚠️ 还有少量未提交残留: `?? multi_agent/`(stray, 属于 V2X 不属于 V2Xverse, **不要 commit 进 V2Xverse**)。L1 代码已全部 commit 到 `dff86d5`。
+- **新服务器 clone**:
+  ```bash
+  git clone -b feature/l1-trajectory-tracker git@github.com:jichengzh/V2Xverse.git
+  # (sim-closedloop 分支同 fork 可 fetch; feature 分支是从 sim-closedloop 长出来的, 含全部工作)
+  ```
+- ⚠️ 旧服务器还有 `?? multi_agent/`(stray, 属于 V2X 不属于 V2Xverse, **未 commit 进 V2Xverse, 也不该**)。L1 代码已全部 commit 到 `dff86d5` 并 push。
 
 ---
 
