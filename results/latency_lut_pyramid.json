@@ -1,0 +1,186 @@
+{
+  "_format": "direct grid (per-width real H800 tuned/default us)",
+  "_source": "gap1_grid_corrected + lut_results_grid (relaunch); -1 rows excluded",
+  "widths": [
+    {
+      "num_filters": [
+        16,
+        32,
+        64
+      ],
+      "label": "p75",
+      "default_us": 12689.07,
+      "tuned_us": 483.63
+    },
+    {
+      "num_filters": [
+        16,
+        128,
+        128
+      ],
+      "label": "mix_c",
+      "default_us": 30743.9,
+      "tuned_us": 5099.7
+    },
+    {
+      "num_filters": [
+        16,
+        128,
+        256
+      ],
+      "label": "s0_16",
+      "default_us": 39461.54,
+      "tuned_us": 5845.42
+    },
+    {
+      "num_filters": [
+        32,
+        64,
+        128
+      ],
+      "label": "p50",
+      "default_us": 26241.67,
+      "tuned_us": 3010.51
+    },
+    {
+      "num_filters": [
+        32,
+        96,
+        192
+      ],
+      "label": "mix_a",
+      "default_us": 35808.62,
+      "tuned_us": 5652.35
+    },
+    {
+      "num_filters": [
+        32,
+        128,
+        256
+      ],
+      "label": "s0_32",
+      "default_us": 44665.72,
+      "tuned_us": 5982.32
+    },
+    {
+      "num_filters": [
+        48,
+        64,
+        256
+      ],
+      "label": "mix_b",
+      "default_us": 41460.19,
+      "tuned_us": 19404.95
+    },
+    {
+      "num_filters": [
+        48,
+        96,
+        192
+      ],
+      "label": "trap25",
+      "default_us": 42355.27,
+      "tuned_us": 21614.8
+    },
+    {
+      "num_filters": [
+        48,
+        128,
+        128
+      ],
+      "label": "mix_d",
+      "default_us": 42447.41,
+      "tuned_us": 21071.43
+    },
+    {
+      "num_filters": [
+        48,
+        128,
+        256
+      ],
+      "label": "iso_s0",
+      "default_us": 51249.03,
+      "tuned_us": 21752.09
+    },
+    {
+      "num_filters": [
+        64,
+        32,
+        256
+      ],
+      "label": "s1_32",
+      "default_us": 41877.36,
+      "tuned_us": 3758.58
+    },
+    {
+      "num_filters": [
+        64,
+        64,
+        256
+      ],
+      "label": "s1_64",
+      "default_us": 46445.27,
+      "tuned_us": 5894.56
+    },
+    {
+      "num_filters": [
+        64,
+        96,
+        128
+      ],
+      "label": "mix_e",
+      "default_us": 42785.79,
+      "tuned_us": 14669.49
+    },
+    {
+      "num_filters": [
+        64,
+        96,
+        192
+      ],
+      "label": "pad64",
+      "default_us": 47407.26,
+      "tuned_us": 6152.04
+    },
+    {
+      "num_filters": [
+        64,
+        96,
+        256
+      ],
+      "label": "iso_s1",
+      "default_us": 51622.49,
+      "tuned_us": 6910.63
+    },
+    {
+      "num_filters": [
+        64,
+        128,
+        64
+      ],
+      "label": "s2_64",
+      "default_us": 43594.23,
+      "tuned_us": 5034.23
+    },
+    {
+      "num_filters": [
+        64,
+        128,
+        192
+      ],
+      "label": "iso_s2",
+      "default_us": 51992.38,
+      "tuned_us": 7243.61
+    },
+    {
+      "num_filters": [
+        64,
+        128,
+        256
+      ],
+      "label": "base",
+      "default_us": 56321.21,
+      "tuned_us": 6319.98
+    }
+  ]
+}

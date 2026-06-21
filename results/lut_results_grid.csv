@@ -1,0 +1,15 @@
+label,onnx,trials,default_us,tuned_us,e2e_ratio,tune_s
+s0_16,s0_16_backbone.onnx,1000,39461.54,5845.42,6.751,2439
+s0_32,s0_32_backbone.onnx,1000,44665.72,5982.32,7.466,3024
+s1_32,s1_32_backbone.onnx,1000,41877.36,3758.58,11.142,1814
+s1_64,s1_64_backbone.onnx,1000,46445.27,5894.56,7.879,1423
+s2_64,s2_64_backbone.onnx,1000,43594.23,5034.23,8.660,1449
+s2_128,s2_128_backbone.onnx,1000,47454.26,-1.00,-1.000,1411
+s2_128,s2_128_backbone.onnx,1000,47455.70,-1.00,-1.000,1311
+mix_b,mix_b_backbone.onnx,1000,41460.19,19404.95,2.137,2219
+mix_d,mix_d_backbone.onnx,1000,42447.41,21071.43,2.014,2379
+mix_a,mix_a_backbone.onnx,1000,35808.62,5652.35,6.335,2281
+mix_c,mix_c_backbone.onnx,1000,30753.63,-1.00,-1.000,3178
+mix_c,mix_c_backbone.onnx,1000,30743.90,5099.70,6.029,3820
+mix_e,mix_e_backbone.onnx,1000,42785.79,14669.49,2.917,3830
+mix_f,mix_f_backbone.onnx,1000,22355.45,2554.12,8.753,1397

@@ -1,0 +1,140 @@
+{
+  "description": "B4 AP-grid expansion: 2 new DepGraph-consistent W_g/P_g pairs",
+  "protocol": "structural_prune_pyramid.py (L1-channel-select from DAIR base) + train_ddp (epoches=31, wpg=4, half) + TRT_FP16 + DAIR_val_1789",
+  "protocol_matches_stage_a": true,
+  "note_on_naming": "B4 checklist calls this 'DepGraph protocol' (vs B2's 'L1-transfer'). Implementation: structural_prune_pyramid.py uses L1 magnitude importance (same as DepGraph MetaPruner MagnitudeImportance p=1). The consistent surface comes from the training budget (epoches=31) and base model init matching stage_a, not from random init.",
+  "gate_check": {
+    "tag": "pruned25",
+    "expected_ap70": 0.5905,
+    "source": "stage_a_ap_real.parquet fp16",
+    "b2_verified": true,
+    "note": "B2 confirmed pruned25 AP70=0.5905 via HEAL inference (=TRT within 0.001)"
+  },
+  "wg_pg_pairs_enabled": [
+    {
+      "W_g_tag": "mix_b",
+      "W_g_widths": [
+        48,
+        64,
+        256
+      ],
+      "P_g_tag": "s1_64",
+      "P_g_widths": [
+        64,
+        64,
+        256
+      ],
+      "s0_alignment": "W_g s0 in_per_g=3 (misaligned) \u2192 P_g s0 in_per_g=4 (aligned)",
+      "weight_identity": "P_g = W_g with s0 zero-padded 48\u219264 (AP unchanged)"
+    },
+    {
+      "W_g_tag": "mix_d",
+      "W_g_widths": [
+        48,
+        128,
+        128
+      ],
+      "P_g_tag": "s2_128",
+      "P_g_widths": [
+        64,
+        128,
+        128
+      ],
+      "s0_alignment": "W_g s0 in_per_g=3 (misaligned) \u2192 P_g s0 in_per_g=4 (aligned)",
+      "weight_identity": "P_g = W_g with s0 zero-padded 48\u219264 (AP unchanged)"
+    }
+  ],
+  "stage_a_anchors_for_reference": {
+    "base": {
+      "s": [
+        64,
+        128,
+        256
+      ],
+      "ap70": 0.6309
+    },
+    "pruned25": {
+      "s": [
+        48,
+        96,
+        192
+      ],
+      "ap70": 0.5905
+    },
+    "pruned50": {
+      "s": [
+        32,
+        64,
+        128
+      ],
+      "ap70": 0.5641
+    },
+    "pruned75": {
+      "s": [
+        16,
+        32,
+        64
+      ],
+      "ap70": 0.53
+    },
+    "pad64": {
+      "s": [
+        64,
+        96,
+        192
+      ],
+      "ap70": 0.5905,
+      "note": "=pruned25 by weight identity"
+    }
+  },
+  "results": [
+    {
+      "tag": "mix_b",
+      "num_filters": [
+        48,
+        64,
+        256
+      ],
+      "s0": 48,
+      "s1": 64,
+      "s2": 256,
+      "comment": "s0=48 misaligned (W_g) \u2192 pad\u2192[64,64,256]=s1_64 (P_g)",
+      "ap30": 0.8185807520379588,
+      "ap50": 0.7804962518701479,
+      "ap70": 0.6361597419498289,
+      "n_samples": 1789,
+      "n_trt_path": 1618,
+      "ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_b_2026_06_20/net_epoch_bestval_at31.pth",
+      "ckpt_dir": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_b_2026_06_20",
+      "engine": "/home/jichengzhi/V2X/models/b4expand_cache/b4expand_mix_b_fp16.engine",
+      "protocol": "structural_prune_pyramid (L1) + train_ddp (epoches=31, half) + TRT_FP16_DAIR_1789",
+      "matches_stage_a": true,
+      "source": "b4expand_finetune_TRT_FP16_DAIR_1789",
+      "status": "OK"
+    },
+    {
+      "tag": "mix_d",
+      "num_filters": [
+        48,
+        128,
+        128
+      ],
+      "s0": 48,
+      "s1": 128,
+      "s2": 128,
+      "comment": "s0=48 misaligned (W_g) \u2192 pad\u2192[64,128,128]=s2_128 (P_g)",
+      "ap30": 0.8257724708092585,
+      "ap50": 0.7858346455876241,
+      "ap70": 0.6369383152509643,
+      "n_samples": 1789,
+      "n_trt_path": 1618,
+      "ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_d_2026_06_20/net_epoch_bestval_at31.pth",
+      "ckpt_dir": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_d_2026_06_20",
+      "engine": "/home/jichengzhi/V2X/models/b4expand_cache/b4expand_mix_d_fp16.engine",
+      "protocol": "structural_prune_pyramid (L1) + train_ddp (epoches=31, half) + TRT_FP16_DAIR_1789",
+      "matches_stage_a": true,
+      "source": "b4expand_finetune_TRT_FP16_DAIR_1789",
+      "status": "OK"
+    }
+  ]
+}
