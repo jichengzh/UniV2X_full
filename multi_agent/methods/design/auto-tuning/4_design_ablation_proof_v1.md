@@ -246,12 +246,19 @@ B5 审计**所有臂收敛 Pareto 解均为真测点**(latency∈直接网格, A
 
 seed0 各臂出货 Pareto 的 DS: A-joint 在 AP0.6362 出 DS=95.7 vs A-serial 出 DS=87.8(同精度差 ~8 DS); A-noS(无调度)全程 DS 50–92(最差)。**闭环从驾驶安全独立支撑结构性论点**: 串行锁 W_g 的代价不止延迟, 还有驾驶分。**口径**: model-estimated(CoDriving τ_perc 曲线 + H800→Orin 线性缩放 ±30%), β=0(无真 AP→DS 数据), 非真 Pyramid 闭环(需装 CARLA), 不得写 "real closed-loop"。
 
+> ★**[2026-06-21 DS 计算勘误 — 用户指出, 当前 DS 模型有结构性缺陷, 后续估算必须修]**
+> 当前 `DS = DS_lat(latency)`(β=0)= **把 Pyramid 延迟投影到 CoDriving 实测 τ→DS 曲线上, 这隐含假设 Pyramid 的感知精度/特征提取 = CoDriving** —— 不成立(两者不同模型、不同任务 DAIR vs V2Xverse)。后果: β=0 下**两个同延迟但不同 AP 的配置得到相同 DS**, 但低 AP = 漏检多 = 即便同延迟驾驶也更不安全。**DS 必须由 (AP, latency) 共同决定**, 不能只看延迟。
+> - **本节内 W_g/P_g 对比仍然有效**: 对内 W_g 与 P_g **AP 严格相等**(零填充权重恒等), 故 +7.95/+10 DS 纯由延迟差驱动, 与 β 取值无关 —— 这个结论可信、可留。
+> - **失效的是跨 AP 的 DS 比较**: 上面"各臂出货 Pareto DS"表跨配置 AP 不同(尤其 A-noS), β=0 下不可信, 仅作占位; 真正结论以 HV/Wilcoxon(§9.2)+ 对内 DS 差为准。
+> - **后续估算修法**: ① 至少给 β>0 让 AP 进入(但 β 无实测标定, 仍是假设); ② 正解 = 建 **Pyramid 专属 DS(AP, τ) 曲面**(真闭环里同时扫 AP 与延迟, 见 §9.7 + 新交接 `HANDOFF_codesign_nextstage_v1.md`), 替换借来的 CoDriving 纯延迟曲线。在此之前, DS 仅用于"同 AP 对内"对比, 不做跨 AP 论断。
+
 ### 9.6 与 §5 判读规则对照 + 必带 caveat
 - **落点 = 故事 A 强版本**(Pyramid 显耦合): A-joint HV 分布显著高于 A-serial(p=4.9e-4 不重叠), 点云显示 P_g 分支被 A-serial 排除, 跨 72 起点一致 → **结构性局部最优成立**, 联合搜不可省。
 - **caveat(写论文必带)**: ① 网格 8 宽度偏小, 防"枚举"质疑靠"结构性排除在任何含 rank-flip 对的网格上成立 + 搜索器自主锁 W_g(非手挑)"立论(§3); 更大搜索需更多真 finetune(贵, 模型引导策略本为省它), 标 future。② AP 轴弱(过参数化, 单/混合剪枝 finetune 后 AP≈0.63 几乎不掉, 仅激进均匀剪枝才掉)但**保留为目标轴**。③ 延迟全程 H800, 不跨平台混。④ 闭环 = 估算非真 sim。⑤ pair1 是机理示范非出货倍率(§9.4)。
 
 ### 9.7 未完成 / 下一步
+> **执行计划 + agent 分工见 `multi_agent/methods/progress/HANDOFF_codesign_nextstage_v1.md`。**
 - **量化轴 Q**(§8 开放问题②, 用户强调别忘): prune×**quant**×schedule 三轴, 需真 TRT INT8(relax 无 INT8 pass, simulated 不可信), 跨口径不混。INT8 会放大 W_g/P_g 但不改本质。
 - **pair3 补全**: s2_128 [64,128,128] TVM 调优持续 CUDA illegal-access 崩(2× exit134), 需排查后补第 3 个 AP 档的对。
 - **CoDriving 对照臂**(§4.1): 预期 A-joint≈A-serial(可分离), 跑通则坐实"协同价值=耦合强度函数"的双模型判据。
-- **真闭环**: Pyramid→V2Xverse 移植 + CARLA 装好后, 用真 Orin e2e τ_perc sweep 替换 DS 估算。
+- **真闭环 + Pyramid DS 曲面**: Pyramid→V2Xverse 移植 + CARLA 装好后, ① 用真 Orin e2e τ_perc sweep 替换 DS 估算; ② 建 **Pyramid 专属 DS(AP, τ) 二维曲面**(同时扫 AP 与延迟), 修 §9.5 勘误的"DS 须由 AP+latency 共同决定"。

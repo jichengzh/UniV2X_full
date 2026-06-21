@@ -3,6 +3,8 @@
 > 由 Agent-CL (sim-integrator) 撰写。overnight model-only deliverable。
 > 配套文件: `results/closedloop_objective_model.json` + `scripts/phase2/closedloop_objective_query.py`
 
+> ★**[2026-06-21 DS 计算勘误 — 用户指出, 重做时必读]**: 本文 DS 模型默认 **β=0(纯延迟)**, 即把延迟投影到 CoDriving 实测 τ→DS 曲线, **隐含假设感知精度/特征提取 = CoDriving**(不成立, Pyramid≠CoDriving、DAIR≠V2Xverse)。**DS 必须由 (AP, latency) 共同决定**: β=0 下同延迟不同 AP 得同 DS = 错(低 AP=漏检多=更不安全)。**仅"同 AP 对内"对比有效**(W_g/P_g AP 恒等, DS 差纯延迟驱动); 跨 AP 的 DS 不可信。正解 = 真闭环里建 **Pyramid 专属 DS(AP, τ) 曲面**替换借来的纯延迟曲线。详见 `auto-tuning/4_design_ablation_proof_v1.md §9.5 勘误` + `HANDOFF_codesign_nextstage_v1.md` T4。
+
 ---
 
 ## §1 诚实评估：现有闭环数据
