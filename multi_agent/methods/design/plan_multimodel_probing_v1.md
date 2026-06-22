@@ -1,121 +1,118 @@
-# 计划二:用框架对更多协同感知算法做第一步探测 (v1, 2026-06-22)
+# 计划二:把 stage1 做成全自动扫描器, 探测更多算法以证明其普适有效 (v2, 2026-06-22)
 
 ## §0 接手须知 (新窗口冷启动 —— 直接从这里开始, 自包含)
 
-**这份计划是可执行交接, 不需要前序对话上下文。** 先读 §0, 再按 §2 Phase P0 起跑。
+**这份计划是可执行交接, 不需要前序对话上下文。** 先读 §0, 再按 §3 Phase A0 起跑。
 
-**前置状态 (已就绪, 不用重做)**:
-- stage1→stage2 bridge **已构造并 4/4 验收**(memory `project-stage1-bridge-construction`):
-  `framework/stage1_bridge.py`(SpaceSpec/KnobSpec, `coupling_summary()` 出 COUPLED/SEPARABLE)
-  + `framework/stage1/{run_scan,graph_scan,hardware_scan,adapters}.py`(图扫描产 manifest)
-  + `framework/partitions/*.yaml`(已有 4 模型 manifest)。
-- e2e 瓶颈 profiler 模板: `scripts/phase2/profile_v2xvit_e2e_breakdown.py`(CUDA-event 逐模块,
-  改 CKPT_DIR/CONFIG 即可复用; 输出 `results/<model>_e2e_breakdown.json`)。
-- 已探 5 模型(Pyramid/CoDriving/V2X-ViT lidar/camera): 见 `results/coupling_dispatch_report.json`
-  + memory `project-v2xvit-attention-bottleneck`。
+**核心目标 (★别跑偏)**: 证明 **stage1 是一个自动扫描器** —— 给 (模型构造器, ckpt,
+一个真实输入), stage1 **自动**追踪依赖图、**自动**跳过不可追踪算子(稀疏 VFE / 自定义
+fusion)、**自动**定位稠密 conv 核、**自动**产 manifest + 耦合判决。**不读人家源码、不手写
+稠密核 forward**。能 push-button 扫通 N 个差异化模型 = stage1 真普适有效。
 
-**本计划第一步 = Phase P0: 探 F-Cooper + AttFuse(ckpt 在手, 无需训练)**:
-- ckpt(真, 已核): `/home/jichengzhi/heal_research/checkpoints/baselines_hf/`
-  `HeterBaseline_opv2v_lidar_fcooper_2023_08_06_19_53_10`(config.yaml + net_epoch17.pth) /
-  `HeterBaseline_opv2v_lidar_attfuse_2023_08_06_19_58_00`(config.yaml + net_epoch19.pth)。
-- **两步**: ① 复制 `profile_v2xvit_e2e_breakdown.py` → 改 CKPT_DIR/CONFIG/CKPT_FILE 跑 e2e
-  瓶颈剖面(F-Cooper/AttFuse 也是 HeterBaseline, 模板几乎直接可用); ② 写
-  `FCooperAdapter`/`AttFuseAdapter`(克隆 `framework/stage1/adapters.py:246 V2XViTAdapter` 模板,
-  调隔离稠密 conv 核的逻辑) → 加进 `adapters.py` 末尾的 `REGISTRY` →
-  `python -m framework.stage1.run_scan --model fcooper --device cpu --profile-latency off`
-  → manifest → `python -m framework.stage1_bridge` 看耦合判决。预期 SEPARABLE(标准 BaseBEVBackbone)。
+> ⚠ **v1 的方向错误 (已纠)**: v1 把"每模型读源码手写 `TraceAdapter._Net` 包装"当成主工。
+> 那恰恰**不能证明 stage1 自动有效**(只证明能手工适配), 与已删的 `QLookupCoDriving` 子类
+> 同病。v2 改为: 先把 stage1 做成自动扫描器, 再 push-button 探测。
+
+**前置状态 (已就绪)**:
+- bridge 已 4/4 验收(memory `project-stage1-bridge-construction`): `framework/stage1_bridge.py`
+  + `framework/stage1/{run_scan,graph_scan,hardware_scan,adapters}.py` + `framework/partitions/*.yaml`。
+- **当前 adapter 是手写的**(`framework/stage1/adapters.py`: 每模型一个 `_Net` 包装类手挑稠密
+  核 + 手列 `skipped_modules`/`ignored_layers`)—— 这正是要自动化掉的东西。
+- e2e profiler 模板: `scripts/phase2/profile_v2xvit_e2e_breakdown.py`。
+- 已探 5 模型(手写 adapter): `results/coupling_dispatch_report.json`。
+
+**本计划第一步 = Phase A0: 建通用 auto-scan + 证明它复现 4 个手写 adapter**(见 §3）。
+**判定 stage1 有效的金标准 = auto-scan 在 Pyramid/CoDriving/V2X-ViT 上自动产出的 manifest,
+与现有手写 adapter 的 manifest 一致**(耦合判决/旋钮/对齐相同)。复现成功 ⇒ 手写 adapter 里
+的知识本就是可自动发现的 ⇒ stage1 是自动的。然后 push-button 探新模型(F-Cooper/AttFuse...)
+扩展证明。
 
 **环境 + 纪律 (硬约束)**:
 - 真仓库 `/home/jichengzhi/V2X`(**绝不用** `/home/jichengzhi/UniV2X` 断链空壳)。
-- conda python `/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python`; HEAL 模型须
-  `sys.path` 加 `/home/jichengzhi/heal_research/HEAL` + `os.chdir(HEAL_ROOT)`(见 profiler 模板)。
-- latency **只在空闲 GPU(4/5/6)测**(`nvidia-smi` 先确认 util 0%); 区分 eager vs 编译口径。
-- **不轻信 agent 自报**: 凡"已测/已build"必复跑/读文件核验。**仅在用户明确要求时 commit**。
-- 克隆新模型代码到 `/home/jichengzhi/V2X/multi_agent/model/<name>/`(已建)。
-
-**与计划一的接口**: P0 瓶颈剖面圈定计划一(transformer)适用集 —— fusion-瓶颈者
-(V2VNet/V2X-ViT)进计划一, conv-瓶颈者(F-Cooper/AttFuse)用现状框架。见
-`plan_transformer_into_framework_v1.md`。
+- conda python `/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python`; HEAL 模型须 `sys.path`
+  加 `/home/jichengzhi/heal_research/HEAL` + `os.chdir(HEAL_ROOT)`(见 profiler 模板)。
+- latency **只在空闲 GPU(4/5/6)测**(`nvidia-smi` 先确认); eager vs 编译口径分清。
+- **不轻信自报**必复跑; **仅在用户明确要求时 commit**。克隆新模型到 `multi_agent/model/<name>/`。
+- **与计划一接口**: 探测产出的瓶颈剖面圈定计划一(transformer)适用集; 见
+  `plan_transformer_into_framework_v1.md`。
 
 ---
 
-> 目标: 把 stage1 探测(图扫描→manifest→bridge 耦合判决 + e2e 瓶颈实测)推广到
-> F-Cooper / AttFuse / Who2com·When2com / Where2comm / V2VNet / DiscoNet / UniV2X 等
-> 通用与最新方法。**探测必须实测**(真 ckpt + 真 forward + 真 GPU 计时), 不估算。
-> 克隆目标目录: `/home/jichengzhi/V2X/multi_agent/model/`。
+## 1. 为什么 v1 错了 + v2 的正确口径
+"通过框架探测"= 把 stage1 当探测器**对准**模型自动扫描; 不是人读源码替每个模型手写
+稠密核包装。后者下"探测 N 个模型"的工作量 = N×(读源码+写 adapter), 且证明的是"我们会手工
+适配", 不是"stage1 自动有效"。**v2: 自动化掉手写部分, 让每模型的人工输入压到最薄的加载样板
+(构造器+ckpt+一个输入样本), stage1 自动完成稠密核隔离→依赖图→manifest→耦合。**
 
----
+## 2. 通用 auto-scan 设计 (Phase A0 的产物, 一次性建)
+新增 `framework/stage1/auto_trace.py`(或扩 adapters.py 加一个 `AutoTraceAdapter`),
+取代逐模型手写 `_Net`:
 
-## 0. "探测一个模型"产出什么 (单模型交付物)
-1. **e2e 瓶颈剖面** (实测, CUDA-event): backbone-conv / fusion / encoder / heads / NMS 各占比
-   → 判该模型是 **conv-瓶颈**(框架现状适用)还是 **fusion-瓶颈**(需计划一)。
-2. **partition manifest** (stage1 图扫描真产出): B1 剪枝组 / B2 量化单元 / D 路由 +
-   `int8_buildable_align`。
-3. **耦合判决** (bridge `coupling_summary`): COUPLED / SEPARABLE + 逐旋钮 `κ`。
-4. **空间规模**: 旋钮数 / 合法宽度 / 压缩比。
-⇒ 汇成**跨模型耦合谱**: 哪些像 Pyramid(conv 分组耦合)/ 哪些像 CoDriving(可分离)/
-   哪些像 V2X-ViT(fusion-瓶颈)。**这是框架"可普适"的核心证据。**
+1. **自动定位稠密核 + 自动跳过不可追踪算子**: 给全模型 + 真实样本输入, 前向时挂 hook 记录
+   模块执行序与张量 shape; 试用 torch_pruning `DependencyGraph.build_dependency`; 对触发异常的
+   模块(稀疏 spconv VFE / 自定义 com_mask fusion / grid_sample 等)**捕获→自动加入 skip→重试**。
+   稠密核 = 最大可追踪的 Conv/BN/ConvT 连续子图(从首个 dense conv 到 heads)。
+2. **自动识别 heads**: 终端、小 out-channel、产 cls/reg/dir 的 conv → 自动进 `ignored_layers`
+   (不剪), 无需手列。
+3. **自动语义分桶**: 复用现有 `_generic_bucket` / `_first_conv_in_channels`(已是自动)给组分
+   backbone/bev_encoder/neck/heads。
+4. **每模型薄胶水 (registry 条目, ~10 行, 不读源码不写 forward)**:
+   `{name, build_fn(从 config 造模型), ckpt_path, sample_input_fn(从 dataloader 取或 dummy)}`。
 
-## 1. 现实 inventory (实测可行性分级, 已核对盘上资源)
+> 诚实边界: 完全无胶水不现实(模型如何 from-config 构造 + ckpt 路径是模型身份, 必须给)。
+> v2 的目标是把胶水压到"身份样板", **消灭"读源码手写稠密核 forward / 手列 skip·ignored"**。
+> 极少数模型若稠密核入口实在无法自动判, 才回退到"声明入口 submodule 名"(一行), 并如实记录。
 
-| 模型 | OpenCOOD 模块 | ckpt 现状 | 历史 fusion 计时(OPV2V) | 预期瓶颈 | 分级 |
+## 3. 分阶段计划
+
+### Phase A0 — 建 auto-scan + 复现 4 个手写 adapter (★证明 stage1 自动有效的金标准)
+- 实现 §2 的 `auto_trace`。
+- **复现验证**: 对 Pyramid_lidar / CoDriving / V2X-ViT / Pyramid_camera 用 auto-scan(只给薄胶水)
+  跑出 manifest, 与现有手写 adapter 的 `framework/partitions/*.yaml` **逐项比对**(B1 组数/对齐/
+  `int8_buildable_align`/耦合判决一致)。一致 ⇒ **手写知识可自动发现 ⇒ stage1 是自动的**。
+- 产物: `framework/stage1/auto_trace.py` + `results/autoscan_reproduce_check.json`(4 模型 diff)。
+
+### Phase A1 — push-button 探 F-Cooper + AttFuse (ckpt 在手, 验证对新模型零源码surgery)
+- ckpt(真, 已核): `/home/jichengzhi/heal_research/checkpoints/baselines_hf/`
+  `HeterBaseline_opv2v_lidar_fcooper_2023_08_06_19_53_10`(config.yaml + net_epoch17.pth) /
+  `..._attfuse_2023_08_06_19_58_00`(config.yaml + net_epoch19.pth)。
+- 只填薄胶水(build_fn 用 HEAL `train_utils.create_model(hypes)` + ckpt) → auto-scan → manifest
+  → `bridge` 耦合判决。**期望 push-button 通, 预期 SEPARABLE**(标准 BaseBEVBackbone)。
+- 同时复用 profiler 模板测 e2e 瓶颈剖面(预期 conv-瓶颈: F-Cooper fusion 1.4ms / AttFuse 3.5ms)。
+
+### Phase A2 — push-button 探 V2VNet / Where2comm / DiscoNet (HF zip ckpt, 解压即扫)
+- 解压 `baselines_hf/*.zip` 或 HF 拉取; 薄胶水 → auto-scan → 判决 + 瓶颈。
+- **V2VNet 重点**: 预期第二个 fusion-瓶颈样本(GNN 28.6ms), 与 V2X-ViT 一起佐证"fusion-瓶颈非
+  transformer 独有"+ auto-scan 在 GNN/注意力 fusion 上能否自动跳过不可追踪部分(压力测试)。
+
+### Phase A3 — 跨模型耦合谱 + 证明陈述
+- 汇 N 模型: (e2e 瓶颈位置 × 耦合判决 × 空间规模 × **每模型胶水行数**)成谱。
+- **证明陈述**: "stage1 对 N 个差异化协同感知模型 push-button 自动扫描(每模型胶水 ≤K 行, 零源码
+  surgery), 自动复现 4 个先前手写 adapter, 并自动区分 conv-分组耦合 / conv-可分离 / fusion-瓶颈
+  三类。" 产物: `results/cross_model_coupling_spectrum.json`。
+
+## 4. 现实 inventory (实测可行性分级; 探测=auto-scan+薄胶水, 非写 adapter)
+
+| 模型 | OpenCOOD 模块 | ckpt 现状 | 历史 fusion 计时(OPV2V, 待复测) | 预期瓶颈 | 分级 |
 |---|---|---|---|---|---|
-| **F-Cooper** | `fusion_in_one`(maxpool) | ✅ `baselines_hf/...opv2v_lidar_fcooper`(+DAIR zip) | 1.41ms (0 fusion 参数) | **conv-瓶颈** | **T1 立即** |
-| **AttFuse** | `fuse_modules/self_attn.py` | ✅ `baselines_hf/...opv2v_lidar_attfuse` | 3.49ms (SDP, 0 参数) | **conv-瓶颈** | **T1 立即** |
-| **V2X-ViT** | `transformer_fuse.py` | ✅ (已探, 见 v2xvit_e2e_breakdown) | 216ms(DAIR eager) | **fusion-瓶颈** | ✅ 已探 |
-| **Pyramid** | `pyramid_fuse.py` | ✅ (已探) | 14.45ms | conv-瓶颈(分组耦合) | ✅ 已探 |
-| **CoDriving** | V2Xverse | ✅ (已探) | — | 可分离 | ✅ 已探 |
-| **Where2comm** | `where2comm_attn.py` | ⚠ HF zip(OPV2V), 无 DAIR yaml | 6.69ms (0.40M 稀疏注意) | 中(待测) | **T2 需解压/配置** |
-| **V2VNet** | `v2v_fuse.py` | ⚠ HF zip(OPV2V) | **28.56ms (6.55M GNN!)** | **fusion-瓶颈** | **T2 需解压** |
-| **DiscoNet** | `point_pillar_disconet.py`(+teacher) | ⚠ 需核 ckpt | GNN 蒸馏 | 中-重(待测) | **T2 核 ckpt** |
-| **Who2com/When2com** | `when2com_fuse.py` | ❌ HEAL 无 ckpt | — | 注意-门控 | **T3 需训练/外源** |
-| **UniV2X 家族** | V2Xverse(univ2x_full/coop_tiny) | ⚠ baseline_4090 有数据点, ckpt 待定位 | — | 含跟踪/规划, 重 | **T3 定位 ckpt** |
+| **F-Cooper** | `fusion_in_one`(maxpool) | ✅ baselines_hf opv2v(+DAIR zip) | 1.41ms (0 fusion 参数) | conv-瓶颈 | **A1 立即** |
+| **AttFuse** | `fuse_modules/self_attn.py` | ✅ baselines_hf opv2v | 3.49ms (SDP, 0 参数) | conv-瓶颈 | **A1 立即** |
+| **V2VNet** | `v2v_fuse.py` | ⚠ HF zip(OPV2V) | **28.56ms (6.55M GNN!)** | **fusion-瓶颈** | **A2** |
+| **Where2comm** | `where2comm_attn.py` | ⚠ HF zip | 6.69ms (0.40M 稀疏注意) | 中(待测) | **A2** |
+| **DiscoNet** | `point_pillar_disconet.py` | ⚠ 核 ckpt | GNN 蒸馏 | 中-重(待测) | **A2** |
+| **Who2com/When2com** | `when2com_fuse.py` | ❌ HEAL 无 ckpt | — | 注意-门控 | **A3 需训练/外源** |
+| **UniV2X 家族** | V2Xverse(univ2x_full) | ⚠ ckpt 待定位 | — | 含跟踪/规划, 重 | **A3 定位 ckpt** |
+| Pyramid / CoDriving / V2X-ViT | — | ✅ 已探(手写 adapter) | — | 复现基准(A0) | ✅ |
 
-> 注: "历史 fusion 计时"来自 `model_zoo_survey_v1.md` 的 OPV2V 分段计时(P0)。预期瓶颈是
-> **假设**, 必须 P0 实测确认 —— 尤其 V2VNet(GNN 6.55M)很可能是第二个 fusion-瓶颈样本。
-
-## 2. 分阶段计划 (按 ckpt 可行性分级, 先摘低垂果实)
-
-### Phase P0 — 立即探测 ckpt-在手的两个 (F-Cooper + AttFuse, ~1-2 GPU session)
-- 复用 `scripts/phase2/profile_v2xvit_e2e_breakdown.py` 模板(改 CKPT_DIR/CONFIG): 实测
-  e2e 瓶颈剖面。**预期确认 conv-瓶颈**(fusion 便宜) → 框架现状对它们适用, 形成与
-  V2X-ViT(fusion-瓶颈)的对照。
-- 复用 `framework/stage1/adapters.py` 模板写 F-Cooper/AttFuse adapter(它们 backbone =
-  标准 BaseBEVBackbone, 比 Pyramid 简单) → `run_scan` → manifest → bridge 耦合判决。
-- **预期**: 标准卷积 backbone → SEPARABLE(像 CoDriving)。产物: 2 个 manifest + 瓶颈 json。
-
-### Phase P1 — 跨模型耦合谱初版 (用已探的 5 个 + P0 的 2 个)
-- 汇 Pyramid/CoDriving/V2X-ViT/F-Cooper/AttFuse 的(瓶颈位置 × 耦合判决 × 空间规模)成一表。
-- **这一步已能支撑论文"框架可普适 + 耦合是架构相关属性"的核心论点**(7 模型谱:
-  conv-分组耦合 / conv-可分离 / fusion-瓶颈 三类)。产物: `results/cross_model_coupling_spectrum.json`。
-
-### Phase P2 — 解压/配置 HF zip ckpt 的三个 (V2VNet / Where2comm / DiscoNet)
-- 解压 `baselines_hf/*.zip`(或 HF 拉取); 配 DAIR/OPV2V yaml; 写 adapter; 探测。
-- **V2VNet 是重点**: 预期第二个 fusion-瓶颈样本(GNN 28.6ms), 与 V2X-ViT 一起证明
-  "fusion-瓶颈不是 transformer 独有, GNN 消息传递同样" → 强化计划一的必要性 + 普适性。
-
-### Phase P3 — 需训练/外源定位的 (Who2com/When2com / UniV2X 家族)
-- Who2com: HEAL 无 ckpt → 找原作者 release 或在 DAIR/OPV2V 上训(成本高, 末位)。
-- UniV2X: 定位 V2Xverse 的 univ2x_full ckpt(baseline_4090 有数据点 → ckpt 应存在), 探测
-  其含跟踪/规划的重型 e2e(注意: 真 AMOTA 只能来自这类有跟踪头的模型, 见 reflection)。
-
-## 3. 单模型探测的标准流程 (可复制 checklist)
-1. clone/定位 模型代码 + ckpt 到 `multi_agent/model/<name>/`(或复用 heal/V2Xverse 盘上)。
-2. 写 `<Name>Adapter`(继承现有 adapter 模板; 隔离稠密 conv 核, skip sparse encoder/fusion)。
-3. `python -m framework.stage1.run_scan --model <name> --device cpu --profile-latency off`
-   → manifest。
-4. `python -m framework.stage1_bridge` 看耦合判决; 写 e2e 瓶颈 profiler(改 CKPT/CONFIG)。
-5. **核验纪律**: latency 在空闲 GPU(4/5/6) 测; 区分 eager/编译口径; 不信自报必复跑。
-
-## 4. 与计划一的接口
-P0/P2 的瓶颈剖面**直接圈定计划一的适用集**: 凡 fusion 占 e2e 大头者(V2X-ViT/V2VNet/…)
-进计划一; conv-瓶颈者(F-Cooper/AttFuse/…)用现状框架。**建议先做本计划 P0-P1**(便宜、
-快、产出谱), 再据瓶颈谱决定计划一投入多少。
+> 历史计时来自 `multi_agent/model/model_zoo_survey_v1.md`(OPV2V P0 粗测); 预期瓶颈是**假设**,
+> 本轮 auto-scan + profiler **必须实测复核**(尤 V2VNet; DAIR vs OPV2V 口径不混)。
 
 ## 5. 诚实边界 / 风险
-- **adapter 是每模型主工**: 各模型 forward 签名/输入不同(multi-agent/com_mask), trace 隔离
-  稠密核需逐个处理(4 个已有 adapter 是模板, 但新模型仍要工)。
-- **ckpt 可得性是硬约束**: T1 两个在手; T2 三个需解压/配 yaml; T3 两个需训练/外源 → 越往后
-  越贵。**先交付 T1+P1(7 模型谱)**, 它已足够支撑普适性论点。
-- 历史 OPV2V 分段计时是 P0 粗测, 预期瓶颈必须本轮重新实测确认(尤其 DAIR vs OPV2V 口径不同)。
-- 真加速/真 AP 一律实测; eager vs 编译口径分清; 跨数据集(DAIR/OPV2V) ckpt 不混比。
+- **auto-scan 的自动跳过是核心风险**: 不可追踪算子(spconv / com_mask fusion / 自定义 CUDA)能否
+  稳健"捕获→排除→重试"未验证; A0 复现 4 模型就是第一道压力测试(它们恰好覆盖 sparse VFE + 协同
+  fusion + 分组 conv)。复现不过 ⇒ auto-scan 设计要迭代, 而非掩盖。
+- **薄胶水不可消灭到 0**: 模型 from-config 构造 + ckpt 路径是身份, 必须给; 目标是消灭源码 surgery
+  (手写 _Net forward / 手列 skip·ignored), 不是消灭加载样板。每模型胶水行数要如实计入 §A3 谱。
+- ckpt 可得性: A1 两个在手; A2 三个需解压/配 yaml; A3 两个需训练/外源 → 越后越贵。**先交付
+  A0(自动化金标准)+ A1(push-button 首证)**, 已足够支撑"stage1 自动普适"的核心论点。
+- 真加速/真 AP 一律实测; eager vs 编译口径分清; 跨数据集 ckpt 不混比; 不信自报必复跑。
