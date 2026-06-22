@@ -1,0 +1,64 @@
+{
+  "codriving": {
+    "model": "codriving",
+    "match": true,
+    "n_diffs": 0,
+    "diffs": []
+  },
+  "pyramid_lidar": {
+    "model": "pyramid_lidar",
+    "match": true,
+    "n_diffs": 0,
+    "diffs": []
+  },
+  "v2xvit": {
+    "model": "v2xvit",
+    "match": true,
+    "n_diffs": 0,
+    "diffs": []
+  },
+  "fcooper": {
+    "model": "fcooper",
+    "match": null,
+    "note": "no_ref_yaml",
+    "scan_status": "ok",
+    "search_space_summary": {
+      "n_b1_groups_structural": 24,
+      "n_b1_search_knobs": 4,
+      "n_b2_quant_units": 3,
+      "n_d_routing_segments": 1,
+      "latency_status": "skipped",
+      "latency_e2e_forward_ms": null
+    },
+    "stats": {
+      "params_total": 8057620,
+      "param_dist": {
+        "backbone": 0.742,
+        "heads": 0.0006,
+        "neck": 0.2574
+      }
+    }
+  },
+  "attfuse": {
+    "model": "attfuse",
+    "match": null,
+    "note": "no_ref_yaml",
+    "scan_status": "ok",
+    "search_space_summary": {
+      "n_b1_groups_structural": 24,
+      "n_b1_search_knobs": 4,
+      "n_b2_quant_units": 3,
+      "n_d_routing_segments": 1,
+      "latency_status": "skipped",
+      "latency_e2e_forward_ms": null
+    },
+    "stats": {
+      "params_total": 8057620,
+      "param_dist": {
+        "backbone": 0.742,
+        "heads": 0.0006,
+        "neck": 0.2574
+      }
+    }
+  }
+}

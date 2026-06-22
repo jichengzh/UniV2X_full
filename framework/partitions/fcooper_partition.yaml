@@ -1,0 +1,1033 @@
+stage: stage1_partition
+model: fcooper
+model_class: HeterModelBaseline (MaxFusion)
+config: /home/jichengzhi/heal_research/checkpoints/baselines_hf/HeterBaseline_opv2v_lidar_fcooper_2023_08_06_19_53_10/config.yaml
+ckpt: /home/jichengzhi/heal_research/checkpoints/baselines_hf/HeterBaseline_opv2v_lidar_fcooper_2023_08_06_19_53_10/net_epoch_bestval_at23.pth
+ckpt_status: ok
+hw_capability:
+  path: /home/jichengzhi/V2X/configs/hardware/rtx4090.yaml
+  name: NVIDIA GeForce RTX 4090
+  arch: ada sm89
+  schema_validated: true
+  schema_validate_err: null
+  has_dla: false
+  dla_op_whitelist: null
+  int8_align: 32
+  fp16_align: 8
+  alignment_enforcement: hard
+  legal_bits:
+  - INT8
+  - FP16
+  legal_granularity_w: &id001
+  - per_tensor
+  - per_channel
+  - per_group
+  per_channel_act: false
+  symmetric_only: true
+  mem_capacity_gb: 22.0
+trace:
+  entry_shape:
+  - 1
+  - 64
+  - 512
+  - 512
+  skipped_modules:
+  - pillar_vfe (sparse VFE, auto-skip)
+  - scatter (sparse scatter, auto-skip)
+  - 'fusion_net (MaxFusion: 无参数 max pooling, auto-skip)'
+  note: 'auto_trace: _HeterBaselineTraceNet (backbone_m1 + optional shrink + heads);
+    push-button: 零源码 surgery, 零 _Net 子类'
+prune_object: channel
+stats:
+  params_total: 8057620
+  param_dist:
+    backbone: 0.742
+    heads: 0.0006
+    neck: 0.2574
+search_space_summary:
+  n_b1_groups_structural: 24
+  n_b1_search_knobs: 4
+  n_b2_quant_units: 3
+  n_d_routing_segments: 1
+  latency_status: skipped
+  latency_e2e_forward_ms: null
+view_b1_search_groups:
+- search_group_id: neck
+  bucket: neck
+  n_b1_groups: 5
+  member_b1_groups:
+  - g0
+  - g1
+  - g2
+  - g22
+  - g23
+  widths:
+  - 128
+  - 256
+  max_rate: 0.75
+  round_to: 32
+  int8_buildable_align: 4
+  grouped_conv: false
+  criterion_pool:
+  - FPGM
+  - L1
+- search_group_id: backbone.s2
+  bucket: backbone
+  n_b1_groups: 9
+  member_b1_groups:
+  - g3
+  - g4
+  - g5
+  - g6
+  - g7
+  - g8
+  - g9
+  - g10
+  - g11
+  widths:
+  - 256
+  max_rate: 0.875
+  round_to: 32
+  int8_buildable_align: 4
+  grouped_conv: false
+  criterion_pool:
+  - FPGM
+  - L1
+- search_group_id: backbone.s1
+  bucket: backbone
+  n_b1_groups: 6
+  member_b1_groups:
+  - g12
+  - g13
+  - g14
+  - g15
+  - g16
+  - g17
+  widths:
+  - 128
+  max_rate: 0.75
+  round_to: 32
+  int8_buildable_align: 4
+  grouped_conv: false
+  criterion_pool:
+  - FPGM
+  - L1
+- search_group_id: backbone.s0
+  bucket: backbone
+  n_b1_groups: 4
+  member_b1_groups:
+  - g18
+  - g19
+  - g20
+  - g21
+  widths:
+  - 64
+  max_rate: 0.5
+  round_to: 32
+  int8_buildable_align: 4
+  grouped_conv: false
+  criterion_pool:
+  - FPGM
+  - L1
+view_b1_prune_groups:
+- group_id: g0
+  bucket: neck
+  root_layer: shrinker.layers.0.double_conv.2
+  member_layers:
+  - shrinker.layers.0.double_conv.2
+  - cls_head
+  - reg_head
+  - dir_head
+  n_members: 4
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets:
+  - heads
+  - neck
+- group_id: g1
+  bucket: neck
+  root_layer: shrinker.layers.0.double_conv.0
+  member_layers:
+  - shrinker.layers.0.double_conv.0
+  - shrinker.layers.0.double_conv.2
+  n_members: 2
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g2
+  bucket: neck
+  root_layer: backbone.deblocks.2.0
+  member_layers:
+  - backbone.deblocks.2.0
+  - backbone.deblocks.2.1
+  - shrinker.layers.0.double_conv.0
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g3
+  bucket: backbone
+  root_layer: backbone.blocks.2.25
+  member_layers:
+  - backbone.blocks.2.25
+  - backbone.blocks.2.26
+  - backbone.deblocks.2.0
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets:
+  - backbone
+  - neck
+- group_id: g4
+  bucket: backbone
+  root_layer: backbone.blocks.2.22
+  member_layers:
+  - backbone.blocks.2.22
+  - backbone.blocks.2.23
+  - backbone.blocks.2.25
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g5
+  bucket: backbone
+  root_layer: backbone.blocks.2.19
+  member_layers:
+  - backbone.blocks.2.19
+  - backbone.blocks.2.20
+  - backbone.blocks.2.22
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g6
+  bucket: backbone
+  root_layer: backbone.blocks.2.16
+  member_layers:
+  - backbone.blocks.2.16
+  - backbone.blocks.2.17
+  - backbone.blocks.2.19
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g7
+  bucket: backbone
+  root_layer: backbone.blocks.2.13
+  member_layers:
+  - backbone.blocks.2.13
+  - backbone.blocks.2.14
+  - backbone.blocks.2.16
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g8
+  bucket: backbone
+  root_layer: backbone.blocks.2.10
+  member_layers:
+  - backbone.blocks.2.10
+  - backbone.blocks.2.11
+  - backbone.blocks.2.13
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g9
+  bucket: backbone
+  root_layer: backbone.blocks.2.7
+  member_layers:
+  - backbone.blocks.2.7
+  - backbone.blocks.2.8
+  - backbone.blocks.2.10
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g10
+  bucket: backbone
+  root_layer: backbone.blocks.2.4
+  member_layers:
+  - backbone.blocks.2.4
+  - backbone.blocks.2.5
+  - backbone.blocks.2.7
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g11
+  bucket: backbone
+  root_layer: backbone.blocks.2.1
+  member_layers:
+  - backbone.blocks.2.1
+  - backbone.blocks.2.2
+  - backbone.blocks.2.4
+  n_members: 3
+  prune_dim: out
+  cur_width: 256
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.875
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g12
+  bucket: backbone
+  root_layer: backbone.blocks.1.16
+  member_layers:
+  - backbone.blocks.1.16
+  - backbone.blocks.1.17
+  - backbone.deblocks.1.0
+  - backbone.blocks.2.1
+  n_members: 4
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets:
+  - backbone
+  - neck
+- group_id: g13
+  bucket: backbone
+  root_layer: backbone.blocks.1.13
+  member_layers:
+  - backbone.blocks.1.13
+  - backbone.blocks.1.14
+  - backbone.blocks.1.16
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g14
+  bucket: backbone
+  root_layer: backbone.blocks.1.10
+  member_layers:
+  - backbone.blocks.1.10
+  - backbone.blocks.1.11
+  - backbone.blocks.1.13
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g15
+  bucket: backbone
+  root_layer: backbone.blocks.1.7
+  member_layers:
+  - backbone.blocks.1.7
+  - backbone.blocks.1.8
+  - backbone.blocks.1.10
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g16
+  bucket: backbone
+  root_layer: backbone.blocks.1.4
+  member_layers:
+  - backbone.blocks.1.4
+  - backbone.blocks.1.5
+  - backbone.blocks.1.7
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g17
+  bucket: backbone
+  root_layer: backbone.blocks.1.1
+  member_layers:
+  - backbone.blocks.1.1
+  - backbone.blocks.1.2
+  - backbone.blocks.1.4
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g18
+  bucket: backbone
+  root_layer: backbone.blocks.0.10
+  member_layers:
+  - backbone.blocks.0.10
+  - backbone.blocks.0.11
+  - backbone.deblocks.0.0
+  - backbone.blocks.1.1
+  n_members: 4
+  prune_dim: out
+  cur_width: 64
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.5
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets:
+  - backbone
+  - neck
+- group_id: g19
+  bucket: backbone
+  root_layer: backbone.blocks.0.7
+  member_layers:
+  - backbone.blocks.0.7
+  - backbone.blocks.0.8
+  - backbone.blocks.0.10
+  n_members: 3
+  prune_dim: out
+  cur_width: 64
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.5
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g20
+  bucket: backbone
+  root_layer: backbone.blocks.0.4
+  member_layers:
+  - backbone.blocks.0.4
+  - backbone.blocks.0.5
+  - backbone.blocks.0.7
+  n_members: 3
+  prune_dim: out
+  cur_width: 64
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.5
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g21
+  bucket: backbone
+  root_layer: backbone.blocks.0.1
+  member_layers:
+  - backbone.blocks.0.1
+  - backbone.blocks.0.2
+  - backbone.blocks.0.4
+  n_members: 3
+  prune_dim: out
+  cur_width: 64
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.5
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g22
+  bucket: neck
+  root_layer: backbone.deblocks.1.0
+  member_layers:
+  - backbone.deblocks.1.0
+  - backbone.deblocks.1.1
+  - shrinker.layers.0.double_conv.0
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+- group_id: g23
+  bucket: neck
+  root_layer: backbone.deblocks.0.0
+  member_layers:
+  - backbone.deblocks.0.0
+  - backbone.deblocks.0.1
+  - shrinker.layers.0.double_conv.0
+  n_members: 3
+  prune_dim: out
+  cur_width: 128
+  grouped_conv_g: 1
+  round_to_int8: 32
+  round_to_fp16: 8
+  round_to_default: 32
+  int8_buildable_align: 4
+  width_floor: 32
+  enforcement: hard
+  max_rate: 0.75
+  criterion_pool:
+  - L1
+  - FPGM
+  prunable: true
+  coupled_buckets: null
+view_b2_quant_units:
+- unit: backbone
+  param_count: 5978624
+  op_composition:
+    Conv2d: 19
+    BatchNorm2d: 19
+  member_groups:
+  - g3
+  - g4
+  - g5
+  - g6
+  - g7
+  - g8
+  - g9
+  - g10
+  - g11
+  - g12
+  - g13
+  - g14
+  - g15
+  - g16
+  - g17
+  - g18
+  - g19
+  - g20
+  - g21
+  quantizable: true
+  legal_bits:
+  - INT8
+  - FP16
+  legal_granularity_w: *id001
+  per_channel_act_ok: false
+- unit: heads
+  param_count: 5140
+  op_composition:
+    Conv2d: 3
+  member_groups: []
+  quantizable: false
+  legal_bits:
+  - FP16
+  legal_granularity_w: *id001
+  per_channel_act_ok: false
+- unit: neck
+  param_count: 2073856
+  op_composition:
+    ConvTranspose2d: 3
+    BatchNorm2d: 3
+    Conv2d: 2
+  member_groups:
+  - g0
+  - g1
+  - g2
+  - g22
+  - g23
+  quantizable: true
+  legal_bits:
+  - INT8
+  - FP16
+  legal_granularity_w: *id001
+  per_channel_act_ok: false
+view_d_routing_segments:
+  n_segments: 1
+  note: 硬件无 DLA → 整图单 GPU 段, D.L1 退化, 无路由决策 (逐节点 dla_able 全 False)
+  segments:
+  - device: gpu
+    n_nodes: 49
+view_d_routing:
+- node: backbone.blocks.0.1
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.2
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.4
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.5
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.7
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.8
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.10
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.0.11
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.1
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.2
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.4
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.5
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.7
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.8
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.10
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.11
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.13
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.14
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.16
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.1.17
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.1
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.2
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.4
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.5
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.7
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.8
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.10
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.11
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.13
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.14
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.16
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.17
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.19
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.20
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.22
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.23
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.25
+  op_type: Conv2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.blocks.2.26
+  op_type: BatchNorm2d
+  bucket: backbone
+  dla_able: false
+  propagate_b2: null
+- node: backbone.deblocks.0.0
+  op_type: ConvTranspose2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: backbone.deblocks.0.1
+  op_type: BatchNorm2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: backbone.deblocks.1.0
+  op_type: ConvTranspose2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: backbone.deblocks.1.1
+  op_type: BatchNorm2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: backbone.deblocks.2.0
+  op_type: ConvTranspose2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: backbone.deblocks.2.1
+  op_type: BatchNorm2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: shrinker.layers.0.double_conv.0
+  op_type: Conv2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: shrinker.layers.0.double_conv.2
+  op_type: Conv2d
+  bucket: neck
+  dla_able: false
+  propagate_b2: null
+- node: cls_head
+  op_type: Conv2d
+  bucket: heads
+  dla_able: false
+  propagate_b2: null
+- node: reg_head
+  op_type: Conv2d
+  bucket: heads
+  dla_able: false
+  propagate_b2: null
+- node: dir_head
+  op_type: Conv2d
+  bucket: heads
+  dla_able: false
+  propagate_b2: null
+view_latency:
+  status: skipped
+  reason: profile_latency_mode=off, device=cpu (auto 仅 cuda 开; --profile-latency on
+    可强制 cpu 估算)
+checks:
+  all_floor_mod_round_to: true
+  floor_violations: null
+  dryrun_prune05:
+    status: ok
+    params_before: 8057620
+    params_after: 2026900
+    reduction_pct: 74.8
+    grouped_conv_consistent: true
+    out_shapes:
+    - - 1
+      - 2
+      - 256
+      - 256
+    - - 1
+      - 14
+      - 256
+      - 256
+    - - 1
+      - 4
+      - 256
+      - 256
+scan_status: ok
