@@ -731,8 +731,12 @@ def build_from_manifest(manifest_path,
     lut = LatencyLUT(lut_path, seed_path, key_scale=key_scale)
     apm = APModel(ap_path, seed_path, key_scale=key_scale)
     qlut = QLookup(key_scale=key_scale, bridge_int8_align=bridge_align, **q_kwargs)
+    # ★ stage1→stage2 打通: 逐-knob 耦合分数驱动内环分流 (高耦合旋钮联合搜/低耦合串行)。
+    dispatch = spec.dispatch_plan()
     return {"spec": spec, "key_scale": key_scale, "bridge_int8_align": bridge_align,
-            "lut": lut, "apm": apm, "qlut": qlut, "gating_knob": gating}
+            "lut": lut, "apm": apm, "qlut": qlut, "gating_knob": gating,
+            "dispatch_plan": dispatch, "joint_knobs": [d["knob"] for d in dispatch
+                                                       if d["dispatch"] == "joint"]}
 
 
 # ============================================================================

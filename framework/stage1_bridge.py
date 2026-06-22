@@ -163,6 +163,45 @@ class KnobSpec:
     def buildable_int8_widths(self) -> list[int]:
         return [w for w in self.legal_widths() if self.buildable_int8(w)]
 
+    # ---- 逐-knob 耦合特征 (stage1→stage2 的分流信号; 解析+结构先验, 非2点回归) ----
+    def cliff_strength(self) -> float:
+        """P×Q 耦合强度 = log2(int8_buildable_align / round_to) (≥0)。
+
+        剪枝宽度(P)是否决定 int8(Q)可达: 当 int8_buildable_align > round_to(分组对齐
+        悬崖), 部分合法剪宽不可建 int8 → P 选择把 Q 轴锁死 → 内外耦合。纯解析,
+        从 manifest 对齐数直接算: Pyramid 分组 log2(128/32)=2; 标准卷积 log2(1)=0。
+        """
+        rt = max(1, self.round_to)
+        ratio = max(1.0, self.int8_buildable_align / rt)
+        return math.log2(ratio)
+
+    def schedule_headroom_prior(self, measured_gain: Optional[float] = None) -> float:
+        """P×S 耦合强度 ∈ [0,1] = 调度自动调优的余量 (越大内环越该联合搜)。
+
+        机理: 宽度一变, 合法 tile/快核/可融合性随之重建 → 调度最优点漂移; 余量大
+        则内环(调度搜索)对最终延迟影响大、且依赖宽度 → P×S 强耦合。
+        结构先验(无 per-block 实测时): 分组/非标卷积 TVM 调优增益大(实测跨模型定标:
+        Pyramid 分组 ~8.7× vs CoDriving 标准 ~2×, HANDOFF_codesign_unified §2) → grouped
+        高余量、标准低余量。measured_gain(该块 default/tuned 实测比)给了则优先用、归一化。
+        """
+        if measured_gain is not None and measured_gain > 1.0:
+            # 实测优先: 归一化到 [0,1], 以跨模型上界 ~9× 为满刻度。
+            return min(1.0, math.log2(measured_gain) / math.log2(9.0))
+        # 结构先验 (定标自跨模型 TVM 增益: 分组≈8.7×→~1.0 / 标准≈2×→~0.32)。
+        return (math.log2(8.7) if self.grouped_conv else math.log2(2.0)) / math.log2(9.0)
+
+    def coupling_score(self, measured_gain: Optional[float] = None,
+                       w_cliff: float = 0.5, w_sched: float = 0.5) -> float:
+        """逐-knob 内外环(S↔P×Q)耦合分数 ∈ [0,1]。
+
+        = w_cliff·(cliff_strength 归一化) + w_sched·schedule_headroom_prior。
+        cliff 以 log2(32)=5(对齐悬崖经验上界)归一化。高分 → stage2 该旋钮联合搜
+        (付内环); 低分 → 串行(默认调度下锁外环, 省内环预算)。
+        """
+        cliff_norm = min(1.0, self.cliff_strength() / 5.0)
+        sched = self.schedule_headroom_prior(measured_gain)
+        return round(w_cliff * cliff_norm + w_sched * sched, 4)
+
 
 # ---------------------------------------------------------------------------
 # 量化单元 / 路由段 (B2 / D 视图)
@@ -245,6 +284,45 @@ class SpaceSpec:
         CoDriving 全 g=1 → 恒 False (可分离); Pyramid 分组旋钮 → True (P-hub 耦合)。
         """
         return any(set(k.legal_widths()) - set(k.buildable_int8_widths()) for k in self.knobs)
+
+    # ---- 逐-knob 分流计划 (stage1→stage2 真正打通点: 耦合分数驱动内环预算) ----
+    def dispatch_plan(self, tau: float = 0.5,
+                      measured_gains: Optional[dict] = None) -> list[dict]:
+        """每个搜索旋钮的耦合分数 + 内环分流决策。
+
+        stage2 据此**逐旋钮**决定: 高耦合(score≥tau)→ 该旋钮宽度与调度**联合搜**
+        (付内环); 低耦合 → **串行**(默认调度下锁外环最优, 省内环预算)。这把全局
+        三臂(A-joint/A-serial)细化成**逐块自适应**: 耦合在哪儿、联合搜就花在哪儿。
+        measured_gains: {search_group_id: default/tuned 实测比} 可选, 优先于结构先验。
+        """
+        mg = measured_gains or {}
+        plan = []
+        for k in self.knobs:
+            score = k.coupling_score(measured_gain=mg.get(k.search_group_id))
+            plan.append({
+                "knob": k.search_group_id, "bucket": k.bucket,
+                "grouped_conv": k.grouped_conv,
+                "round_to": k.round_to, "int8_buildable_align": k.int8_buildable_align,
+                "cliff_strength": round(k.cliff_strength(), 3),
+                "schedule_headroom": round(k.schedule_headroom_prior(mg.get(k.search_group_id)), 3),
+                "coupling_score": score,
+                "dispatch": "joint" if score >= tau else "serial",
+            })
+        return sorted(plan, key=lambda p: -p["coupling_score"])
+
+    def coupling_summary(self, tau: float = 0.5,
+                         measured_gains: Optional[dict] = None) -> dict:
+        plan = self.dispatch_plan(tau, measured_gains)
+        n_joint = sum(1 for p in plan if p["dispatch"] == "joint")
+        return {
+            "model": self.model,
+            "int8_buildability_cliff": self.has_int8_buildability_cliff(),
+            "max_coupling_score": max((p["coupling_score"] for p in plan), default=0.0),
+            "n_knobs": len(plan), "n_joint": n_joint, "n_serial": len(plan) - n_joint,
+            "architecture_verdict": ("COUPLED (部分旋钮联合搜)" if n_joint else
+                                     "SEPARABLE (全旋钮可串行)"),
+            "dispatch_plan": plan,
+        }
 
     # ---- 自检报告 ----
     def summary(self) -> dict:

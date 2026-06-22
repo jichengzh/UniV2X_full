@@ -145,6 +145,12 @@ def run(n_seeds=12, budget=60, pop=8, verbose=True, manifest=None):
             print(f"  [bridge] manifest={Path(manifest).name} key_scale={key_scale} "
                   f"int8_buildable_align={b['bridge_int8_align']} "
                   f"gating={g.search_group_id if g else None}")
+            print(f"  [dispatch] 逐-knob 耦合分流 (stage1 耦合分数→stage2 内环预算):")
+            for d in b["dispatch_plan"]:
+                print(f"    {d['knob']:18s} score={d['coupling_score']:.3f} "
+                      f"(cliff={d['cliff_strength']:.2f} sched={d['schedule_headroom']:.2f}) "
+                      f"→ {d['dispatch'].upper()}")
+            print(f"  [dispatch] 联合搜旋钮 = {b['joint_knobs']} (其余串行, 省内环预算)")
     else:
         lut = LatencyLUT()
         apm = APModel()
