@@ -1,0 +1,424 @@
+{
+  "meta": {
+    "experiment": "P\u00d7Q\u00d7S three-axis coupling ablation",
+    "data_status": "real",
+    "int8_latency_model": "H800_TVM_fp16 / 1.449 (uniform proxy from real H800 stage0 WMMA int8; H800-pure, no 4090 cross-hardware)",
+    "int8_ap_delta": -0.008,
+    "int8_ap_source": "real DAIR val 1789 TRT INT8 MinMaxCalib (median)",
+    "structural_constraint": "int8 buildable iff in_per_g(=s0//16) % 4 == 0 (NCHWc IC_BN=4 / dp4a 4-int8 packing); s0=48 MEASURED-excluded (q_int8_dp4a_pairs.csv), s0=16/32 excluded by same rule",
+    "caveat": "INT8 latency is a UNIFORM per-width stage0-speedup proxy; full-backbone int8 (stage1/stage2) NOT separately measured. The CATEGORICAL claim (buildable-or-not) is the robust result; the int8 latency MAGNITUDE is a proxy.",
+    "lut_mode": "b1_direct",
+    "ap_mode": "b2",
+    "n_seeds": 12,
+    "budget": 60,
+    "pop_size": 8,
+    "grid_widths": [
+      [
+        16,
+        32,
+        64
+      ],
+      [
+        32,
+        64,
+        128
+      ],
+      [
+        48,
+        64,
+        256
+      ],
+      [
+        48,
+        96,
+        192
+      ],
+      [
+        48,
+        128,
+        128
+      ],
+      [
+        64,
+        64,
+        256
+      ],
+      [
+        64,
+        96,
+        192
+      ],
+      [
+        64,
+        128,
+        128
+      ],
+      [
+        64,
+        128,
+        256
+      ]
+    ],
+    "hv_ref_scalar": 7571.108652866149,
+    "hv_ref_nadir": [
+      59137.2705,
+      -0.502
+    ]
+  },
+  "int8_buildability_table": [
+    {
+      "width": [
+        16,
+        32,
+        64
+      ],
+      "label": "p75",
+      "s0": 16,
+      "in_per_g": 1,
+      "int8_buildable": false
+    },
+    {
+      "width": [
+        32,
+        64,
+        128
+      ],
+      "label": "p50",
+      "s0": 32,
+      "in_per_g": 2,
+      "int8_buildable": false
+    },
+    {
+      "width": [
+        48,
+        64,
+        256
+      ],
+      "label": "(48, 64, 256)",
+      "s0": 48,
+      "in_per_g": 3,
+      "int8_buildable": false
+    },
+    {
+      "width": [
+        48,
+        96,
+        192
+      ],
+      "label": "trap25",
+      "s0": 48,
+      "in_per_g": 3,
+      "int8_buildable": false
+    },
+    {
+      "width": [
+        48,
+        128,
+        128
+      ],
+      "label": "(48, 128, 128)",
+      "s0": 48,
+      "in_per_g": 3,
+      "int8_buildable": false
+    },
+    {
+      "width": [
+        64,
+        64,
+        256
+      ],
+      "label": "(64, 64, 256)",
+      "s0": 64,
+      "in_per_g": 4,
+      "int8_buildable": true
+    },
+    {
+      "width": [
+        64,
+        96,
+        192
+      ],
+      "label": "pad64",
+      "s0": 64,
+      "in_per_g": 4,
+      "int8_buildable": true
+    },
+    {
+      "width": [
+        64,
+        128,
+        128
+      ],
+      "label": "(64, 128, 128)",
+      "s0": 64,
+      "in_per_g": 4,
+      "int8_buildable": true
+    },
+    {
+      "width": [
+        64,
+        128,
+        256
+      ],
+      "label": "base",
+      "s0": 64,
+      "in_per_g": 4,
+      "int8_buildable": true
+    }
+  ],
+  "q_rank_flip_pairs": [],
+  "ps_rank_flip_pairs": [
+    {
+      "wg": [
+        48,
+        128,
+        128
+      ],
+      "pg": [
+        64,
+        128,
+        128
+      ],
+      "ap70": 0.6369,
+      "iso_ap_latency_ratio": 3.827
+    },
+    {
+      "wg": [
+        48,
+        96,
+        192
+      ],
+      "pg": [
+        64,
+        96,
+        192
+      ],
+      "ap70": 0.5905,
+      "iso_ap_latency_ratio": 3.513
+    },
+    {
+      "wg": [
+        48,
+        64,
+        256
+      ],
+      "pg": [
+        64,
+        64,
+        256
+      ],
+      "ap70": 0.6362,
+      "iso_ap_latency_ratio": 3.292
+    }
+  ],
+  "hv_distribution": {
+    "A-joint-PQS": {
+      "mean": 7557.072353167449,
+      "std": 26.41480261097675,
+      "min": 7500.356012866149,
+      "max": 7571.108652866149,
+      "pct_of_joint": 100.0
+    },
+    "A-noS-PQS": {
+      "mean": 4282.333816742387,
+      "std": 104.47568529958038,
+      "min": 3938.103695785405,
+      "max": 4317.576495785405,
+      "pct_of_joint": 56.666571611524965
+    },
+    "A-serial-PQS": {
+      "mean": 6447.5708634500015,
+      "std": 9.094947017729282e-13,
+      "min": 6447.570863450001,
+      "max": 6447.570863450001,
+      "pct_of_joint": 85.31836883561907
+    }
+  },
+  "hv_raw": {
+    "A-joint-PQS": [
+      7571.108652866149,
+      7571.108652866149,
+      7571.108652866149,
+      7500.356012866149,
+      7571.108652866149,
+      7571.108652866149,
+      7571.108652866149,
+      7571.108652866149,
+      7544.178336481747,
+      7571.108652866149,
+      7571.108652866149,
+      7500.356012866149
+    ],
+    "A-noS-PQS": [
+      4317.576495785405,
+      4317.576495785405,
+      4317.576495785405,
+      4317.576495785405,
+      4317.576495785405,
+      4317.576495785405,
+      4274.137147269187,
+      4317.576495785405,
+      3938.103695785405,
+      4317.576495785405,
+      4317.576495785405,
+      4317.576495785405
+    ],
+    "A-serial-PQS": [
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001,
+      6447.570863450001
+    ]
+  },
+  "wilcoxon_joint_vs_serial": {
+    "n": 12,
+    "n_nonzero": 12,
+    "mean_diff": 1109.501489717448,
+    "method": "scipy.wilcoxon",
+    "statistic": 0.0,
+    "p_value": 0.00048828125,
+    "effect_size_rank_biserial": 1.0
+  },
+  "structural_q_claim": {
+    "n_pairs": 3,
+    "per_pair": [
+      {
+        "wg": [
+          48,
+          128,
+          128
+        ],
+        "pg": [
+          64,
+          128,
+          128
+        ],
+        "ap70": 0.6369,
+        "wg_in_per_g": 3,
+        "pg_in_per_g": 4,
+        "wg_int8_buildable": false,
+        "pg_int8_buildable": true,
+        "joint_reaches_pg_int8": true,
+        "serial_reaches_pg_int8": false,
+        "ps_iso_ap_latency_ratio": 3.827
+      },
+      {
+        "wg": [
+          48,
+          96,
+          192
+        ],
+        "pg": [
+          64,
+          96,
+          192
+        ],
+        "ap70": 0.5905,
+        "wg_in_per_g": 3,
+        "pg_in_per_g": 4,
+        "wg_int8_buildable": false,
+        "pg_int8_buildable": true,
+        "joint_reaches_pg_int8": true,
+        "serial_reaches_pg_int8": false,
+        "ps_iso_ap_latency_ratio": 3.513
+      },
+      {
+        "wg": [
+          48,
+          64,
+          256
+        ],
+        "pg": [
+          64,
+          64,
+          256
+        ],
+        "ap70": 0.6362,
+        "wg_in_per_g": 3,
+        "pg_in_per_g": 4,
+        "wg_int8_buildable": false,
+        "pg_int8_buildable": true,
+        "joint_reaches_pg_int8": true,
+        "serial_reaches_pg_int8": false,
+        "ps_iso_ap_latency_ratio": 3.292
+      }
+    ],
+    "categorical_pass": true,
+    "serial_misaligned_int8_on_pareto": false,
+    "serial_locked_widths": [
+      [
+        16,
+        32,
+        64
+      ],
+      [
+        32,
+        64,
+        128
+      ],
+      [
+        48,
+        64,
+        256
+      ],
+      [
+        48,
+        128,
+        128
+      ]
+    ],
+    "serial_locked_all_int8_unbuildable": true,
+    "n_joint_int8_widths": 4,
+    "n_serial_int8_widths": 0,
+    "interpretation": "3-axis coupling PROVEN: A-serial's ENTIRE fp16-default-locked frontier ([[16, 32, 64], [32, 64, 128], [48, 64, 256], [48, 128, 128]]) consists of int8-UNBUILDABLE widths (all s0 in {16,32,48}, in_per_g not divisible by 4) \u2014 because the fp16-default-fast frontier is itself dominated by misaligned-s0 widths. So A-serial reaches int8 on ZERO widths, while A-joint reaches int8 on 4 aligned (s0=64) widths. Even though A-serial DOES tune quant in stage2, its locked widths cannot build int8. The SAME s0-alignment property gates pruning, schedule-tuning AND quant."
+  },
+  "visited_int8": {
+    "A-joint-PQS": [
+      [
+        "(64, 128, 128)",
+        "default"
+      ],
+      [
+        "(64, 128, 128)",
+        "tuned"
+      ],
+      [
+        "(64, 64, 256)",
+        "default"
+      ],
+      [
+        "(64, 64, 256)",
+        "tuned"
+      ],
+      [
+        "base",
+        "default"
+      ],
+      [
+        "base",
+        "tuned"
+      ],
+      [
+        "pad64",
+        "default"
+      ],
+      [
+        "pad64",
+        "tuned"
+      ]
+    ],
+    "A-serial-PQS": []
+  },
+  "figures": {
+    "hv_boxplot": "/home/jichengzhi/V2X/multi_agent/figure/pqs_hv_boxplot.png",
+    "pareto_int8": "/home/jichengzhi/V2X/multi_agent/figure/pqs_pareto_int8.png"
+  }
+}

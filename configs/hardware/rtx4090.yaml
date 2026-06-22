@@ -46,6 +46,14 @@ alignment:
   int8_dense_channel: 32
   int8_sparse_channel: 32
   k_dim_min_for_2_4_sparse: 64
+  # ★ dp4a/IMMA int8 沿 per-group 输入(reduction)轴打包 pack_factor 个 int8 (TVM 路径):
+  #   分组卷积 int8 可建 ⟺ in_per_g % pack_factor == 0 ⟺ width % (pack_factor×groups) == 0。
+  #   有效 int8 可建对齐 = pack_factor × groups (不叠 int8_dense_channel; 那是 TRT 张量
+  #   tiling, 进 round_to 不进可建性 — TVM dp4a 路径无 32-floor)。
+  #   两模型实测交叉定标: Pyramid g=32 (q_int8_dp4a_pairs.csv): in_per_g=4 PASS /
+  #   =3 NOT_APPLICABLE → 4×32=128; CoDriving g=1 (codriving_int8_verify.json):
+  #   Cin=48/64 均 build → 4×1=4 (全可建; 若误叠 lcm(32,4)=32 会假判 48 不可建)。
+  int8_pack_factor: 4
   alignment_enforcement: "hard"    # ★ 默认保守: 4090 端尚未做对齐拐点实证 (Orin 已验证 soft)
                                     #   待补实验后改 (类比 N2v2 在 4090 上重做)
 
@@ -88,12 +96,15 @@ memory:
   available_for_inference_gb: 22     # 减驱动/cuda context
 
 features:
+  tensor_core: true                  # Ada 4th-gen TC; IMMA fast-path 要求 width_per_group ∈ {1,2,4,8,16,32}
+  sparse_tc: true                    # 2:4 N:M sparsity (需 ASP recipe)
   cuda_graph: true
   cuda_streams_priority: true
   trt_strongly_typed: true          # ★ TRT 10+ 才有
   trt_sparse_weights_flag: true
   trt_timing_cache: true
   cuDLA: false                       # 无 DLA
+  dla_count: 0
 
 paths:
   trtexec: "/usr/src/tensorrt/bin/trtexec"  # 系统装的话；4090 host 待确认

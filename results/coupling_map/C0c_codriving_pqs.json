@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "cell": "C0c'",
+    "experiment": "CoDriving P\u00d7Q\u00d7S three-arm ablation (low-dim separability probe)",
+    "model": "CoDriving (V2Xverse, DAIR, standard 3x3 conv, groups=1, resnet:true)",
+    "goal": "\u2461-precursor: low-dim baseline; SERIAL here -> C6 escalates dims to hunt trap",
+    "backend": "pure-Python over H800-TVM LUT (base/p50 real, p25/p75 power-law est)",
+    "int8_latency_model": "uniform 1.37x proxy (mean of measured 1.42x/1.32x); ALL widths buildable",
+    "caveat": "p25/p75 latency power-law estimated; structural verdict (0 rank-flip pairs, SERIAL) is magnitude-independent. C6 (trap hunt) requires REAL int8 per-width default+tuned.",
+    "n_seeds": 12,
+    "budget": 60,
+    "pop_size": 8,
+    "grid_widths": [
+      [
+        16,
+        32,
+        64
+      ],
+      [
+        32,
+        64,
+        128
+      ],
+      [
+        48,
+        96,
+        192
+      ],
+      [
+        64,
+        128,
+        256
+      ]
+    ],
+    "hv_ref_scalar": 1164.8255361014603
+  },
+  "int8_buildability_table": [
+    {
+      "width": [
+        16,
+        32,
+        64
+      ],
+      "s0": 16,
+      "int8_buildable": true
+    },
+    {
+      "width": [
+        32,
+        64,
+        128
+      ],
+      "s0": 32,
+      "int8_buildable": true
+    },
+    {
+      "width": [
+        48,
+        96,
+        192
+      ],
+      "s0": 48,
+      "int8_buildable": true
+    },
+    {
+      "width": [
+        64,
+        128,
+        256
+      ],
+      "s0": 64,
+      "int8_buildable": true
+    }
+  ],
+  "ps_rank_flip_pairs": [],
+  "n_ps_pairs": 0,
+  "hv_distribution": {
+    "A-joint-PQS": {
+      "mean": 1164.82553610146,
+      "std": 2.2737367544323206e-13,
+      "min": 1164.8255361014603,
+      "max": 1164.8255361014603,
+      "pct_of_joint": 100.0
+    },
+    "A-noS-PQS": {
+      "mean": 1130.6546308167888,
+      "std": 0.0,
+      "min": 1130.6546308167888,
+      "max": 1130.6546308167888,
+      "pct_of_joint": 97.06643576865275
+    },
+    "A-serial-PQS": {
+      "mean": 1164.82553610146,
+      "std": 2.2737367544323206e-13,
+      "min": 1164.8255361014603,
+      "max": 1164.8255361014603,
+      "pct_of_joint": 100.0
+    }
+  },
+  "hv_raw": {
+    "A-joint-PQS": [
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603
+    ],
+    "A-noS-PQS": [
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888,
+      1130.6546308167888
+    ],
+    "A-serial-PQS": [
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603,
+      1164.8255361014603
+    ]
+  },
+  "wilcoxon_joint_vs_serial": {
+    "n": 12,
+    "n_nonzero": 0,
+    "mean_diff": 0.0,
+    "method": "none",
+    "statistic": null,
+    "p_value": null,
+    "effect_size_rank_biserial": 0.0,
+    "note": "all paired differences are zero (separable regime)"
+  },
+  "verdict": {
+    "value": "SERIAL",
+    "serves_goal": "\u2461 (low-dim baseline)",
+    "architecture_conditional": "standard-conv (groups=1) \u2014 contrast to Pyramid grouped",
+    "serial_pct_of_joint": 100.0,
+    "n_rank_flip_pairs": 0,
+    "separable": true,
+    "interpretation": "CoDriving LOW-DIM SEPARABLE: A-serial reaches 100.0% of A-joint HV with ZERO schedule rank-flip pairs and ALL widths int8-buildable. Standard conv has no alignment cliff -> P,Q,S decouple at this dimensionality. NOT the final verdict (goal\u2461): C6 escalates to per-channel granularity / int4 / batch to hunt a higher-dim trap."
+  }
+}

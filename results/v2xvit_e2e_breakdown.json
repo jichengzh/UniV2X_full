@@ -1,0 +1,24 @@
+{
+  "model": "v2xvit (HeterBaseline_DAIR_lidar_v2xvit)",
+  "n_samples": 60,
+  "device": "NVIDIA GeForce RTX 4090",
+  "per_module_ms_mean": {
+    "fusion_net": 216.7333,
+    "backbone_m1": 5.6341,
+    "encoder_m1": 4.1202,
+    "shrinker_m1": 1.0116,
+    "cls_head": 0.0471,
+    "reg_head": 0.0455,
+    "dir_head": 0.0439
+  },
+  "fusion_modules": [
+    "fusion_net"
+  ],
+  "fusion_ms_mean": 216.7333,
+  "model_forward_ms_mean": 228.5255,
+  "postprocess_ms_mean": 6.1294,
+  "total_inference_ms_mean": 234.6549,
+  "fusion_pct_of_model_forward": 94.8,
+  "fusion_pct_of_total_inference": 92.4,
+  "model_forward_pct_of_total": 97.4
+}
