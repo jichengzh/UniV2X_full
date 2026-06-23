@@ -1,0 +1,79 @@
+{
+  "n_anchor": 4584,
+  "lgb_v9_lat_r2_groupkfold_bq": 0.49352689650510595,
+  "lgb_v9_lat_per_fold": [
+    0.44774464702474137,
+    0.4437569496291238,
+    0.5850274652964232,
+    0.5348767426466523,
+    0.4562286779285888
+  ],
+  "lgb_v9_lat_mae_log10": 0.047446123438350106,
+  "lgb_v9_lat_mae_mult_factor": 1.1154397664769402,
+  "ood_hold_d1_mae_ms": 1.124778291608943,
+  "ood_hold_d1_mae_log10": 0.05704492861288499,
+  "l1_gate_pass": false,
+  "l3_gate_pass": true,
+  "top_features": [
+    {
+      "feature": "build_secs",
+      "gain": 246.31674100524106
+    },
+    {
+      "feature": "engine_size_mb",
+      "gain": 209.67414990672842
+    },
+    {
+      "feature": "d_builder_opt_level",
+      "gain": 90.64587003077031
+    },
+    {
+      "feature": "stage2_planes",
+      "gain": 45.7672865591594
+    },
+    {
+      "feature": "stage0_planes",
+      "gain": 45.263300962833455
+    },
+    {
+      "feature": "stage1_planes",
+      "gain": 34.181956245040055
+    },
+    {
+      "feature": "q_Q_int8_ent",
+      "gain": 33.019323978049215
+    },
+    {
+      "feature": "q_Q_fp16",
+      "gain": 21.65981346857734
+    },
+    {
+      "feature": "d_workspace_gb",
+      "gain": 15.834526872291462
+    },
+    {
+      "feature": "q_Q_int8_mm",
+      "gain": 10.598385344957933
+    },
+    {
+      "feature": "q_Q_mix_s2",
+      "gain": 7.950071746832691
+    },
+    {
+      "feature": "d_tac_edge_only",
+      "gain": 7.280358609132236
+    },
+    {
+      "feature": "q_Q_int8_pc_wo",
+      "gain": 6.878464455832727
+    },
+    {
+      "feature": "d_tac_cublas_lt",
+      "gain": 4.155055712617468
+    },
+    {
+      "feature": "d_tac_default",
+      "gain": 4.0515478028100915
+    }
+  ]
+}

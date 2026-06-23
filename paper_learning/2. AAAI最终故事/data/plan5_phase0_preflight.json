@@ -1,0 +1,103 @@
+{
+  "phase": "phase_0",
+  "ran_at_iso_date": "2026-05-29",
+  "checks": {
+    "g8_baseline_ckpt": {
+      "label": "g8_baseline_epoch19",
+      "path": "/home/jichengzhi/heal_research/HEAL/opencood/logs/Pyramid_DAIR_m1_base_g8_2026_05_21_22_07_45/net_epoch_bestval_at19.pth",
+      "exists": true,
+      "size_mb": 30.48,
+      "loadable": true,
+      "n_state_keys": 382
+    },
+    "g32_baseline_ckpt": {
+      "label": "g32_baseline_epoch23",
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29/net_epoch_bestval_at23.pth",
+      "exists": true,
+      "size_mb": 22.12,
+      "loadable": true,
+      "n_state_keys": 382
+    },
+    "calibration_data": {
+      "label": "calibration_data",
+      "exists": true,
+      "files": [
+        "univ2x_ego_bev_baseline_200_int8.cache",
+        "univ2x_ego_bev_encoder_1cam_int8_int8.cache",
+        "pyramid_dair_calib_minmax.cache",
+        "quant_encoder_adaround.pth",
+        "pyramid_dair_calib.npy",
+        "univ2x_ego_heads_v2x_1101_int8_int8.cache",
+        "downstream_ego_calib_inputs.pkl",
+        "univ2x_ego_bev_pruned_60_200_int8.cache",
+        "downstream_infra_calib_inputs.pkl",
+        "pyramid_dair_e2e_32k_base_minmax.cache",
+        "pyramid_dair_pruned25_ft_collab_int8.cache",
+        "pyramid_dair_collab_int8.cache",
+        "pyramid_calib.npy",
+        "latency_lut.json",
+        "heads_ego_calib_inputs.pkl",
+        "pyramid_dair_collab_mixed.cache",
+        "pyramid_dair_collab_spatial.npy",
+        "pyramid_dair_collab_int8_sparse.cache",
+        "bev_encoder_inputs.pkl",
+        "univ2x_infra_downstream_int8_int8.cache",
+        "univ2x_ego_bev_encoder_adaround_int8_int8.cache",
+        "pyramid_dair_pruned50_collab_int8.cache",
+        "pyramid_dair_collab_tego.npy",
+        "univ2x_ego_bev_pruned_60_1cam_int8.cache",
+        "pyramid_dair_pruned75_ft_collab_int8.cache",
+        "pyramid_calib_entropy.cache",
+        "univ2x_ego_downstream_int8_int8.cache",
+        "pyramid_calib.cache",
+        "sensitivity_report.json",
+        "univ2x_ego_bev_encoder_int8_int8.cache",
+        "pyramid_dair_pruned50_ft_collab_int8.cache",
+        "tiny_bev_encoder_int8_calib.cache",
+        "bev_encoder_calib_inputs.pkl"
+      ],
+      "has_dair_minmax_cache": true,
+      "has_entropy_cache": true
+    },
+    "tensorrt": {
+      "label": "tensorrt",
+      "version": "10.13.0.35",
+      "installed": true,
+      "sparse_weights_flag": true,
+      "available_sparse_flags": [
+        "SPARSE_WEIGHTS"
+      ],
+      "int8_flag": true,
+      "trtexec_binary": "NOT_FOUND",
+      "trtexec_available": false
+    },
+    "sparsity_tools": {
+      "label": "sparsity_tools",
+      "apex_asp_available": false,
+      "apex_asp_error": "ModuleNotFoundError: No module named 'apex'",
+      "torch_prune_available": true,
+      "fallback_strategy": "manual_24_via_torch_prune"
+    },
+    "dair_val": {
+      "label": "dair_val",
+      "path": "/home/jichengzhi/heal_research/dataset/my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure/val.json",
+      "exists": true,
+      "n_samples": 1789,
+      "expected_n": 1789,
+      "matches_expected": true
+    }
+  },
+  "pass_criteria": {
+    "g8_ckpt_ok": true,
+    "g32_ckpt_ok": true,
+    "calib_ok": true,
+    "trt_ok": true,
+    "sparsity_tool_ok": true,
+    "dair_val_ok": true
+  },
+  "all_pass": true,
+  "soft_warnings": [
+    "apex.contrib.sparsity NOT available; falling back to torch.nn.utils.prune manual 2:4 mask. Functionally equivalent but ASP-style auto-finetune loop must be hand-rolled in Phase B.",
+    "trtexec binary NOT found; all engine build + lat bench must use TRT Python API (IBuilderConfig + IExecutionContext.execute_v2 + cuda events). Plan §5/§7 commands referencing trtexec need to be wrapped in Python helper."
+  ]
+}

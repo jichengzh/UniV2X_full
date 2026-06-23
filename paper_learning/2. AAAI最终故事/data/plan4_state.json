@@ -1,0 +1,102 @@
+{
+  "plan_version": "v4",
+  "started_at": "2026-05-27",
+  "phase_0_done": true,
+  "phase_0_progress": {
+    "seeds_done": 5
+  },
+  "sigma_ft8": 0.01829878944554342,
+  "threshold_signal": 0.06,
+  "phase_a_done": true,
+  "phase_a_progress": {
+    "step": "complete",
+    "anchors_done": 119,
+    "anchors_target": 120,
+    "fail_count": 1,
+    "fail_anchor": "T6_p75_Q_int8_pt_wa_ent"
+  },
+  "phase_a_attribution": {
+    "n_anchor": 119,
+    "ap_mean": 0.4806,
+    "ap_std": 0.1267,
+    "ss_b_pct": 12.6,
+    "ss_q_pct": 55.9,
+    "ss_bq_pct": 33.1,
+    "ss_err_pct": -1.5,
+    "b_main_fp32_std": 0.0211,
+    "q_signal_triplet_count": 0,
+    "lgb_groupkfold_r2": 0.4147,
+    "lgb_r2_per_fold": [0.475, 0.821, 0.707, -0.509, 0.579],
+    "non_ent_q_std_t1": 0.0023,
+    "non_ent_q_std_t22": 0.0008,
+    "non_ent_q_std_g8p97": 0.0029,
+    "ent_crash_triplet_count_severe": 8,
+    "ent_crash_triplet_count_degraded": 16
+  },
+  "phase_b_pre_registered_path": "2b",
+  "phase_b_path": "4",
+  "phase_b_path_rationale": "Path 2b Stage 1 tested (96 mix Q anchor on 24T at FT=8). LGB v9_ap fit on 215 (Phase A+S1) anchor gave R²=0.388 (DOWN from Phase A 0.41), plateau-only R²=-5.24, AP std=0.098. 5 gate all FAIL. Per plan v4 §8.4 任一 gate fail → path 4 reframe legal fallback. Stage 2 escalation skipped — KLD/percentile predicted to repeat ent random crash, head-fallback would just erase ent (only signal source). 见 plan4_phaseC_stage1_summary.md.",
+  "phase_c_done": true,
+  "phase_c_progress": {
+    "path": "2b_stage1_run",
+    "stage1_n_anchor": 96,
+    "stage1_all_ok": true,
+    "stage1_mix_ap_std": 0.0232,
+    "stage1_mix_ap_range": [0.4585, 0.5732],
+    "combined_215_lgb_r2": 0.3881,
+    "combined_plateau_only_r2": -5.24,
+    "stage2_escalation": "skipped (predicted_outcome_path_4_either_way)",
+    "next_step": "Phase D with 215 anchor: 14 figs + reframe report"
+  },
+  "phase_c_anchors": null,
+  "phase_d_done": true,
+  "phase_d_ap_r2": 0.388,
+  "phase_d_random_kfold_r2": 0.637,
+  "phase_d_plateau_r2": -5.24,
+  "phase_d_5gate": {
+    "g1_5fold_groupkfold_r2_ge_0.65": false,
+    "g3_plateau_r2_ge_0.55": false,
+    "g4_strong_features_ge_3": false,
+    "g5_std_ge_0.10": false,
+    "all_fail": true
+  },
+  "phase_d_path4_reframe_triggered": true,
+  "phase_d_user_review": "approved_auto_per_preregistration",
+  "phase_d_user_review_rationale": "5 gate all FAIL = plan v4 §11.2 success Path 2 (reframe) per pre-registered decision tree. No user override needed — per §6 'agent 不允许 hand-pick'. Phase E auto-trigger as paper §C reframe is the contribution.",
+  "phase_d_paper_reframe_text": "Pyramid Fusion + DAIR-V2X over-parameterized for deployment-realistic compression. AP plateau intrinsic (std=0.098, 87% in [0.50, 0.57]). Framework predictor 主体 = lat. AP rule-based safety filter sufficient.",
+  "phase_e_done": true,
+  "phase_e_progress": {
+    "sub_e1_done": true,
+    "sub_e2_skipped": "TRT kernel noise 实测仅 0.7%, D 网格补不解决 lat capped",
+    "sub_e3_e4_done": true,
+    "e1_median_cv_pct": 0.70,
+    "e1_pct_cells_under_5pct": 98.9
+  },
+  "phase_e_lat_r2": 0.520,
+  "phase_e_lat_r2_v0_planes_only": 0.472,
+  "phase_e_lat_ood_mae_ms": 1.13,
+  "phase_e_3gate": {
+    "l1_r2_ge_0.75": false,
+    "l1_actual": 0.520,
+    "l2_cv_pass": true,
+    "l2_pct_cells_under_5": 98.9,
+    "l3_ood_mae_le_2ms": true,
+    "l3_actual_ms": 1.13
+  },
+  "context_compaction_count": 0,
+  "last_session_id": "",
+  "user_abort": false,
+  "final_verdict": "intrinsic_plateau_dual_axis_finding",
+  "final_verdict_rationale": "AP plateau intrinsic (Phase D 5 gate FAIL, R²=0.39) + LAT capped (Phase E L1 FAIL, R²=0.52, L2+L3 PASS). 双轴 capped 是 plan v4 严格 factorial 实测发现, 推翻 plan v1-v3 + 数据集制作_plan 假设. paper §C 必须 reframe 为 cost-aware sampling 而非 predictor 精度突破. 详 plan4_final_report.md.",
+  "final_report_path": "paper_learning/2. AAAI最终故事/data/plan4_final_report.md",
+  "completed_at": "2026-05-28",
+  "phase_0_mean_ap": 0.5578515172798161,
+  "phase_0_aps": [
+    0.5556866761746613,
+    0.5268817654296855,
+    0.566639424305193,
+    0.5690341922255511,
+    0.5710155282639899
+  ],
+  "phase_0_verdict": "PASS_TIGHT"
+}

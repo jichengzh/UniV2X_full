@@ -1,0 +1,85 @@
+{
+  "phase": "B.1_mask",
+  "anchors": [
+    {
+      "tag": "p64",
+      "src_ckpt": "/home/jichengzhi/heal_research/HEAL/opencood/logs/Pyramid_DAIR_m1_base_g8_2026_05_21_22_07_45/net_epoch_bestval_at19.pth",
+      "seed_ckpt": "/tmp/plan5_phaseB_sparse/p64/net_epoch19.pth",
+      "config_path": "/tmp/plan5_phaseB_sparse/p64/config.yaml",
+      "out_dir": "/tmp/plan5_phaseB_sparse/p64",
+      "init_epoch": 19,
+      "target_epoches": 20,
+      "ft_epochs_sparse": 1,
+      "mask_info": {
+        "n_conv_masked": 68,
+        "n_conv_skipped": 0,
+        "masked_l1_loss": 4345.258,
+        "out_size_mb": 30.47
+      }
+    },
+    {
+      "tag": "p48",
+      "src_ckpt": "/tmp/plan5_phaseA_finetune/p48/net_epoch_bestval_at27.pth",
+      "seed_ckpt": "/tmp/plan5_phaseB_sparse/p48/net_epoch27.pth",
+      "config_path": "/tmp/plan5_phaseB_sparse/p48/config.yaml",
+      "out_dir": "/tmp/plan5_phaseB_sparse/p48",
+      "init_epoch": 27,
+      "target_epoches": 28,
+      "ft_epochs_sparse": 1,
+      "mask_info": {
+        "n_conv_masked": 69,
+        "n_conv_skipped": 0,
+        "masked_l1_loss": 5399.942,
+        "out_size_mb": 20.7
+      }
+    },
+    {
+      "tag": "p32",
+      "src_ckpt": "/tmp/plan5_phaseA_finetune/p32/net_epoch_bestval_at23.pth",
+      "seed_ckpt": "/tmp/plan5_phaseB_sparse/p32/net_epoch23.pth",
+      "config_path": "/tmp/plan5_phaseB_sparse/p32/config.yaml",
+      "out_dir": "/tmp/plan5_phaseB_sparse/p32",
+      "init_epoch": 23,
+      "target_epoches": 24,
+      "ft_epochs_sparse": 1,
+      "mask_info": {
+        "n_conv_masked": 69,
+        "n_conv_skipped": 0,
+        "masked_l1_loss": 4906.561,
+        "out_size_mb": 13.52
+      }
+    },
+    {
+      "tag": "p16",
+      "src_ckpt": "/tmp/plan5_phaseA_finetune/p16/net_epoch_bestval_at27.pth",
+      "seed_ckpt": "/tmp/plan5_phaseB_sparse/p16/net_epoch27.pth",
+      "config_path": "/tmp/plan5_phaseB_sparse/p16/config.yaml",
+      "out_dir": "/tmp/plan5_phaseB_sparse/p16",
+      "init_epoch": 27,
+      "target_epoches": 28,
+      "ft_epochs_sparse": 1,
+      "mask_info": {
+        "n_conv_masked": 69,
+        "n_conv_skipped": 0,
+        "masked_l1_loss": 5298.024,
+        "out_size_mb": 8.95
+      }
+    },
+    {
+      "tag": "p8",
+      "src_ckpt": "/tmp/plan5_phaseA_finetune/p8/net_epoch_bestval_at27.pth",
+      "seed_ckpt": "/tmp/plan5_phaseB_sparse/p8/net_epoch27.pth",
+      "config_path": "/tmp/plan5_phaseB_sparse/p8/config.yaml",
+      "out_dir": "/tmp/plan5_phaseB_sparse/p8",
+      "init_epoch": 27,
+      "target_epoches": 28,
+      "ft_epochs_sparse": 1,
+      "mask_info": {
+        "n_conv_masked": 66,
+        "n_conv_skipped": 3,
+        "masked_l1_loss": 4685.854,
+        "out_size_mb": 7.64
+      }
+    }
+  ]
+}

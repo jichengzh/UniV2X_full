@@ -1,0 +1,42 @@
+{
+  "ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12",
+  "device": "NVIDIA GeForce RTX 4090",
+  "n_nms_calls": 170,
+  "correctness": {
+    "exact_keepset_match_rate": 1.0,
+    "mean_jaccard": 1.0,
+    "mean_n_in": 83.38823529411765,
+    "mean_keep_shapely": 18.235294117647058,
+    "mean_keep_cuda": 18.235294117647058
+  },
+  "nms_latency_ms": {
+    "shapely": {
+      "n": 170,
+      "mean": 55.059415978543896,
+      "p50": 48.004216980189085,
+      "p99": 101.42258717678487
+    },
+    "cuda": {
+      "n": 170,
+      "mean": 1.5544753083411385,
+      "p50": 1.2275204062461853,
+      "p99": 1.5255332831293344
+    },
+    "speedup_mean": 35.41993602799691
+  },
+  "e2e_latency_ms": {
+    "shapely": {
+      "n": 150,
+      "mean": 81.53113047281902,
+      "p50": 78.9111852645874,
+      "p99": 125.52296161651608
+    },
+    "cuda": {
+      "n": 150,
+      "mean": 26.78612232208252,
+      "p50": 26.82960033416748,
+      "p99": 32.34357833862304
+    },
+    "speedup_mean": 3.043782503957455
+  }
+}

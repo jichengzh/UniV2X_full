@@ -1,0 +1,109 @@
+{
+  "plan_version": "v5",
+  "created_iso_date": "2026-05-29",
+  "current_phase": "done",
+  "last_completed_phase": "phase_D",
+  "pre_registered_thresholds": {
+    "G_A_smooth_r2_min": 0.85,
+    "G_B_sparsity_reduction_min": 0.3,
+    "G_B_sparsity_pass_planes_min": 3,
+    "G_C_ap_gap_max": 0.02,
+    "G_D_dominate_lat_factor": 0.7,
+    "G_D_dominate_ap_factor": 0.92
+  },
+  "hypotheses": {
+    "H1": "g8 lat vs plane is smooth (poly3 R^2 >= 0.85)",
+    "H2": "2:4 sparsity gives independent >=30% extra lat reduction on >=3/5 plane",
+    "H3": "TRT real INT8 AP vs fake quant proxy median gap <= 0.02",
+    "D1_derived": "g8 anchor dominates g32 best (lat<0.7x AND ap>=0.92x)"
+  },
+  "design_constraints_inherited": [
+    "C1: FT=8 locked across all anchors (g8 epoch 19->27, g32 epoch 23->31)",
+    "C5: pruning anchor MUST include finetune (no mask-only zero-shot AP)",
+    "C6: INT8 AP must come from TRT engine forward (Phase C closes this loop)",
+    "C7: 2:4 sparsity must be TRT --sparsity=enable real build (no simulation)"
+  ],
+  "key_paths": {
+    "g8_baseline_ckpt": "/home/jichengzhi/heal_research/HEAL/opencood/logs/Pyramid_DAIR_m1_base_g8_2026_05_21_22_07_45/net_epoch_bestval_at19.pth",
+    "g32_baseline_ckpt_dir": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29",
+    "calib_dir": "/home/jichengzhi/UniV2X/calibration",
+    "dair_val_json": "/home/jichengzhi/heal_research/dataset/my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure/val.json"
+  },
+  "phase_status": {
+    "phase_0": "completed",
+    "phase_A": "completed",
+    "phase_A_substep": "A.1_done_A.2_pending_finetune",
+    "phase_B": "completed_path_3",
+    "phase_C": "completed_partial",
+    "phase_D": "completed"
+  },
+  "phase_A_artifacts": {
+    "prune_log": "paper_learning/2. AAAI最终故事/data/plan5_phaseA_prune_log.json",
+    "pruned_ckpts": {
+      "g8_p48": {
+        "path": "/tmp/plan5_phaseA_ckpts/g8_p48_pruned_unfinetuned.pth",
+        "params_M": 5.14,
+        "factor": 0.75
+      },
+      "g8_p32": {
+        "path": "/tmp/plan5_phaseA_ckpts/g8_p32_pruned_unfinetuned.pth",
+        "params_M": 3.34,
+        "factor": 0.5
+      },
+      "g8_p16": {
+        "path": "/tmp/plan5_phaseA_ckpts/g8_p16_pruned_unfinetuned.pth",
+        "params_M": 2.2,
+        "factor": 0.25
+      },
+      "g8_p8": {
+        "path": "/tmp/plan5_phaseA_ckpts/g8_p8_pruned_unfinetuned.pth",
+        "params_M": 1.87,
+        "factor": 0.125
+      }
+    },
+    "baseline_for_reference": {
+      "params_M": 7.58,
+      "factor": 1.0
+    },
+    "observation": "Even at plane_factor=0.125, total params only drop -75% (1.87M vs 7.58M) because encoder_m1 + heads + shrink_conv are plane-invariant. Backbone-only param reduction is closer to -90%."
+  },
+  "soft_warnings": [
+    "apex.contrib.sparsity NOT available; falling back to torch.nn.utils.prune manual 2:4 mask. Functionally equivalent but ASP-style auto-finetune loop must be hand-rolled in Phase B.",
+    "trtexec binary NOT found; all engine build + lat bench must use TRT Python API (IBuilderConfig + IExecutionContext.execute_v2 + cuda events). Plan §5/§7 commands referencing trtexec need to be wrapped in Python helper."
+  ],
+  "preflight_summary": {
+    "g8_ckpt_ok": true,
+    "g32_ckpt_ok": true,
+    "calib_ok": true,
+    "trt_ok": true,
+    "sparsity_tool_ok": true,
+    "dair_val_ok": true
+  },
+  "phase_A_gate_result": {
+    "G_A_smooth_r2_min_required": 0.85,
+    "G_A_r2_smooth_actual": 0.935,
+    "n_cells_evaluated": 9,
+    "verdict_path": "path_1",
+    "verdict_reason": "G_A PASS — H1 confirmed (smooth curve). Proceed to Phase B."
+  },
+  "phase_B_gate_result": {
+    "G_B_threshold_pct": 30,
+    "G_B_threshold_n_planes": 3,
+    "G_B_fp16_max_reduction_pct": 2.2,
+    "G_B_int8_mm_max_reduction_pct": 17,
+    "G_B_pass_planes_fp16": 0,
+    "G_B_pass_planes_int8_mm": 0,
+    "verdict_path": "path_3",
+    "verdict_reason": "G_B FAIL — 2:4 sparsity gives <30% reduction on all 5 plane. Drop sparsity dim, proceed to Phase C."
+  },
+  "plan_v5_completion_status": {
+    "verdict": "partial_success_path_B",
+    "verdict_reason": "G_A PASS, G_B FAIL path_3, G_C partial (PyTorch FP32 AP measured, TRT real INT8 AP deferred)",
+    "paper_shippable_findings": [
+      "Smooth lat-vs-plane curve on g8 (H1 confirmed)",
+      "2:4 sparsity insufficient deployment gain on PyramidFusion (negative result)",
+      "Per-plane PyTorch FP32 AP measured on DAIR-V2X val"
+    ],
+    "open_followon_task": "Real TRT INT8 AP via multi-output ONNX hybrid pipeline (~1 day eng)"
+  }
+}

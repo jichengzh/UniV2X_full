@@ -1,0 +1,880 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="518.4pt" height="334.8pt" viewBox="0 0 518.4 334.8" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-06-22T18:49:58.741881</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.5.3, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 334.8
+L 518.4 334.8
+L 518.4 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 18.6624 127.5588
+L 245.7216 127.5588
+Q 251.9424 127.5588 251.9424 123.5412
+L 251.9424 25.4448
+Q 251.9424 21.4272 245.7216 21.4272
+L 18.6624 21.4272
+Q 12.4416 21.4272 12.4416 25.4448
+L 12.4416 123.5412
+Q 12.4416 127.5588 18.6624 127.5588
+z
+" style="fill: #e4f0fa; stroke: #4c78a8; stroke-width: 1.25; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 17.6256 40.5108
+L 246.7584 40.5108
+Q 251.9424 40.5108 251.9424 37.1628
+L 251.9424 24.7752
+Q 251.9424 21.4272 246.7584 21.4272
+L 17.6256 21.4272
+Q 12.4416 21.4272 12.4416 24.7752
+L 12.4416 37.1628
+Q 12.4416 40.5108 17.6256 40.5108
+z
+" style="fill: #4c78a8; stroke: #4c78a8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 49.7664 58.9248
+L 214.6176 58.9248
+Q 223.4304 58.9248 223.4304 53.2332
+L 223.4304 48.8808
+Q 223.4304 43.1892 214.6176 43.1892
+L 49.7664 43.1892
+Q 40.9536 43.1892 40.9536 48.8808
+L 40.9536 53.2332
+Q 40.9536 58.9248 49.7664 58.9248
+z
+" style="fill: #ffffff; stroke: #4c78a8; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 67.9104 124.5456
+L 196.4736 124.5456
+Q 204.2496 124.5456 204.2496 119.5236
+L 204.2496 114.1668
+Q 204.2496 109.1448 196.4736 109.1448
+L 67.9104 109.1448
+Q 60.1344 109.1448 60.1344 114.1668
+L 60.1344 119.5236
+Q 60.1344 124.5456 67.9104 124.5456
+z
+" style="fill: #d4e7f6; stroke: #4c78a8; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 272.6784 127.5588
+L 499.7376 127.5588
+Q 505.9584 127.5588 505.9584 123.5412
+L 505.9584 25.4448
+Q 505.9584 21.4272 499.7376 21.4272
+L 272.6784 21.4272
+Q 266.4576 21.4272 266.4576 25.4448
+L 266.4576 123.5412
+Q 266.4576 127.5588 272.6784 127.5588
+z
+" style="fill: #eee9f7; stroke: #7a6aae; stroke-width: 1.25; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 271.6416 40.5108
+L 500.7744 40.5108
+Q 505.9584 40.5108 505.9584 37.1628
+L 505.9584 24.7752
+Q 505.9584 21.4272 500.7744 21.4272
+L 271.6416 21.4272
+Q 266.4576 21.4272 266.4576 24.7752
+L 266.4576 37.1628
+Q 266.4576 40.5108 271.6416 40.5108
+z
+" style="fill: #7a6aae; stroke: #7a6aae; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 324.5184 58.9248
+L 447.8976 58.9248
+Q 456.7104 58.9248 456.7104 53.2332
+L 456.7104 48.8808
+Q 456.7104 43.1892 447.8976 43.1892
+L 324.5184 43.1892
+Q 315.7056 43.1892 315.7056 48.8808
+L 315.7056 53.2332
+Q 315.7056 58.9248 324.5184 58.9248
+z
+" style="fill: #ffffff; stroke: #7a6aae; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 279.936 79.0128
+L 337.4784 79.0128
+Q 341.6256 79.0128 341.6256 76.3344
+L 341.6256 63.2772
+Q 341.6256 60.5988 337.4784 60.5988
+L 279.936 60.5988
+Q 275.7888 60.5988 275.7888 63.2772
+L 275.7888 76.3344
+Q 275.7888 79.0128 279.936 79.0128
+z
+" style="fill: #ffffff; stroke: #b9add5; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 357.1776 79.0128
+L 418.3488 79.0128
+Q 422.496 79.0128 422.496 76.3344
+L 422.496 63.2772
+Q 422.496 60.5988 418.3488 60.5988
+L 357.1776 60.5988
+Q 353.0304 60.5988 353.0304 63.2772
+L 353.0304 76.3344
+Q 353.0304 79.0128 357.1776 79.0128
+z
+" style="fill: #ffffff; stroke: #b9add5; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 438.048 79.0128
+L 491.9616 79.0128
+Q 496.1088 79.0128 496.1088 76.3344
+L 496.1088 63.2772
+Q 496.1088 60.5988 491.9616 60.5988
+L 438.048 60.5988
+Q 433.9008 60.5988 433.9008 63.2772
+L 433.9008 76.3344
+Q 433.9008 79.0128 438.048 79.0128
+z
+" style="fill: #ffffff; stroke: #b9add5; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 280.9728 108.81
+L 343.6992 108.81
+Q 347.8464 108.81 347.8464 106.1316
+L 347.8464 90.0612
+Q 347.8464 87.3828 343.6992 87.3828
+L 280.9728 87.3828
+Q 276.8256 87.3828 276.8256 90.0612
+L 276.8256 106.1316
+Q 276.8256 108.81 280.9728 108.81
+z
+" style="fill: #ffffff; stroke: #b9add5; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 356.1408 108.81
+L 418.8672 108.81
+Q 423.0144 108.81 423.0144 106.1316
+L 423.0144 90.0612
+Q 423.0144 87.3828 418.8672 87.3828
+L 356.1408 87.3828
+Q 351.9936 87.3828 351.9936 90.0612
+L 351.9936 106.1316
+Q 351.9936 108.81 356.1408 108.81
+z
+" style="fill: #ffffff; stroke: #b9add5; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 431.3088 108.81
+L 494.0352 108.81
+Q 498.1824 108.81 498.1824 106.1316
+L 498.1824 90.0612
+Q 498.1824 87.3828 494.0352 87.3828
+L 431.3088 87.3828
+Q 427.1616 87.3828 427.1616 90.0612
+L 427.1616 106.1316
+Q 427.1616 108.81 431.3088 108.81
+z
+" style="fill: #ffffff; stroke: #b9add5; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 323.4816 124.5456
+L 448.9344 124.5456
+Q 456.7104 124.5456 456.7104 119.5236
+L 456.7104 114.1668
+Q 456.7104 109.1448 448.9344 109.1448
+L 323.4816 109.1448
+Q 315.7056 109.1448 315.7056 114.1668
+L 315.7056 119.5236
+Q 315.7056 124.5456 323.4816 124.5456
+z
+" style="fill: #e0d8f0; stroke: #7a6aae; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 49.7664 180.1224
+L 468.6336 180.1224
+Q 474.8544 180.1224 474.8544 176.1048
+L 474.8544 134.9244
+Q 474.8544 130.9068 468.6336 130.9068
+L 49.7664 130.9068
+Q 43.5456 130.9068 43.5456 134.9244
+L 43.5456 176.1048
+Q 43.5456 180.1224 49.7664 180.1224
+z
+" style="fill: #e3f2ee; stroke: #3e8c7a; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 60.1344 174.096
+L 186.1056 174.096
+Q 189.7344 174.096 189.7344 171.7524
+L 189.7344 150.66
+Q 189.7344 148.3164 186.1056 148.3164
+L 60.1344 148.3164
+Q 56.5056 148.3164 56.5056 150.66
+L 56.5056 171.7524
+Q 56.5056 174.096 60.1344 174.096
+z
+" style="fill: #ffffff; stroke: #a9d0c7; stroke-width: 0.7; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 196.4736 174.096
+L 322.4448 174.096
+Q 326.0736 174.096 326.0736 171.7524
+L 326.0736 150.66
+Q 326.0736 148.3164 322.4448 148.3164
+L 196.4736 148.3164
+Q 192.8448 148.3164 192.8448 150.66
+L 192.8448 171.7524
+Q 192.8448 174.096 196.4736 174.096
+z
+" style="fill: #ffffff; stroke: #a9d0c7; stroke-width: 0.7; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 332.8128 174.096
+L 458.784 174.096
+Q 462.4128 174.096 462.4128 171.7524
+L 462.4128 150.66
+Q 462.4128 148.3164 458.784 148.3164
+L 332.8128 148.3164
+Q 329.184 148.3164 329.184 150.66
+L 329.184 171.7524
+Q 329.184 174.096 332.8128 174.096
+z
+" style="fill: #ffffff; stroke: #a9d0c7; stroke-width: 0.7; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 49.7664 248.0868
+L 468.6336 248.0868
+Q 474.8544 248.0868 474.8544 244.0692
+L 474.8544 196.1928
+Q 474.8544 192.1752 468.6336 192.1752
+L 49.7664 192.1752
+Q 43.5456 192.1752 43.5456 196.1928
+L 43.5456 244.0692
+Q 43.5456 248.0868 49.7664 248.0868
+z
+" style="fill: #f8e9d7; stroke: #c47a32; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 61.6896 221.3028
+L 80.352 221.3028
+Q 85.536 221.3028 85.536 217.9548
+L 85.536 212.2632
+Q 85.536 208.9152 80.352 208.9152
+L 61.6896 208.9152
+Q 56.5056 208.9152 56.5056 212.2632
+L 56.5056 217.9548
+Q 56.5056 221.3028 61.6896 221.3028
+z
+" style="fill: #ffffff; stroke: #c47a32; stroke-width: 0.65; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 61.6896 232.3512
+L 80.352 232.3512
+Q 85.536 232.3512 85.536 229.0032
+L 85.536 223.3116
+Q 85.536 219.9636 80.352 219.9636
+L 61.6896 219.9636
+Q 56.5056 219.9636 56.5056 223.3116
+L 56.5056 229.0032
+Q 56.5056 232.3512 61.6896 232.3512
+z
+" style="fill: #ffffff; stroke: #c47a32; stroke-width: 0.65; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 61.6896 243.3996
+L 80.352 243.3996
+Q 85.536 243.3996 85.536 240.0516
+L 85.536 234.36
+Q 85.536 231.012 80.352 231.012
+L 61.6896 231.012
+Q 56.5056 231.012 56.5056 234.36
+L 56.5056 240.0516
+Q 56.5056 243.3996 61.6896 243.3996
+z
+" style="fill: #ffffff; stroke: #c47a32; stroke-width: 0.65; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_24">
+    <path d="M 367.0272 239.0472
+L 454.6368 239.0472
+Q 459.3024 239.0472 459.3024 236.034
+L 459.3024 211.2588
+Q 459.3024 208.2456 454.6368 208.2456
+L 367.0272 208.2456
+Q 362.3616 208.2456 362.3616 211.2588
+L 362.3616 236.034
+Q 362.3616 239.0472 367.0272 239.0472
+z
+" style="fill: #ffffff; stroke: #c47a32; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_25">
+    <path d="M 26.4384 318.3948
+L 147.2256 318.3948
+Q 153.4464 318.3948 153.4464 314.3772
+L 153.4464 269.8488
+Q 153.4464 265.8312 147.2256 265.8312
+L 26.4384 265.8312
+Q 20.2176 265.8312 20.2176 269.8488
+L 20.2176 314.3772
+Q 20.2176 318.3948 26.4384 318.3948
+z
+" style="fill: #edf3f7; stroke: #6f8fa6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_26">
+    <path d="M 40.4352 313.7076
+L 133.2288 313.7076
+Q 139.4496 313.7076 139.4496 309.69
+L 139.4496 304.668
+Q 139.4496 300.6504 133.2288 300.6504
+L 40.4352 300.6504
+Q 34.2144 300.6504 34.2144 304.668
+L 34.2144 309.69
+Q 34.2144 313.7076 40.4352 313.7076
+z
+" style="fill: #ffffff; stroke: #afc2d0; stroke-width: 0.65; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_27">
+    <path d="M 187.1424 318.3948
+L 292.3776 318.3948
+Q 298.5984 318.3948 298.5984 314.3772
+L 298.5984 269.8488
+Q 298.5984 265.8312 292.3776 265.8312
+L 187.1424 265.8312
+Q 180.9216 265.8312 180.9216 269.8488
+L 180.9216 314.3772
+Q 180.9216 318.3948 187.1424 318.3948
+z
+" style="fill: #eaf2e8; stroke: #6e9271; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_28">
+    <path d="M 212.544 314.3772
+L 266.976 314.3772
+Q 272.6784 314.3772 272.6784 310.6944
+L 272.6784 305.6724
+Q 272.6784 301.9896 266.976 301.9896
+L 212.544 301.9896
+Q 206.8416 301.9896 206.8416 305.6724
+L 206.8416 310.6944
+Q 206.8416 314.3772 212.544 314.3772
+z
+" style="fill: #ffffff; stroke: #b8cdba; stroke-width: 0.65; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_29">
+    <path d="M 332.2944 321.7428
+L 497.1456 321.7428
+Q 503.3664 321.7428 503.3664 317.7252
+L 503.3664 266.5008
+Q 503.3664 262.4832 497.1456 262.4832
+L 332.2944 262.4832
+Q 326.0736 262.4832 326.0736 266.5008
+L 326.0736 317.7252
+Q 326.0736 321.7428 332.2944 321.7428
+z
+" style="fill: #2f526f; stroke: #2f526f; stroke-width: 1.1; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_30">
+    <path d="M 372.7296 317.7252
+L 456.7104 317.7252
+Q 462.9312 317.7252 462.9312 313.7076
+L 462.9312 308.6856
+Q 462.9312 304.668 456.7104 304.668
+L 372.7296 304.668
+Q 366.5088 304.668 366.5088 308.6856
+L 366.5088 313.7076
+Q 366.5088 317.7252 372.7296 317.7252
+z
+" style="fill: #ffffff; stroke: #ffffff; stroke-width: 0.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_31">
+    <path d="M 29.5488 84.7044
+L 125.9712 84.7044
+Q 130.1184 84.7044 130.1184 82.026
+L 130.1184 63.2772
+Q 130.1184 60.5988 125.9712 60.5988
+L 29.5488 60.5988
+Q 25.4016 60.5988 25.4016 63.2772
+L 25.4016 82.026
+Q 25.4016 84.7044 29.5488 84.7044
+z
+" style="fill: #ffffff; stroke: #a7c5df; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_32">
+    <path d="M 138.4128 84.7044
+L 234.8352 84.7044
+Q 238.9824 84.7044 238.9824 82.026
+L 238.9824 63.2772
+Q 238.9824 60.5988 234.8352 60.5988
+L 138.4128 60.5988
+Q 134.2656 60.5988 134.2656 63.2772
+L 134.2656 82.026
+Q 134.2656 84.7044 138.4128 84.7044
+z
+" style="fill: #ffffff; stroke: #a7c5df; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_33">
+    <path d="M 29.5488 108.1404
+L 125.9712 108.1404
+Q 130.1184 108.1404 130.1184 105.462
+L 130.1184 86.7132
+Q 130.1184 84.0348 125.9712 84.0348
+L 29.5488 84.0348
+Q 25.4016 84.0348 25.4016 86.7132
+L 25.4016 105.462
+Q 25.4016 108.1404 29.5488 108.1404
+z
+" style="fill: #ffffff; stroke: #a7c5df; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_34">
+    <path d="M 138.4128 108.1404
+L 234.8352 108.1404
+Q 238.9824 108.1404 238.9824 105.462
+L 238.9824 86.7132
+Q 238.9824 84.0348 234.8352 84.0348
+L 138.4128 84.0348
+Q 134.2656 84.0348 134.2656 86.7132
+L 134.2656 105.462
+Q 134.2656 108.1404 138.4128 108.1404
+z
+" style="fill: #ffffff; stroke: #a7c5df; stroke-width: 0.75; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_35">
+    <path d="M 341.55232 69.8058
+Q 347.068236 69.8058 351.298412 69.8058
+" style="fill: none; stroke: #7a6aae; stroke-width: 1.15; stroke-linecap: round"/>
+    <path d="M 348.498412 68.4058
+L 351.298412 69.8058
+L 348.498412 71.2058
+L 348.498412 68.4058
+z
+" style="fill: #7a6aae; stroke: #7a6aae; stroke-width: 1.15; stroke-linecap: round"/>
+   </g>
+   <g id="patch_36">
+    <path d="M 422.42272 69.8058
+Q 427.938636 69.8058 432.168812 69.8058
+" style="fill: none; stroke: #7a6aae; stroke-width: 1.15; stroke-linecap: round"/>
+    <path d="M 429.368812 68.4058
+L 432.168812 69.8058
+L 429.368812 71.2058
+L 429.368812 68.4058
+z
+" style="fill: #7a6aae; stroke: #7a6aae; stroke-width: 1.15; stroke-linecap: round"/>
+   </g>
+   <g id="patch_37">
+    <path d="M 134.161629 125.923135
+Q 151.632328 129.232862 167.784832 132.292864
+" style="fill: none; stroke: #4c78a8; stroke-width: 1.2; stroke-linecap: round"/>
+    <path d="M 164.582784 129.854239
+L 167.784832 132.292864
+L 163.912703 133.391326
+L 164.582784 129.854239
+z
+" style="fill: #4c78a8; stroke: #4c78a8; stroke-width: 1.2; stroke-linecap: round"/>
+   </g>
+   <g id="patch_38">
+    <path d="M 384.238371 125.923135
+Q 366.767672 129.232862 350.615168 132.292864
+" style="fill: none; stroke: #7a6aae; stroke-width: 1.2; stroke-linecap: round"/>
+    <path d="M 354.487297 133.391326
+L 350.615168 132.292864
+L 353.817216 129.854239
+L 354.487297 133.391326
+z
+" style="fill: #7a6aae; stroke: #7a6aae; stroke-width: 1.2; stroke-linecap: round"/>
+   </g>
+   <g id="patch_39">
+    <path d="M 259.2 180.11063
+Q 259.2 186.145755 259.2 190.783339
+" style="fill: none; stroke: #3e8c7a; stroke-width: 1.25; stroke-linecap: round"/>
+    <path d="M 261 187.183339
+L 259.2 190.783339
+L 257.4 187.183339
+L 261 187.183339
+z
+" style="fill: #3e8c7a; stroke: #3e8c7a; stroke-width: 1.25; stroke-linecap: round"/>
+   </g>
+   <g id="patch_40">
+    <path d="M 196.400953 215.2764
+Q 209.952415 215.2764 222.553547 215.2764
+" style="fill: none; stroke: #c47a32; stroke-width: 0.85; stroke-linecap: round"/>
+    <path d="M 219.753547 213.8764
+L 222.553547 215.2764
+L 219.753547 216.6764
+L 219.753547 213.8764
+z
+" style="fill: #c47a32; stroke: #c47a32; stroke-width: 0.85; stroke-linecap: round"/>
+   </g>
+   <g id="patch_41">
+    <path d="M 196.400953 226.3248
+Q 209.952415 226.3248 222.553547 226.3248
+" style="fill: none; stroke: #c47a32; stroke-width: 0.85; stroke-linecap: round"/>
+    <path d="M 219.753547 224.9248
+L 222.553547 226.3248
+L 219.753547 227.7248
+L 219.753547 224.9248
+z
+" style="fill: #c47a32; stroke: #c47a32; stroke-width: 0.85; stroke-linecap: round"/>
+   </g>
+   <g id="patch_42">
+    <path d="M 196.400953 237.3732
+Q 209.952415 237.3732 222.553547 237.3732
+" style="fill: none; stroke: #c47a32; stroke-width: 0.85; stroke-linecap: round"/>
+    <path d="M 219.753547 235.9732
+L 222.553547 237.3732
+L 219.753547 238.7732
+L 219.753547 235.9732
+z
+" style="fill: #c47a32; stroke: #c47a32; stroke-width: 0.85; stroke-linecap: round"/>
+   </g>
+   <g id="patch_43">
+    <path d="M 399.610526 233.0208
+Q 410.829905 233.0208 421.043054 233.0208
+" style="fill: none; stroke: #c47a32; stroke-width: 0.9; stroke-linecap: round"/>
+    <path d="M 418.243054 231.6208
+L 421.043054 233.0208
+L 418.243054 234.4208
+L 418.243054 231.6208
+z
+" style="fill: #c47a32; stroke: #c47a32; stroke-width: 0.9; stroke-linecap: round"/>
+   </g>
+   <g id="patch_44">
+    <path d="M 257.202421 245.93868
+Q 170.887823 240.107535 89.952087 266.806178
+" style="fill: none; stroke: #c47a32; stroke-width: 1.15; stroke-linecap: round"/>
+    <path d="M 93.934763 267.387801
+L 89.952087 266.806178
+L 92.806991 263.96901
+L 93.934763 267.387801
+z
+" style="fill: #c47a32; stroke: #c47a32; stroke-width: 1.15; stroke-linecap: round"/>
+   </g>
+   <g id="patch_45">
+    <path d="M 152.339168 292.113
+Q 167.185511 292.113 180.857919 292.113
+" style="fill: none; stroke: #667384; stroke-width: 1.05; stroke-linecap: round"/>
+    <path d="M 177.657919 290.513
+L 180.857919 292.113
+L 177.657919 293.713
+L 177.657919 290.513
+z
+" style="fill: #667384; stroke: #667384; stroke-width: 1.05; stroke-linecap: round"/>
+   </g>
+   <g id="patch_46">
+    <path d="M 297.491168 292.113
+Q 312.337511 292.113 326.009919 292.113
+" style="fill: none; stroke: #667384; stroke-width: 1.05; stroke-linecap: round"/>
+    <path d="M 322.809919 290.513
+L 326.009919 292.113
+L 322.809919 293.713
+L 322.809919 290.513
+z
+" style="fill: #667384; stroke: #667384; stroke-width: 1.05; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <text style="fill: #243447; font: 700 10px 'sans-serif'; text-anchor: middle" x="259.2" y="10.858925" transform="rotate(-0, 259.2, 10.858925)">阶段一：面向部署的网络–硬件协同刻画</text>
+   </g>
+   <g id="text_2">
+    <text style="fill: #667384; font: 5.7px 'sans-serif'; text-anchor: middle" x="259.2" y="19.873884" transform="rotate(-0, 259.2, 19.873884)">并行扫描定义合法配置域，整合与校验生成阶段二可直接消费的低维搜索清单</text>
+   </g>
+   <g id="text_3">
+    <text style="fill: #ffffff; font: 700 8.5px 'sans-serif'; text-anchor: start" x="24.8832" y="33.64982" transform="rotate(-0, 24.8832, 33.64982)">A</text>
+   </g>
+   <g id="text_4">
+    <text style="fill: #ffffff; font: 700 8px 'sans-serif'; text-anchor: start" x="44.064" y="34.012125" transform="rotate(-0, 44.064, 34.012125)">硬件能力扫描</text>
+   </g>
+   <g id="text_5">
+    <text style="fill: #243447; font: 700 6.2px 'sans-serif'; text-anchor: middle" x="132.192" y="53.409125" transform="rotate(-0, 132.192, 53.409125)">目标加速器  +  capability YAML</text>
+   </g>
+   <g id="text_6">
+    <!-- $\mathcal{I}$  计算 IP -->
+    <g style="fill: #243447" transform="translate(34.7328 71.46776)">
+     <text>
+      <tspan style="font: italic 6.4px 'STIXNonUnicode'" x="0" y="-0.875"></tspan>
+      <tspan style="font: 300 6.4px 'AR PL UMing CN'" x="3.665634 6.853134 10.040634 16.415634 22.790634 25.978134 29.165634" y="-0.875">  计算 IP</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_7">
+    <text style="fill: #667384; font: 5.25px 'sans-serif'; text-anchor: start" x="34.7328" y="78.473164" transform="rotate(-0, 34.7328, 78.473164)">支持精度 · 算子白名单</text>
+   </g>
+   <g id="text_8">
+    <!-- $\mathbf{a}$  通道对齐 -->
+    <g style="fill: #243447" transform="translate(143.5968 71.43576)">
+     <text>
+      <tspan style="font: 700 6.4px 'DejaVu Sans'" x="0" y="-0.90625">a</tspan>
+      <tspan style="font: 300 6.4px 'AR PL UMing CN'" x="4.30188 7.48938 10.67688 17.05188 23.42688 29.80188" y="-0.90625">  通道对齐</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_9">
+    <text style="fill: #667384; font: 5.25px 'sans-serif'; text-anchor: start" x="143.5968" y="78.460449" transform="rotate(-0, 143.5968, 78.460449)">INT8/FP16 · 强制模式</text>
+   </g>
+   <g id="text_10">
+    <!-- $\mathcal{Q}$  量化能力 -->
+    <g style="fill: #243447" transform="translate(34.7328 94.77576)">
+     <text>
+      <tspan style="font: italic 6.4px 'STIXNonUnicode'" x="0" y="-0.890625"></tspan>
+      <tspan style="font: 300 6.4px 'AR PL UMing CN'" x="4.743011 7.930511 11.118011 17.493011 23.868011 30.243011" y="-0.890625">  量化能力</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_11">
+    <text style="fill: #667384; font: 5.25px 'sans-serif'; text-anchor: start" x="34.7328" y="101.903832" transform="rotate(-0, 34.7328, 101.903832)">位宽 · 粒度 · 对称性</text>
+   </g>
+   <g id="text_12">
+    <!-- $\mathcal{T}$  工具链 -->
+    <g style="fill: #243447" transform="translate(143.5968 94.90376)">
+     <text>
+      <tspan style="font: italic 6.4px 'STIXNonUnicode'" x="0" y="-0.90625"></tspan>
+      <tspan style="font: 300 6.4px 'AR PL UMing CN'" x="3.244873 6.432373 9.619873 15.994873 22.369873" y="-0.90625">  工具链</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_13">
+    <text style="fill: #667384; font: 5.25px 'sans-serif'; text-anchor: start" x="143.5968" y="101.891117" transform="rotate(-0, 143.5968, 101.891117)">后端与版本锁定</text>
+   </g>
+   <g id="text_14">
+    <!-- $\mathcal{H}=\langle\mathcal{I},\mathbf{a},\mathcal{Q},\mathcal{T}\rangle$ -->
+    <g style="fill: #243447" transform="translate(108.112 119.0152)">
+     <text>
+      <tspan style="font: italic 7px 'STIXNonUnicode'" x="0 17.140717 33.067078 41.863937" y="-0.6875"></tspan>
+      <tspan style="font: 7px 'DejaVu Sans'" x="7.180756 14.40976 21.16571 29.47821 38.27507 45.426926" y="-0.6875">=⟨,,,⟩</tspan>
+      <tspan style="font: 700 7px 'DejaVu Sans'" x="24.754578" y="-0.6875">a</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_15">
+    <text style="fill: #ffffff; font: 700 8.5px 'sans-serif'; text-anchor: start" x="278.8992" y="33.64982" transform="rotate(-0, 278.8992, 33.64982)">B</text>
+   </g>
+   <g id="text_16">
+    <text style="fill: #ffffff; font: 700 8px 'sans-serif'; text-anchor: start" x="298.08" y="34.019625" transform="rotate(-0, 298.08, 34.019625)">计算图依赖分区</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #243447; font: 700 6.2px 'sans-serif'; text-anchor: middle" x="386.208" y="53.430438" transform="rotate(-0, 386.208, 53.430438)">待加速网络  +  checkpoint</text>
+   </g>
+   <g id="text_18">
+    <text style="fill: #243447; font: 700 5.35px 'sans-serif'" transform="translate(295.3322 69.387413)">轻量 trace</text>
+    <text style="fill: #243447; font: 700 5.35px 'sans-serif'" transform="translate(300.6822 74.330312)">适配器</text>
+   </g>
+   <g id="text_19">
+    <text style="fill: #243447; font: 700 5.35px 'sans-serif'" transform="translate(377.0632 69.338511)">稠密通道</text>
+    <text style="fill: #243447; font: 700 5.35px 'sans-serif'" transform="translate(377.0632 74.359152)">耦合核心</text>
+   </g>
+   <g id="text_20">
+    <text style="fill: #243447; font: 700 5.35px 'sans-serif'" transform="translate(454.3048 68.969445)">DepGraph</text>
+    <text style="fill: #243447; font: 700 5.35px 'sans-serif'" transform="translate(454.3048 73.828749)">依赖分析</text>
+   </g>
+   <g id="text_21">
+    <text style="fill: #667384; font: 4.9px 'sans-serif'; text-anchor: middle" x="386.208" y="85.200403" transform="rotate(-0, 386.208, 85.200403)">分区外：稀疏/数据依赖编码；绕过：通道保持融合 neck</text>
+   </g>
+   <g id="text_22">
+    <text style="fill: #243447; font: 700 5.4px 'sans-serif'; text-anchor: middle" x="312.336" y="97.458609" transform="rotate(-0, 312.336, 97.458609)">B1  剪枝组</text>
+   </g>
+   <g id="text_23">
+    <!-- $G=|\mathrm{B1}|$ -->
+    <g style="fill: #667384" transform="translate(302.836 103.37275)">
+     <text>
+      <tspan style="font: oblique 4.75px 'DejaVu Sans'" x="0" y="-0.171875">G</tspan>
+      <tspan style="font: 4.75px 'DejaVu Sans'" x="4.606201 9.511597 11.111938 14.370605 17.3927" y="-0.171875">=|B1|</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_24">
+    <text style="fill: #243447; font: 700 5.4px 'sans-serif'; text-anchor: middle" x="387.504" y="97.485187" transform="rotate(-0, 387.504, 97.485187)">B2  量化单元</text>
+   </g>
+   <g id="text_25">
+    <text style="fill: #667384; font: 4.75px 'sans-serif'; text-anchor: middle" x="387.504" y="103.923082" transform="rotate(-0, 387.504, 103.923082)">完整 B1 组并集</text>
+   </g>
+   <g id="text_26">
+    <text style="fill: #243447; font: 700 5.4px 'sans-serif'; text-anchor: middle" x="462.672" y="97.466625" transform="rotate(-0, 462.672, 97.466625)">D  路由标注</text>
+   </g>
+   <g id="text_27">
+    <text style="fill: #667384; font: 4.75px 'sans-serif'; text-anchor: middle" x="462.672" y="103.927906" transform="rotate(-0, 462.672, 103.927906)">逐算子可达性</text>
+   </g>
+   <g id="text_28">
+    <!-- $\mathcal{G}=\langle\mathrm{B1},\mathrm{B2},\mathrm{D}\rangle$ -->
+    <g style="fill: #243447" transform="translate(361.603 119.0152)">
+     <text>
+      <tspan style="font: italic 7px 'STIXNonUnicode'" x="0" y="-0.6875"></tspan>
+      <tspan style="font: 7px 'DejaVu Sans'" x="5.423767 12.652771 15.383728 20.185974 24.639587 28.228455 33.030701 37.484314 41.073181 46.463318" y="-0.6875">=⟨B1,B2,D⟩</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_29">
+    <text style="fill: #275f54; font: 700 7.7px 'sans-serif'; text-anchor: middle" x="259.2" y="144.214006" transform="rotate(-0, 259.2, 144.214006)">硬件–网络约束耦合</text>
+   </g>
+   <g id="text_30">
+    <text style="fill: #3e8c7a; font: 700 5.8px 'sans-serif'; text-anchor: start" x="65.8368" y="159.185266" transform="rotate(-0, 65.8368, 159.185266)">A → B</text>
+   </g>
+   <g id="text_31">
+    <text style="fill: #667384; font: 5px 'sans-serif'" transform="translate(65.8368 166.15915)">对齐 → 剪枝宽度</text>
+    <text style="fill: #667384; font: 5px 'sans-serif'" transform="translate(65.8368 171.125088)">量化能力 → 位宽/粒度</text>
+   </g>
+   <g id="text_32">
+    <text style="fill: #3e8c7a; font: 700 5.8px 'sans-serif'; text-anchor: start" x="202.176" y="159.559094" transform="rotate(-0, 202.176, 159.559094)">D 与 B2 双向传播</text>
+   </g>
+   <g id="text_33">
+    <text style="fill: #667384; font: 5px 'sans-serif'" transform="translate(202.176 166.158759)">DLA → INT8 / per-tensor</text>
+    <text style="fill: #667384; font: 5px 'sans-serif'" transform="translate(202.176 170.949697)">per-channel → 禁用 DLA</text>
+   </g>
+   <g id="text_34">
+    <text style="fill: #3e8c7a; font: 700 5.8px 'sans-serif'; text-anchor: start" x="338.5152" y="159.185266" transform="rotate(-0, 338.5152, 159.185266)">B → A</text>
+   </g>
+   <g id="text_35">
+    <text style="fill: #667384; font: 5px 'sans-serif'" transform="translate(338.5152 166.174736)">算子集合 → 扫描范围</text>
+    <text style="fill: #667384; font: 5px 'sans-serif'" transform="translate(338.5152 171.099345)">路由标注 → 连续分段</text>
+   </g>
+   <g id="text_36">
+    <text style="fill: #80501f; font: 700 7.7px 'sans-serif'; text-anchor: start" x="59.616" y="205.810589" transform="rotate(-0, 59.616, 205.810589)">整合层：结构真相 → 搜索旋钮</text>
+   </g>
+   <g id="text_37">
+    <text style="fill: #c47a32; font: 700 5.5px 'sans-serif'; text-anchor: middle" x="71.0208" y="217.011048" transform="rotate(-0, 71.0208, 217.011048)">B1</text>
+   </g>
+   <g id="text_38">
+    <!-- $G=|\mathrm{B1}|$ 个剪枝组 -->
+    <g style="fill: #243447" transform="translate(90.72 216.87765)">
+     <text>
+      <tspan style="font: oblique 5.25px 'DejaVu Sans'" x="0" y="-0.75">G</tspan>
+      <tspan style="font: 5.25px 'DejaVu Sans'" x="5.091064 10.512817 12.281616 15.883301 19.223511" y="-0.75">=|B1|</tspan>
+      <tspan style="font: 300 5.25px 'AR PL UMing CN'" x="20.99231 23.61731 28.86731 34.11731 39.36731" y="-0.75"> 个剪枝组</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_39">
+    <!-- $K\ll G$ 个 stage 级旋钮 -->
+    <g style="fill: #243447" transform="translate(235.872 217.2714)">
+     <text>
+      <tspan style="font: oblique 5.25px 'DejaVu Sans'" x="0 10.984497" y="-0.734375">KG</tspan>
+      <tspan style="font: 5.25px 'DejaVu Sans'" x="4.465576" y="-0.734375">≪</tspan>
+      <tspan style="font: 300 5.25px 'AR PL UMing CN'" x="15.052734 17.677734 22.927734 25.552734 28.177734 30.802734 33.427734 36.052734 38.677734 41.302734 46.552734 51.802734" y="-0.734375"> 个 stage 级旋钮</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_40">
+    <text style="fill: #c47a32; font: 700 5.5px 'sans-serif'; text-anchor: middle" x="71.0208" y="228.059448" transform="rotate(-0, 71.0208, 228.059448)">B2</text>
+   </g>
+   <g id="text_41">
+    <text style="fill: #243447; font: 5.25px 'sans-serif'; text-anchor: start" x="90.72" y="228.324312" transform="rotate(-0, 90.72, 228.324312)">完整耦合组并集</text>
+   </g>
+   <g id="text_42">
+    <text style="fill: #243447; font: 700 5.25px 'sans-serif'; text-anchor: start" x="235.872" y="228.332105" transform="rotate(-0, 235.872, 228.332105)">合法位宽 / 粒度</text>
+   </g>
+   <g id="text_43">
+    <text style="fill: #c47a32; font: 700 5.5px 'sans-serif'; text-anchor: middle" x="71.0208" y="239.107848" transform="rotate(-0, 71.0208, 239.107848)">D</text>
+   </g>
+   <g id="text_44">
+    <text style="fill: #243447; font: 5.25px 'sans-serif'; text-anchor: start" x="90.72" y="239.375173" transform="rotate(-0, 90.72, 239.375173)">逐算子路由标注</text>
+   </g>
+   <g id="text_45">
+    <text style="fill: #243447; font: 700 5.25px 'sans-serif'; text-anchor: start" x="235.872" y="239.370251" transform="rotate(-0, 235.872, 239.370251)">2–4 个连续路由段</text>
+   </g>
+   <g id="text_46">
+    <text style="fill: #c47a32; font: 700 5.7px 'sans-serif'; text-anchor: middle" x="410.832" y="220.117237" transform="rotate(-0, 410.832, 220.117237)">剪枝空间压缩</text>
+   </g>
+   <g id="text_47">
+    <!-- $6^{43}\approx10^{33}$ -->
+    <g style="fill: #243447" transform="translate(394.832 230.277)">
+     <text>
+      <tspan style="font: 6.4px 'DejaVu Sans'" x="0 11.197815 17.781372 21.837341" y="-0.5859375">6≈10</tspan>
+      <tspan style="font: 4.48px 'DejaVu Sans'" x="4.113391 6.95257 25.950732 28.789911" y="-2.8828125">4333</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_48">
+    <!-- $6^{5}\approx10^{4}$ -->
+    <g style="fill: #243447" transform="translate(426.9696 235.6018)">
+     <text>
+      <tspan style="font: 6.4px 'DejaVu Sans'" x="0 8.358636 14.942194 18.998163" y="-0.640625">6≈10</tspan>
+      <tspan style="font: 4.48px 'DejaVu Sans'" x="4.113391 23.111554" y="-2.9375">54</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_49">
+    <!-- 基线延迟刻画  $\lambda$ -->
+    <g style="fill: #45677f" transform="translate(61.372 279.7604)">
+     <text>
+      <tspan style="font: 300 6.7px 'AR PL UMing CN'" x="0 6.75 13.5 20.25 27 33.75 40.5 43.875" y="-0.09375">基线延迟刻画  </tspan>
+      <tspan style="font: oblique 6.7px 'DejaVu Sans'" x="47.25" y="-0.09375">λ</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_50">
+    <text style="fill: #243447; font: 5.2px 'sans-serif'" transform="translate(59.532 291.533891)">CUDA-Event 逐算子计时</text>
+    <text style="fill: #243447; font: 5.2px 'sans-serif'" transform="translate(55.632 296.982971)">按统一层名聚合至搜索旋钮</text>
+   </g>
+   <g id="text_51">
+    <text style="fill: #667384; font: 4.7px 'sans-serif'; text-anchor: middle" x="86.832" y="308.966469" transform="rotate(-0, 86.832, 308.966469)">描述性输入先验 · 非合法性约束</text>
+   </g>
+   <g id="text_52">
+    <!-- 试剪校验  $v$ -->
+    <g style="fill: #4f7553" transform="translate(221 280.3965)">
+     <text>
+      <tspan style="font: 300 6.7px 'AR PL UMing CN'" x="0 6.75 13.5 20.25 27 30.375" y="-0.046875">试剪校验  </tspan>
+      <tspan style="font: oblique 6.7px 'DejaVu Sans'" x="33.75" y="-0.046875">v</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_53">
+    <!-- $r=0.5$ 物理通道剪枝 -->
+    <g style="fill: #243447" transform="translate(213.489 292.6314)">
+     <text>
+      <tspan style="font: oblique 5.4px 'DejaVu Sans'" x="0" y="-0.75">r</tspan>
+      <tspan style="font: 5.4px 'DejaVu Sans'" x="3.257019 8.807861 12.2276 13.936157" y="-0.75">=0.5</tspan>
+      <tspan style="font: 300 5.4px 'AR PL UMing CN'" x="17.355896 20.043396 25.418396 30.793396 36.168396 41.543396 46.918396" y="-0.75"> 物理通道剪枝</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_54">
+    <text style="fill: #243447; font: 5.2px 'sans-serif'; text-anchor: middle" x="239.76" y="302.610556" transform="rotate(-0, 239.76, 302.610556)">+ 一次前向</text>
+   </g>
+   <g id="text_55">
+    <text style="fill: #667384; font: 700 4.9px 'sans-serif'; text-anchor: middle" x="239.76" y="309.728814" transform="rotate(-0, 239.76, 309.728814)">fail-fast</text>
+   </g>
+   <g id="text_56">
+    <text style="fill: #ffffff; font: 700 6.8px 'sans-serif'; text-anchor: middle" x="414.72" y="277.80235" transform="rotate(-0, 414.72, 277.80235)">分区清单  partition manifest</text>
+   </g>
+   <g id="text_57">
+    <!-- $\mathcal{M}=\langle\mathcal{H},\mathcal{G},\Theta,\lambda,v\rangle$ -->
+    <g style="fill: #ffffff" transform="translate(383.724 291.4992)">
+     <text>
+      <tspan style="font: italic 7.2px 'STIXNonUnicode'" x="0 20.181656 29.923447" y="-0.6875"></tspan>
+      <tspan style="font: 7.2px 'DejaVu Sans'" x="9.865982 17.353165 26.206406 34.128448 37.84549 43.552032 51.559601 59.567169" y="-0.6875">=⟨,,Θ,,⟩</tspan>
+      <tspan style="font: oblique 7.2px 'DejaVu Sans'" x="47.269073 55.276642" y="-0.6875">λv</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_58">
+    <!-- $\Theta$: 低维合法搜索空间 -->
+    <g style="fill: #dce8f0" transform="translate(389.266 303.296)">
+     <text>
+      <tspan style="font: 5.2px 'DejaVu Sans'" x="0" y="-0.734375">Θ</tspan>
+      <tspan style="font: 300 5.2px 'AR PL UMing CN'" x="4.132324 6.757324 9.382324 14.632324 19.882324 25.132324 30.382324 35.632324 40.882324 46.132324" y="-0.734375">: 低维合法搜索空间</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_59">
+    <text style="fill: #2f526f; font: 700 5.2px 'sans-serif'; text-anchor: middle" x="414.72" y="313.171787" transform="rotate(-0, 414.72, 313.171787)">阶段二联合搜索输入</text>
+   </g>
+  </g>
+ </g>
+</svg>
