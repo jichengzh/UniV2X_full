@@ -1,0 +1,41 @@
+{
+  "version": "1.2-active",
+  "_description": "Stage 2.5 主动采样: encoder 0.25 + 全 INT8 (per-tensor, W+A)",
+  "_purpose": "解锁 sanity 模型未见过的特征维度",
+  "locked": {
+    "importance_criterion": "l1_norm",
+    "pruning_granularity": "local",
+    "iterative_steps": 5,
+    "round_to": 8
+  },
+  "encoder": {
+    "ffn_mid_ratio": 0.75,
+    "attn_proj_ratio": 0.0,
+    "head_pruning_ratio": 0.0
+  },
+  "decoder": {
+    "ffn_mid_ratio": 1.0,
+    "attn_proj_ratio": 0.0,
+    "head_pruning_ratio": 0.0,
+    "num_layers": 6
+  },
+  "heads": {
+    "head_mid_ratio": 1.0
+  },
+  "backbone": {
+    "channel_pruning_ratio": 0.0,
+    "_note": "1.2 没实现 backbone 剪枝, Stage 2.5 需要新实现或借助 Torch-Pruning"
+  },
+  "finetune": {
+    "epochs": 0,
+    "_note": "零微调, 与 1.2 PhaseB 一致, 直接评估剪枝后精度损失"
+  },
+  "constraints": {
+    "skip_layers": [
+      "sampling_offsets",
+      "attention_weights"
+    ],
+    "min_channels": 64,
+    "channel_alignment": 32
+  }
+}

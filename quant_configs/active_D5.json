@@ -1,0 +1,46 @@
+{
+  "version": "1.1-active",
+  "_description": "Stage 2.5 主动采样: 全 INT8 + W-only (对比 W+A 的精度损失)",
+  "global": {
+    "symmetric": true,
+    "scale_method": "minmax",
+    "default_w_bits": 8,
+    "default_a_bits": 8,
+    "default_w_granularity": "per_tensor",
+    "default_a_granularity": "per_tensor",
+    "default_quant_target": "W"
+  },
+  "modules": {
+    "backbone": {
+      "bits": 8,
+      "granularity": "per_tensor",
+      "target": "W"
+    },
+    "encoder": {
+      "bits": 8,
+      "granularity": "per_tensor",
+      "target": "W"
+    },
+    "decoder": {
+      "bits": 8,
+      "granularity": "per_tensor",
+      "target": "W"
+    },
+    "heads": {
+      "bits": 8,
+      "granularity": "per_tensor",
+      "target": "W"
+    },
+    "v2x_comm": {
+      "bits": 8,
+      "granularity": "per_tensor",
+      "target": "W"
+    }
+  },
+  "layers": {},
+  "v2x_comm": {
+    "agent_query_precision": "int8",
+    "lane_query_precision": "int8",
+    "bev_scatter_precision": "fp16"
+  }
+}

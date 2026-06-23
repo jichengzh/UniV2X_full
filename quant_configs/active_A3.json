@@ -1,0 +1,46 @@
+{
+  "version": "1.1-active",
+  "_description": "Stage 2.5 主动采样: backbone 单独剪 0.5",
+  "global": {
+    "symmetric": true,
+    "scale_method": "minmax",
+    "default_w_bits": 32,
+    "default_a_bits": 32,
+    "default_w_granularity": "per_tensor",
+    "default_a_granularity": "per_tensor",
+    "default_quant_target": "none"
+  },
+  "modules": {
+    "backbone": {
+      "bits": 32,
+      "granularity": "per_tensor",
+      "target": "none"
+    },
+    "encoder": {
+      "bits": 32,
+      "granularity": "per_tensor",
+      "target": "none"
+    },
+    "decoder": {
+      "bits": 32,
+      "granularity": "per_tensor",
+      "target": "none"
+    },
+    "heads": {
+      "bits": 32,
+      "granularity": "per_tensor",
+      "target": "none"
+    },
+    "v2x_comm": {
+      "bits": 32,
+      "granularity": "per_tensor",
+      "target": "none"
+    }
+  },
+  "layers": {},
+  "v2x_comm": {
+    "agent_query_precision": "fp16",
+    "lane_query_precision": "fp16",
+    "bev_scatter_precision": "fp16"
+  }
+}

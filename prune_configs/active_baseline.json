@@ -1,0 +1,36 @@
+{
+  "version": "1.2-active",
+  "_description": "Stage 5.1 baseline: NO pruning. Merge pipeline reference for 30 configs.",
+  "_purpose": "公平基准 — 验证'merge stage1 ego + stage2 inf'机制本身的精度,与 30 个 config 同 pipeline 比较",
+  "locked": {
+    "importance_criterion": "l1_norm",
+    "pruning_granularity": "local",
+    "iterative_steps": 5,
+    "round_to": 8
+  },
+  "encoder": {
+    "ffn_mid_ratio": 1.0,
+    "attn_proj_ratio": 0.0,
+    "head_pruning_ratio": 0.0
+  },
+  "decoder": {
+    "ffn_mid_ratio": 1.0,
+    "attn_proj_ratio": 0.0,
+    "head_pruning_ratio": 0.0,
+    "num_layers": 6
+  },
+  "heads": {
+    "head_mid_ratio": 1.0
+  },
+  "backbone": {
+    "channel_pruning_ratio": 0.0
+  },
+  "finetune": {
+    "epochs": 0
+  },
+  "constraints": {
+    "skip_layers": ["sampling_offsets", "attention_weights"],
+    "min_channels": 64,
+    "channel_alignment": 32
+  }
+}

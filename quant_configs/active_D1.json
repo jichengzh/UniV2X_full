@@ -1,0 +1,46 @@
+{
+  "version": "1.1-active",
+  "_description": "Stage 2.5 \u4e3b\u52a8\u91c7\u6837: backbone INT8 + \u5176\u4ed6 FP16 (per-tensor) [Plan B: coerced 16->8]",
+  "global": {
+    "symmetric": true,
+    "scale_method": "minmax",
+    "default_w_bits": 8,
+    "default_a_bits": 8,
+    "default_w_granularity": "per_tensor",
+    "default_a_granularity": "per_tensor",
+    "default_quant_target": "W"
+  },
+  "modules": {
+    "backbone": {
+      "bits": 8,
+      "granularity": "per_tensor",
+      "target": "W+A"
+    },
+    "encoder": {
+      "bits": 16,
+      "granularity": "per_tensor",
+      "target": "W+A"
+    },
+    "decoder": {
+      "bits": 16,
+      "granularity": "per_tensor",
+      "target": "W+A"
+    },
+    "heads": {
+      "bits": 16,
+      "granularity": "per_tensor",
+      "target": "W+A"
+    },
+    "v2x_comm": {
+      "bits": 16,
+      "granularity": "per_tensor",
+      "target": "W+A"
+    }
+  },
+  "layers": {},
+  "v2x_comm": {
+    "agent_query_precision": "fp16",
+    "lane_query_precision": "fp16",
+    "bev_scatter_precision": "fp16"
+  }
+}

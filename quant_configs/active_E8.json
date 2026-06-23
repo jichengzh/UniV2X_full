@@ -1,0 +1,46 @@
+{
+  "version": "1.1-active",
+  "_description": "Stage 2.5 主动采样: encoder 0.5 + decoder 0.5 + 全 INT8 + per-channel",
+  "global": {
+    "symmetric": true,
+    "scale_method": "minmax",
+    "default_w_bits": 8,
+    "default_a_bits": 8,
+    "default_w_granularity": "per_channel",
+    "default_a_granularity": "per_channel",
+    "default_quant_target": "W+A"
+  },
+  "modules": {
+    "backbone": {
+      "bits": 8,
+      "granularity": "per_channel",
+      "target": "W+A"
+    },
+    "encoder": {
+      "bits": 8,
+      "granularity": "per_channel",
+      "target": "W+A"
+    },
+    "decoder": {
+      "bits": 8,
+      "granularity": "per_channel",
+      "target": "W+A"
+    },
+    "heads": {
+      "bits": 8,
+      "granularity": "per_channel",
+      "target": "W+A"
+    },
+    "v2x_comm": {
+      "bits": 8,
+      "granularity": "per_channel",
+      "target": "W+A"
+    }
+  },
+  "layers": {},
+  "v2x_comm": {
+    "agent_query_precision": "int8",
+    "lane_query_precision": "int8",
+    "bev_scatter_precision": "fp16"
+  }
+}
