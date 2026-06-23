@@ -1,6 +1,6 @@
 {
   "_format": "direct grid (per-width real H800 tuned/default us)",
-  "_source": "gap1_grid_corrected + lut_results_grid (relaunch); -1 rows excluded",
+  "_source": "gap1_grid_corrected + lut_results_grid (relaunch); -1 rows excluded; s2_128 added 2026-06-21 seed=42 fresh workdir",
   "widths": [
     {
       "num_filters": [
@@ -161,6 +161,19 @@
       "label": "s2_64",
       "default_us": 43594.23,
       "tuned_us": 5034.23
+    },
+    {
+      "num_filters": [
+        64,
+        128,
+        128
+      ],
+      "label": "s2_128",
+      "default_us": 47435.27,
+      "tuned_us": 5506.57,
+      "_note": "pair3 P_g; seed=42 fresh workdir fixed seed=0 CUDA illegal-access; task#4 0 trials (consistent); SUBPROCESS VALIDATION PASSED; 200reps x5 repeats",
+      "_tune_s": 1673,
+      "_trials": 1031
     },
     {
       "num_filters": [

@@ -4,6 +4,8 @@
 > 1. **W_g 定义**: W_g = **单维(贪心所搜那一维)最优、但多维(全局)非最优**的点 = 单侧贪心搜索落入并卡住的**局部最优**(贪心选它因它单维最优; 非全局因到达真全局需接受贪心已丢弃的单维次优选择)。另设 P_g = 被错过的全局点(单维次优/多维最优)。
 > 2. **平台: 已迁移 TVM, 不以 TRT/INT8 为重心**。架构/实验主轴 = **TVM prune × schedule**(MetaSchedule); 量化(INT8)因 relax 无 INT8 pass 降为 **future/次要**, 不作主依赖。本文涉及 TRT/INT8 处相应降级为 future-note。
 
+> 3. ★**耦合口径统一(2026-06-22, 见 `1_design_space_building_v1.md §0.1`)**: 本代价模型服务的"协同"= **内环(硬件调度 S, 本文真测对象)↔外环(软件 P×Q)的耦合**, 经 P(IC_BN)枢纽; 耦合强度按架构用三臂消融**测量**(非规则)。本文 block-LUT 解耦内外环正是为了在测得耦合时仍能高效联合搜。
+
 > **定位**: 为软硬件协同搜索框架(prune×quant×schedule 联合搜)设计**代价模型(性能评估器)**的构建与训练方案, 严格基于 ALT(EuroSys'23)/ CHaNAS(LCTES'21)/ AutoTVM(NeurIPS'18) 三篇文献的可迁移机制。
 > **上游事实源**: 文献研读 `../../references/study_joint_search_methods_v1.md`(尤 §三c AutoTVM / §二c CHaNAS / §一c ALT); 预测器选型 `../../methods/design/predictor_selection_v1.md`; 现状方法稿 `stage2_method_zh_v1.md`; 联合搜实验 `../../methods/design/gap1_joint_vs_serial_design_v1.md`。
 > **核心痛点(必须正面解决)**: ① LGB latency 预测器"跨数量级回归崩、给负值"已弃用(`CLAUDE.md §四`); ② Pyramid e2e f_lat 预测 R² 上限 ~0.73, 特征缺口非容量问题(memory `project_f_lat_ceiling`); ③ AP 必须 finetune 真测, 预测不准(配置效应仅 ~0.04, 在任务上限 0.791 附近)。

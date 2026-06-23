@@ -71,6 +71,7 @@ class Features(BaseModel):
     mig: bool = False
     mps: bool = False
     sparse_tc: bool = False
+    tensor_core: bool = False
     cuda_graph: bool = True
     dla_count: int = 0
 

@@ -1,12 +1,16 @@
 # HANDOFF — 协同加速下一阶段执行计划 + agent 分工 (nextstage v1, 2026-06-21)
 
+> ⚠️ **[已过时, 2026-06-21] 本文件被 `HANDOFF_codesign_nextstage_v2.md` 取代。** v1 的两处关键判断已被实测推翻: ① Option B(真 TVM int8)"需数周/无 int8 pass" **错** —— TVM int8 WMMA 在 sm90 已工作; ② "CARLA 未装/闭环不可运行" **stale** —— 移植 P1–P5 已完成、RSU smoke PASS。pair3 也已补全(3.83×)。**接手读 v2。** 下文保留作历史。
+
 > **前置**: 三臂 prune×schedule ablation(B1–B5)已完成并 commit(`243753c`)。现状入口 = `HANDOFF_three_arm_ablation_results_v1.md`;命题与四层证据 + 真数据结果 = `auto-tuning/4_design_ablation_proof_v1.md §9`。
 > **本页**: 定义 4 个下一阶段任务(T1–T4)+ agent 分工 + DS 曲面评估。接手按本页起 agent。
 
 ---
 
 ## §0 一句话状态
-ablation 主结论已坐实(A-joint 99.6% / A-serial 86.0% / A-noS 48.0% HV,p=4.9e-4;1 个干净 shipped 协同赢 3.29×@iso-AP0.6362)。下一阶段 = **扩维度 + 补对照 + 修闭环**,共 4 条线,T1/T2/T3 可即刻并行,T4 是长杆(gated on Pyramid→V2Xverse+CARLA 移植)。
+ablation 主结论已坐实(A-joint 99.6% / A-serial 86.0% / A-noS 48.0% HV,p=4.9e-4;1 个干净 shipped 协同赢 3.29×@iso-AP0.6362)。下一阶段 = **先扩维度(Q 轴)→ 再在三维上扩网格 + 补对照 + 修闭环**。
+> **★顺序铁律(用户拍板)**:网格扩充 **必须在维度扩充之后**。先 T1 把空间建成 **P×Q×S 三维**,再在三维基础上一次性扩网格(T1b)。否则现在在 2D(P×S)上扩完,加 Q 后还得在 3D 重测 = 白做。
+> 流水:**T1(扩维度 Q)→ T1b(三维扩网格,gated on T1)**;并行:**T2(pair3,快速补完现有 2D)/ T3(CoDriving 对照)** 可即刻起;**T4(真闭环+DS 曲面)** 长杆(gated on V2Xverse 移植)。
 
 ---
 
@@ -18,7 +22,7 @@ ablation 主结论已坐实(A-joint 99.6% / A-serial 86.0% / A-noS 48.0% HV,p=4.
 
 ---
 
-## §2 T1 — 量化 Q 轴(prune × quant × schedule 三轴)
+## §2 T1 — 量化 Q 轴(prune × quant × schedule 三轴)【维度扩充,先做】
 **目标**:把搜索空间从 P×S 扩到 **P×Q×S**,Q = 量化档(FP16 / INT8)。证 Q 是否引入新的 rank-flip(对齐宽度只在 INT8+tensorize 下显优),以及 Q 对 W_g/P_g 倍率的放大。
 **纪律(铁律)**:
 - INT8 必须**真 TRT INT8 build**(relax 无 INT8 pass;gap1 已记录 simulated INT8 不可信,见 [[project-dair-ap-axis-collapse]])。
@@ -33,7 +37,24 @@ ablation 主结论已坐实(A-joint 99.6% / A-serial 86.0% / A-noS 48.0% HV,p=4.
 
 ---
 
-## §3 T2 — pair3 s2_128 崩排查(补第 3 AP 档的对)
+## §2bis T1b — 三维(P×Q×S)网格扩充【★gated on T1,回应"网格偏小"】
+> **顺序铁律**:本任务**必须在 T1 之后**。维度先建全(P×Q×S),再在**完整三维空间**上扩网格 —— 现在 2D 上扩完,加 Q 后还得在 3D 重测 = 白做。
+
+**动机**:当前 headline 网格仅 **8 真 AP+真延迟宽度**(2D P×S),doc4 §9.6 caveat ① 已承认偏小。在三维空间扩网格能正面强化:① 更多 W_g/P_g rank-flip 对(现仅 2 对、1 shipped 赢);② 更多 shipped 协同赢;③ 配置数 ≫ budget → "真搜索非枚举"更可信;④ 密化 AP 轴 → 更多 P_g 落在全局 Pareto(非机理-only);⑤ Q 维加入后,rank-flip 可能在 (W, Q) 联合上出现新形态(对齐宽度只在 INT8 下翻转)→ 三维网格才看得到。
+**目标**:在 P×Q×S 上把真测网格扩到 **~16–20 宽度 × {fp16,int8} × {default,tuned}**。
+
+**策略 = 模型引导 + 只真测赢家(控成本:每个真 AP 一次 DepGraph finetune ≈ 数小时 GPU;每点 INT8 一次真 TRT build)**:
+1. **廉价延迟筛(无需 AP)**:对候选宽度在**三维**跑延迟(TVM default/tuned × TRT fp16/int8),用 `detect_wg_pg_pairs` 同款逻辑(共享 (s1,s2)、s0 失配 vs 补齐 64、排序翻转)筛出所有延迟层 rank-flip 候选对——**含只在 int8 下翻转的对**。候选覆盖:多 (s1,s2) × 多 s0 失配档(48/80/112 vs 对齐 64/96/128)+ 中间均匀剪枝率密化 AP。
+2. **门控 finetune**:仅对延迟确认翻转的对 DepGraph finetune 其 W_g(一次 finetune 由零填充权重恒等同时给 W_g 与补齐 P_g 真 AP);INT8 AP 走真 TRT INT8 引擎测,不复用 fp16 AP。绝不盲目 finetune。
+3. **并入 + 重跑**:新点并入三维 LUT+AP → 重跑 `run_b4_ablation`/`b5_verify_convergence`(内核需先在 T1 支持 Q 维)→ 报新增对/新 shipped 赢/三维 HV+收敛。
+**纪律**:headline AP 必须真 finetune(模型 AP held-out MAE 0.035,只作 sensitivity 旁路不进 headline);跨口径不混(TVM vs TRT 延迟分轴);空闲 GPU;fresh workdir 逐宽度进程隔离([[feedback-tvm-tune-apply-fresh-workdir]])。
+**分工**:**data-orchestrator(lead,门控决策)** + **hw-optimizer**(三维延迟筛 + 真 TRT INT8)+ **sw-optimizer**(门控 DepGraph finetune + 真 INT8 AP)。
+**退路(诚实)**:GPU 预算紧时,优先扩到多拿 1–2 个 shipped 赢(覆盖 2–3 AP 档)即达"非 cherry-pick"门槛,不必追满;扩多少都比 8 强,标清实测了哪些。
+
+---
+
+## §3 T2 — pair3 s2_128 崩排查(补第 3 AP 档的对)【独立,2D 快速补完】
+> 注:T2 是补完**现有 2D** ablation(§9 已发表)的一个具体缺口,**不等 T1**,可即刻起;它也是 T1b 三维扩网格里 s2_128 这一点的预演。
 **现状**:pair3 = mix_d [48,128,128](W_g,延迟已测)/ s2_128 [64,128,128](P_g)。s2_128 TVM MetaSchedule 调优**持续 CUDA illegal-access 崩(2× exit134)**→ P_g 延迟拿不到 → pair3 降级。mix_d 的 AP(0.6369)已 finetune,只差 s2_128 的 tuned 延迟。
 **任务**:排查 s2_128 在 H800 上的 TVM 调优崩因(fresh workdir、builder timeout=300、逐宽度进程隔离、continue-on-error;参考 [[feedback-tvm-tune-apply-fresh-workdir]])。若修通 → 第 3 个 AP 档(0.6369)的完整对,强化"结构性、非 cherry-pick"。
 **分工**:**hw-optimizer**(H800/TVM 调优专长)。环境:`ssh -p 30001 jichengzhi@222.95.84.215`(pw 12345678);tuner `/exdata/jichengzhi/s2_tvm/s2_2e_bumped.py`;python `/exdata/jichengzhi/tvm310/bin/python`。
@@ -74,14 +95,17 @@ ablation 主结论已坐实(A-joint 99.6% / A-serial 86.0% / A-noS 48.0% HV,p=4.
 ---
 
 ## §7 优先级 / 并行建议
+> **顺序铁律**:维度先于网格 —— **T1(扩 Q 维)→ T1b(三维扩网格)**;T1b 不得在 T1 前起。
+
 | 任务 | 可即刻起? | 依赖 | 建议 agent | 阻塞 ablation 主线? |
 |---|---|---|---|---|
-| T1 量化 Q 轴 | ✅ | 无(4090/Orin TRT 已通) | data-orchestrator + hw + sw | 否(扩展) |
-| T2 pair3 排查 | ✅ | H800 可用 | hw-optimizer | 否(强化) |
+| **T1 量化 Q 轴**(扩维度) | ✅ | 无(4090/Orin TRT 已通) | data-orchestrator + hw + sw | 否(扩展) |
+| **T1b 三维扩网格** | ❌ | **gated on T1** | data-orchestrator + hw + sw | 否(强化,回应"网格偏小") |
+| T2 pair3 排查 | ✅ | H800 可用(独立 2D) | hw-optimizer | 否(强化) |
 | T3 CoDriving 对照臂 | ✅ | CoDriving TVM 基础(已有) | sw-optimizer + data | 否(双模型判据) |
 | T4 真闭环 + DS 曲面 | ⏳ 长杆 | Pyramid→V2Xverse+CARLA 移植 | sim-integrator(+hw) | 否(修 DS 估算) |
 
-**建议**:T1/T2/T3 三线并行起 3 组 agent(data-orchestrator 协调 T1、hw-optimizer 主 T2、sw-optimizer 主 T3);T4 由 sim-integrator 并行推进移植(慢,不等)。**supervisor** 全程核验"已测/已修/已build"自报(复跑/读文件/git diff);**doc-curator** 把已核验结论整合回 doc4 + dataset_v2(非追加)。
+**建议起法**:即刻并行 3 线 —— **T1**(data-orch 协调,主推,因 T1b 等它)、**T2**(hw-optimizer,独立 2D 快补)、**T3**(sw-optimizer,CoDriving 对照);**T1b** 在 T1 完成后接力(同班 agent 复用)。**T4** 由 sim-integrator 并行推进移植(慢,不等)。**supervisor** 全程核验"已测/已修/已build"自报(复跑/读文件/git diff);**doc-curator** 把已核验结论整合回 doc4 + dataset_v2(非追加)。
 
 ---
 

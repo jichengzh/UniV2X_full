@@ -1,8 +1,10 @@
 # 交接: τ_ego 驾驶分曲线实验 (HANDOFF_tau_ego_curve_v1)
 
 > 写于 2026-06-11。用于新窗口接手"延迟→V2X 场景驾驶分退化曲线"实验。
-> 配套: `multi_agent/methods/design/exp_tau_ego_curve_design_v1.md`(实验设计) + `l1_fix_proposal_purepursuit_v1.md`(L1 修法) + `l1_architecture_problems_v1.md`(L1 问题)。
-> ★接手第一件事: 读本文 §1 当前进度 + §5 教训, 别重复踩端口/CSV 的坑。
+> 配套: `multi_agent/real_test/exp_tau_ego_curve_design_v1.md`(实验设计, **★含 §8 最新方法学定论**) + `l1_fix_proposal_purepursuit_v1.md`(L1 修法) + `l1_architecture_problems_v1.md`(L1 问题)。
+> ★接手第一件事: 读本文 §1 当前进度 + §5 教训(注意 §5.7 已更新) + **`exp_tau_ego_curve_design_v1.md §8`(2026-06-13 方法学定论)**.
+
+> **★★[2026-06-13 补充]** H800 闭环根因已查清(台账: `multi_agent/real_test/h800_rootcause_investigation_v1.md`): H800 无感知退化; "te0 崩"是 ambient traffic 非确定 + knife-edge route + n=1 噪声(两机对称)。H800 GPU1-7 空闲可直接跑延迟曲线。**推荐配置 = `_1notraffic` 或 r104 类 clean route**, 见 `exp_tau_ego_curve_design_v1.md §8`。
 
 ---
 
@@ -86,7 +88,8 @@ TeamCreate → 3 agent:
 4. **共享 GPU**: latency 不准但 DS/RC 准(DS 验证用 `SKIP_GPU_GUARD=1`)。跑前 nvidia-smi 看真实空卡(util+mem)。
 5. **单路 n=1 噪声大**: "恰好 1 碰撞"洗牌使 DS ±噪声; 单路看不出 τ_ego 单调。必须大库聚合 + n 重复。
 6. **failure 是 per-km float 非 list**: 解析碰撞用 `float(v)` 不是 `len(v)`。
-7. **H800 不可用于此实验**: H800(sm90) 上老栈 torch1.10/cu113 第一个 CUDA 算子就卡死(见 `HANDOFF_new_server_deploy_v1.md §7.4`)。**本实验只能在旧 4090 跑**。
+7. ~~**H800 不可用于此实验**: H800(sm90) 上老栈 torch1.10/cu113 第一个 CUDA 算子就卡死(见 `HANDOFF_new_server_deploy_v1.md §7.4`)。**本实验只能在旧 4090 跑**。~~ **★[2026-06-13 已过时]**: H800 闭环无感知退化, 双进程+torch2 栈已可用(smoke 跑通, b-test 感知等价)。H800 GPU1-7 空闲, 可承载此实验。4090 单进程也可用。注意使用正确评测配置(见下 §8)。
+8. **★[2026-06-13 新增] 评测配置选择**: 使用 `_1notraffic` config(ambient vehicle=ped=0)或 r104 类 clean route 跑延迟曲线, 避免 CARLA ambient traffic 非确定带来高方差。延迟曲线须逐 route 出(失败阈值依避让余量), 每档 N≥3, 别跨 route 朴素平均。详见 `multi_agent/real_test/exp_tau_ego_curve_design_v1.md §8`。
 
 ---
 

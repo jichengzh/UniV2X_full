@@ -1,6 +1,6 @@
 # Space Building 设计 — 搜索空间构建与收缩 (v1, 2026-06-19)
 
-> **定位**: 为软硬件协同搜索框架的 **auto-tuning 之前的"空间构建"环节** 写一份严格基于 ALT / CHaNAS / AutoTVM 三篇论文的设计稿。本稿**主搜索轴 = P(剪枝)× schedule(TVM 调度, MetaSchedule)**; Q(量化/INT8)因 TVM relax 无 INT8 pass 降为 **future/次要**, 不作主依赖, 涉及处均按 future-note 处理。本稿讲这些轴的合法空间如何 **快速构建 + 分解 + 收缩到可搜规模**，承接 `stage1_method_zh_v1.md`(刻画) 与 `stage2_method_zh_v1.md`(搜索器/评估器)之间的缺口，并把 `gap1_joint_vs_serial_design_v1.md` 的实验骨架落到"空间定义"这一层。
+> **定位**: 为软硬件协同搜索框架的 **auto-tuning 之前的"空间构建"环节** 写一份严格基于 ALT / CHaNAS / AutoTVM 三篇论文的设计稿。本稿专注三轴 **P(剪枝)× Q(量化)× schedule(TVM 调度)** 的合法空间如何 **快速构建 + 分解 + 收缩到可搜规模**，承接 `stage1_method_zh_v1.md`(刻画) 与 `stage2_method_zh_v1.md`(搜索器/评估器)之间的缺口，并把 `gap1_joint_vs_serial_design_v1.md` 的实验骨架落到"空间定义"这一层。
 >
 > **标注约定**: 每条标 `[借鉴 ALT/CHaNAS/AutoTVM 哪个机制]` / `[我们的设计]` / `[待定]`。
 >
@@ -18,13 +18,21 @@
 | **CHaNAS** | R^B·S^B → 分解为 **R·B·S + R^B**; block-level pre-scheduling 存 LUT; 按 input-res×expand-ratio 划子空间选 CDF 最低 | 按 **块**(Pyramid stage / 双 agent 段)预调度每个 **(宽度,精度)** 组合建 **schedule-LUT**; 外层加性组合; 子空间预筛 |
 | **AutoTVM** | schedule 模板空间 S_e(tiling/reorder/unroll/vectorize, O(10^9)); divisible split factor; rank loss | 内环 schedule 轴的 **可调原语清单** + 合法 split 网格(divisible) |
 
-**一句话**: 我们的 Space Building = **两阶段空间定义**(借 ALT cross-exploration) × **按块分解 + schedule-LUT**(借 CHaNAS) × **divisible/对齐合法性 + propagation 预筛**(借 ALT propagation + CHaNAS divisible + AutoTVM 模板)。最终把理论 **P×schedule**(主轴, ~10^15 × O(10^9) 指数爆炸; Q/INT8 为 future 次要轴) 收缩为 **块级 LUT(线性) + 外环组合(~10^4)**。
+**一句话**: 我们的 Space Building = **两阶段空间定义**(借 ALT cross-exploration) × **按块分解 + schedule-LUT**(借 CHaNAS) × **divisible/对齐合法性 + propagation 预筛**(借 ALT propagation + CHaNAS divisible + AutoTVM 模板)。最终把理论 P×Q×schedule(~10^15 × O(10^9) 指数爆炸) 收缩为 **块级 LUT(线性) + 外环组合(~10^4)**。
 
 ---
 
-> ★**2026-06-19 两点更正(用户强调, 全文据此理解)**:
-> 1. **W_g 定义**: W_g = **单维(贪心所搜那一维)最优、但多维(全局)非最优**的点 = 单侧贪心搜索落入并卡住的**局部最优**(贪心选它因它单维最优; 非全局因到达真全局需接受贪心已丢弃的单维次优选择)。另设 P_g = 被错过的全局点(单维次优/多维最优)。
-> 2. **平台: 已迁移 TVM, 不以 TRT/INT8 为重心**。架构/实验主轴 = **TVM prune × schedule**(MetaSchedule); 量化(INT8)因 relax 无 INT8 pass 降为 **future/次要**, 不作主依赖。本文涉及 TRT/INT8 处相应降级为 future-note。
+### §0.1 协同的本质 —— 内外环(软件优化×硬件优化)耦合, 强度按架构"测量"而非"规则" (★统一口径, 2026-06-22)
+
+本框架是**内外双环搜索**: **外环 = 软件优化轴 (剪枝 P × 量化 Q)**, NSGA-II 查 LUT 加性组合; **内环 = 硬件优化轴 (TVM 调度 S)**, 按块跑 MetaSchedule 真搜。我们要主张的"协同"**不是 P/Q/S 三轴各自独立的强纠缠**, 而是 **内环(硬件调度)与外环(软件 P×Q)的强耦合** —— 即 **外环的 (P,Q) 排序离不开内环 S 的结果, 反之亦然**。
+
+- **机理枢纽 P(IC_BN)**: 外环的结构选择(宽度/groups → IC_BN=IC/groups)决定内环调度的可张量化性与对齐合法性(§3 对齐谓词正是此机理的前移)。这是把"外环结构"灌入"内环可调性"的**唯一枢纽**; 故协同 = **P-hub 的 外环×内环 耦合**, 而非三轴对称纠缠。`grouped conv → 小 IC_BN → 强耦合 / groups=1 → IC_BN 恒大 → 弱耦合` 是我们实测得到的**机理 insight (作为科学发现报告)**, **不是写进框架的 operative 规则**。
+- **耦合强度是被"测量"的, 不是被"声明"的**: 同一套三臂消融 (A-joint vs A-serial vs A-noS 的 HV 比) **就是普适的耦合度量仪** —— 任意架构跑同一度量, CoDriving 自动落到 ≈1.0 (可分离), Pyramid 落到 <1 (耦合), V2X-ViT 居中。**"可分离"是测量结果, 不是手写的 `if groups==1` 规则**; 框架因此**普适**而非工程拼装。
+- **搜索据耦合分数自适应**(设计目标, 见 §2 内环预算): 内环(调度)预算按每块测得/预测的耦合分数连续分配 —— 弱耦合块退化为"搜一次", 强耦合块付全量 joint。**分流不是二元硬开关, 是耦合分数驱动的连续预算分配**。
+
+> 详见 `coupling_map_v1.md` (逐 cell 实证: P-hub, mech3 后端 artifact 已证伪) 与 `4_design_ablation_proof_v1.md §9.8d'` (三臂消融=耦合度量仪)。本稿下文"三轴 P×Q×schedule"均指**搜索的三个维度轴**(空间定义层面), 与上述"耦合**主张**=内外环"不矛盾: 三者是被搜的轴, 耦合发生在内外环之间、经 P 枢纽。
+
+---
 
 ## §1 ALT 映射 — 两阶段空间定义(joint stage / schedule-only stage)
 
@@ -92,7 +100,7 @@
 
 **块的两种切法**(模型相关, 取并):
 1. **backbone stage 块**: Pyramid backbone 3 个 stage(num_filters [64,128,256] → 每 stage 一块); CoDriving backbone stage。这是 P 轴(per-stage num_filters)与 schedule 的天然耦合粒度。
-2. **双 agent 部署段块**: RSU 段 / 车端段(ego)。这是 D 轴路由 + 异构(GPU∥DLA)的天然粒度。两者**不冲突**: stage 块是 P×schedule 的载体, 部署段块是 D×异构的载体; 一个块在某个部署段上。
+2. **双 agent 部署段块**: RSU 段 / 车端段(ego)。这不是 D 轴路由 + 异构(GPU∥DLA)的天然粒度，因为两个agent不可能用一块GPU完成计算。两者**不冲突**: stage 块是 P×schedule 的载体, 部署段块是 D×异构的载体; 一个块在某个部署段上。
 
 与 stage1 一致性: 块 = stage1 DepGraph 给出的"最小耦合组整合后的 per-stage 剪枝旋钮" 的承载单元(B1 视图), schedule 在其上重建。
 
@@ -130,7 +138,7 @@
 
 ### 2.5 [待定]
 - 双 agent 段的 `Lat_net` 是否仍加性? — RSU∥ego 若异构并行(GPU∥DLA 多进程 1.34×)则 **非加性**, 是 `max(Lat_RSU, Lat_ego) + handoff`。加性公式只对串行块成立。这是 CHaNAS 加性假设在我们异构流水下的 **真实偏离**, 待 §4.3 D 轴与流水形态确定后修正。
-
+这里我还是要再次强调两个agent不能放在一块去考虑，因为两个部分是不同的设备计算的，一个是路测设备一个是车端设备。这不是说在异构GPU上就不是并行的时延问题。而是只要提到时延，就要把RSU和ego分开讨论，RSU给出一个时延，RSU给一个时延
 ---
 
 ## §3 快速确定 + 收缩搜索空间 — 三件套 pipeline
@@ -214,7 +222,7 @@ NSGA-II 多目标搜索 (stage2 §联合搜索器)
 ### 4.2 Q 轴(量化) — 精度档 [我们的设计]
 
 - **位宽** `q_bits ∈ {FP32, FP16, INT8}`, per-量化单元(语义桶: backbone/BEV-encoder/neck/heads, ~3-4 单元)。
-- **单元精度选择**: 粗粒度 on/off(哪些单元走 INT8 vs FP16); **逐层精度委托 TRT-auto**(stage2 已定论: per-stage 强制混精被 TRT-auto 延迟驱动支配, 不枚举)。
+- **单元精度选择**: 粗粒度 on/off(哪些单元走 INT8 vs FP16); **逐层精度委托 TRT-auto**(stage2 已定论: per-stage 强制混精被 TRT-auto 延迟驱动支配, 不枚举)，注意我们现在使用TVM而不是TRT进行加速了。
 - **粒度**: weight per-tensor/per-channel(DLA⇒per-tensor); activation 恒 per-tensor。`[派生约束]` 由 D↔B2 传播定, 非自由搜。
 - **每块精度档数** `|P| ≈ 3`(FP32/FP16/INT8, 敏感单元门控后可能 2)。
 - `[待定]` INT8 真实 AP 代价 **未测定**(gap1 §5.2: simulated fake-quant 全失真不可信), 需真 TRT INT8 / TensorRT-ModelOpt。空间里 INT8 档 **结构上保留**, 但其 AP 标签待真测。
@@ -223,8 +231,8 @@ NSGA-II 多目标搜索 (stage2 §联合搜索器)
 
 - `[借鉴 AutoTVM 模板空间 S_e]` 算子级原语: **multi-level tiling**(每 loop 轴 tile 因子, 须整除宽度)、**loop reorder**、**unroll**、**vectorize**、**(GPU) thread-binding / shared-mem cache**。
 - `[借鉴 ALT]` graph 级: **fusion**(相邻 conv-bn-relu / neck 融合, 注: Pyramid/CoDriving fusion neck TVM 导入有已知坑)、**layout transform / pad-repack**(对齐救援: 48→64 + INT8 tensorize)。
-- **INT8 专属** `[future-note, 次要]`: **tensorize**(映射到 tensor-core MMA intrinsic, 须 in_per_g∈2^k); 因 INT8 降为 future 轴, 此原语暂不作主搜依赖。
-- **引擎**: TVM **MetaSchedule**(AutoTVM 后继): `space_generator/post_order_apply` + `schedule_rule/multi_level_tiling` + `search_strategy/evolutionary_search` + `cost_model/xgb_model`。`[借鉴 AutoTVM]` **不重造轮子**。`[future-note]` INT8 须走 BYOC-TRT(TVM relax 无 INT8 pass), 故 INT8 量化为 **future/次要**, 主轴 schedule 搜不依赖它。
+- **INT8 专属**: **tensorize**(映射到 tensor-core MMA intrinsic, 须 in_per_g∈2^k)。
+- **引擎**: TVM **MetaSchedule**(AutoTVM 后继): `space_generator/post_order_apply` + `schedule_rule/multi_level_tiling` + `search_strategy/evolutionary_search` + `cost_model/xgb_model`。INT8 走 BYOC-TRT(relax 无 INT8 pass)。`[借鉴 AutoTVM]` **不重造轮子**。
 - **每 (块,W,P) 的 schedule 搜预算** `|S|` = MetaSchedule trial 数(如 512~2048), **非枚举**(O(10^9) 空间靠进化+cost model 引导搜)。
 - `[借鉴 AutoTVM divisible split]` 内环 split factor 限可整除(同 §3.1 谓词)。
 

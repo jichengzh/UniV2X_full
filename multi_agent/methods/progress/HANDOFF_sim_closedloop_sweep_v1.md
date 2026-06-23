@@ -121,8 +121,10 @@
 
 ## 四、Sim-D 闭环指标入库 (data-orchestrator 主理, Task #4 pending)
 
+> ★**[2026-06-12 已落实 — 本节建议列名已被取代]** 闭环 schema 已正式 wire 进 `build_dataset_v2.py` + `dataset_v2.{csv,parquet}`(全表 70→93 列, 8 元数据 + 15 `cl_`)。**列名以 `schema_v2.md §[ACTIVE] 闭环驾驶指标列` 为准**(实际用 `cl_` 前缀: `cl_driving_score`/`cl_route_completion`/`cl_collision_ped`… 而非下方旧提案名)。现 **0 行 gated**(`CL_INGEST=False`, pilot DS 全平未达 GO 门), 时延补全 + GO 门达标后置 `CL_INGEST=True` 即接入。**学习视图 `dataset_v2_learning` 闭环只留 DS + cl_route_completion + latency_inject_ms, 剔 norsu 行**。下方旧提案保留作历史。
+
 - **数据源**: `results/closedloop_sweep_v1.csv`(sweep 聚合输出)。
-- **建议新增列**(与 dataset_v2 现有 5 指标 {AP,latency,throughput,energy,model_size} 并列, 议定后定): `closedloop_driving_score`, `collision_rate_pedestrian/vehicle/layout`, `route_completion`, `zoh_age_frames_mean`, `latency_inject_ms`, `delta_frames`。
+- **建议新增列(★旧提案, 已被 cl_ 前缀实列取代, 见上方)**(与 dataset_v2 现有 5 指标 {AP,latency,throughput,energy,model_size} 并列, 议定后定): `closedloop_driving_score`, `collision_rate_pedestrian/vehicle/layout`, `route_completion`, `zoh_age_frames_mean`, `latency_inject_ms`, `delta_frames`。
 - **元数据列**: `latency_ms_source`(injected_from_E7), `isolation`(single_card_shared), `sim_route_set`(6route id), `n_repeat`(=1 确定性)。
 - **schema 纪律**: 闭环指标与现有感知指标(AP/AMOTA)**不同任务口径, 绝不混入同列/同曲线**; 新增列须 schema_v2.md 显式登记。
 

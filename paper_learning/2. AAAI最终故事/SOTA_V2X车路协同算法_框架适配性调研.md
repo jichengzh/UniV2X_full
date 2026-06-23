@@ -30,11 +30,17 @@
 
 ### 修正 2:**Transformer 量化困难的根因 — 跟我们 UniV2X 上的观察一致**
 
-**V2X-ViT INT8 量化崩溃(AP30 75.1 → 29.9, -45pt)** 跟我们 **UniV2X 上 MSDA plugin INT8 ≈ FP16(无加速)** 是**同一个问题的两面**:
+**~~V2X-ViT INT8 量化崩溃(AP30 75.1 → 29.9, -45pt)~~ → [ISS-031 勘误: 旧数字跨模型混淆已作废]**
+**真值(arXiv:2509.03704 Table 1, DAIR-V2X, PTQ)**:
+- INT8/INT8: AP30 **57.4→40.0(−17.4pt)** / AP50 **49.5→11.0(−38.5pt, −78%)**
+- INT4/INT8: AP30 57.4→29.9(−27.5pt) / AP50 49.5→8.8(−82%)
+- ★AP50 −78% 比旧假数字更戏剧性, 崩溃叙事更强。
+
+跟我们 **UniV2X 上 MSDA plugin INT8 ≈ FP16(无加速)** 是**同一个问题的两面**:
 
 | 现象 | 我们 UniV2X 观察 | QuantV2X V2X-ViT 观察 | 共同根因 |
 |---|---|---|---|
-| Attention 难量化 | INT8 ≈ FP16(强制 plugin FP16-only)| INT8 → AP -45pt 崩溃 | **Attention SoftMax + QK^T 对精度敏感** |
+| Attention 难量化 | INT8 ≈ FP16(强制 plugin FP16-only)| INT8 → AP30 −17.4pt / AP50 −38.5pt 崩溃 | **Attention SoftMax + QK^T 对精度敏感** |
 | Deformable attention 更糟 | MSDA plugin 完全无 INT8 路径 | MSwin 多尺度窗口注意力崩溃 | **不规则内存访问 + 双线性插值 + 多尺度** |
 | 量化收益小 | INT8 在 BEV encoder 上 < 1% | F-Cooper max pool INT8 也 degrade | **fusion 层数值敏感性放大** |
 
@@ -201,7 +207,7 @@
 | **AttFuse** | ✅ | ⚠️ | ⚠️(-7pt) | ✅ | **4/5** | **2.5-3×** |
 | **Where2Comm** | ✅ | ⚠️ | ⚠️(-13pt) | ✅ | **3.5/5** | **2-3×** |
 | **F-Cooper** | ✅ | — (无参) | ❌(notable degrade) | ✅ | **2.5/5** | **2× 但精度损失大** |
-| **V2X-ViT** | ⚠️ | ❌(双 transformer) | ❌(-45pt 崩溃) | ⚠️(可能 plugin) | **1.5/5** | **<10% 但作反例**|
+| **V2X-ViT** | ⚠️ | ❌(双 transformer) | ❌(INT8: AP30 −17.4pt/AP50 −78%崩溃 [ISS-031]) | ⚠️(可能 plugin) | **1.5/5** | **<10% 但作反例**|
 
 ---
 
@@ -213,7 +219,7 @@
 |---|---|---|---|---|
 | **UniV2X (我们)** | R101+DCN | MSDA plugin | INT8 ≈ FP16(plugin 限制)| 我们实测 |
 | **UniV2X-tiny (我们)** | R50 + 无 DCN | MSDA plugin | 同上(span 0.38ms)| 我们实测 |
-| **V2X-ViT** | PointPillar | HMSA + MSwin | AP -45pt 崩溃 | QuantV2X 实测 |
+| **V2X-ViT** | PointPillar | HMSA + MSwin | INT8: AP30 57.4→40.0(−17.4pt) / AP50 −78% [ISS-031] | QuantV2X 实测 |
 | **F-Cooper** | PointPillar | (无 attn,Max pool) | "notable degrade" | QuantV2X 实测 |
 
 ### 论文章节素材
@@ -323,7 +329,7 @@
 
 **答**:**完全一致,这是同一个根本问题的两面**:
 - 我们 UniV2X 实测:**MSDA plugin 强制 FP16**(plugin 限制 INT8)
-- QuantV2X V2X-ViT 实测:**INT8 PTQ AP -45pt 崩溃**(数值精度限制)
+- QuantV2X V2X-ViT 实测:**INT8 PTQ AP30 57.4→40.0(−17.4pt) / AP50 49.5→11.0(−78%)崩溃** [ISS-031真值](数值精度限制)
 
 **根因相同**:
 > Attention 机制(尤其 deformable / multi-scale)对 INT8 量化敏感,

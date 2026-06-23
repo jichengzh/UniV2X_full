@@ -191,13 +191,21 @@ git clone -b hw-deploy-d-space git@github.com:jichengzh/UniV2X_full.git V2X
 # 5. CoDriving ckpt (51M): scp 旧服务器 或 HF 下 → $WORK/V2Xverse/checkpoints/codriving/
 ```
 
-### 7.4 ⚠️ H800(Hopper sm90) torch 兼容 — 关键风险, 部署前必读
+### 7.4 ⚠️ H800(Hopper sm90) torch 兼容 — ★已实测定论(2026-06-10): 老栈不可用
 - 旧 v2xverse 栈 = **torch 1.10.1+cu113**(2021)。其 arch_list 最高 sm_86 + compute_37 PTX。**H800 sm90 无 cubin**。
-- 4090(sm89) 上靠 compute_37 **PTX-JIT** 前向兼容跑通了(首算子暖机~1.6s)。H800(sm90) + 驱动 535 理论上也能 JIT, **但 cu113(CUDA11.3)运行时库在 Hopper 上能否初始化未实测**, 风险比 4090 大。
-- **部署策略(按序试)**:
-  1. 先按 §3.1 装老栈, 跑一句 `python -c "import torch;print(torch.cuda.is_available());torch.zeros(4).cuda()"` 试。通 → 直接用。
-  2. 若老栈在 Hopper 报 "no kernel image"/CUDA init 失败 → **升级 torch 到 cu118/cu121**(如 torch 2.x), 但**会与 opencood/spconv-cu113 2.3.6 冲突**, 需同步升级 spconv(spconv-cu118/cu120)+ 验 opencood 兼容。这是真移植工作量, `[需用户确认]` 是否投入。
-  3. CARLA 本身是 UE4 二进制, 不依赖 torch CUDA, H800 上能跑(只要 GL/驱动 OK)。
+- 4090(sm89) 上靠 compute_37 **PTX-JIT** 前向兼容跑通了(首算子暖机~1.6s)。
+- **★[2026-06-10 实测定论] 老栈在 H800(sm90) 上 = 不可用**。conda-pack 旧 4090 的 v2xverse env(3.7G)→scp→H800 解包+conda-unpack, smoke 结果:
+  - import torch ✅ / `cuda.is_available()=True` ✅ / 识别 `NVIDIA H800 cap (9,0)` ✅ / CUDA context 创建+显存分配 ✅(无 "no kernel image")。
+  - PyTorch 自身警告: `sm_90 is not compatible ... supports sm_37..sm_86 compute_37`。
+  - **但第一个 CUDA 算子 `torch.zeros(4).cuda()`(纯 memcpy+synchronize) 200s 超时未返回, 全程 100% CPU 单核, 无 ptxas 外部进程** → compute_37 PTX→sm90 的 driver in-process JIT 病态卡死(非正常暖机, 正常 1 kernel 应秒级)。cuBLAS matmul 同样 7min+ 不返回。⇒ **闭环感知(conv via cuDNN / cuBLAS)在 H800 上会卡死或 hard-fail, 老栈实际不能用于 H800 GPU 推理**。
+  - 附带: conda-pack 会损坏 `pkg_resources`(jaraco import 报错)和 `numpy`(`numpy._version` 缺失) → 需从旧服务器 scp 对应目录覆盖修复(已修 pkg_resources)。
+- **结论: 要用 H800 的 GPU 跑闭环仿真, 必须移植到 Hopper-native 栈**:
+  - sm90 native cubin 需 **CUDA ≥11.8** → 需 **torch ≥2.0**(cu118/cu121)。
+  - torch 2.0 **不支持 py3.7** → 必须同时升 **python ≥3.8**(整环境重建, 非原地升级)。
+  - 连带: **spconv-cu113 2.3.6 → spconv-cu118/cu120**; **opencood**(box_overlaps.so cython 扩展 + 大量 torch 1.x API)需重编+验兼容; CoDriving/HEAL 推理代码需验 torch2.x 兼容。= **真移植工作量(数小时, 有 API 破坏风险)**。`[需用户确认]` 是否投入。
+  - **注**: 无 "py3.7+sm90" 组合(torch 1.13.1 是 py3.7 末班但只到 cu117, 仍无 sm90 cubin)。
+  - CARLA 本身是 UE4 二进制, 不依赖 torch CUDA, H800 上能跑(只要 GL/驱动 OK) → 移植后 CARLA 端不受影响。
+  - **替代方案**: GPU 闭环仿真留在旧 4090(sm89 老栈可用); H800 仅在完成移植后才能承接 GPU 实验。V0 纯数学测试(无 CUDA)在 H800 任意 py 环境可跑。
 
 ### 7.5 在 H800 上跑测试 (环境就绪后)
 ```bash
@@ -214,9 +222,13 @@ sshpass -p '<pwd>' ssh -p 30001 jichengzhi@222.95.84.215 \
 **4 个待用户拍板的决策(新会话接手先问用户)**:
 1. **下载源**: anaconda 墙了 → 用**清华镜像** `https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-x86_64.sh` 装 miniconda + 配 conda/pip 国内镜像; **或从旧服务器 scp** 安装包。
 2. **代码传输**: 从 fork `git@github.com:jichengzh/V2Xverse.git` clone 需 H800 配 GitHub 认证(deploy key/PAT); **或从旧服务器 scp** 整仓(排除 carla/results)。旧→新网络是否互通需测。
-3. **★Hopper torch 兼容(最大技术风险)**: 老栈 torch1.10/cu113 在 sm90 上靠 PTX-JIT, cu113 运行时在 Hopper 上未必能 init。策略: 先试老栈→不行升级 torch cu121(但与 opencood/spconv-cu113 冲突=真移植量)。**用户是否接受先试老栈、不行再投入移植?**
+3. **★Hopper torch 兼容(最大技术风险)**: ★[2026-06-10 实测已定论, 见 §7.4]: **老栈先试已失败(第一个 CUDA 算子 200s 卡死), H800 GPU 必须移植 torch2.x/cu121/py3.8+ 才能用**。待用户拍板: 投入移植 / 还是 GPU 仿真留旧 4090、H800 暂不用于 GPU。
 4. **CARLA 16GB**: 旧服务器 scp(局域网快) vs H800 重下(CDN 可能也受限)。
 > **team-lead 建议**: 下载/代码/CARLA 都**从旧服务器 scp**(绕墙+GitHub认证), 先装 conda + 跑 V0 纯数学测试验通, 再啃 CARLA + Hopper torch。
+
+> **★[2026-06-10 用户拍板]**: smoke 实测老栈在 H800 不可用后, 用户决定 **"GPU 仿真留旧 4090, H800 暂不用于 GPU 推理"**(不投入 torch 移植)。
+> - H800 上已部署的资产**保留不删**(env 8.5G 解包 + 3.7G tarball + V2Xverse 代码 503M, 在 `/data/jichengzhi/`), 将来若决定移植代码已就位; env 本身不可用(sm90)。
+> - 下一步回到旧 4090 推进 **item4 I-1 L1 V1(Fix-D)验证**(§7.7), 推进 τ_ego。
 
 ### 7.7 旧服务器(4090, /home/jichengzhi)当前运行状态 — 新会话需知
 - **有一个运行中的 multi-agent team `sim-closedloop-sweep`**(sim-integrator/supervisor/sw-optimizer 三个后台 agent, tmux teammate-mode)。L1 工作是它们做的。新会话若不续用可 TeamDelete 或让其 idle。

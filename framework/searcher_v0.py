@@ -122,6 +122,7 @@ def random_search(
     lock_d_to_gpu_only: bool = True,
     verbose: bool = False,
     use_v11_api: bool = True,
+    modules: tuple[str, ...] = UNIV2X_MODULES,
 ) -> tuple[list[Config], dict]:
     """随机搜索: 采样 + 传播 + 过滤,直到收集到 n_candidates 个合法配置.
 
@@ -132,6 +133,9 @@ def random_search(
         用 is_legal_for_hardware (A3 v1.1) — 经验约束级别由 capability YAML
         实证字段 (alignment_enforcement) 动态调整. 这是 N2v2 实证机制的入口.
     use_v11_api=False: 用旧静态 is_legal (向后兼容).
+
+    modules: 模型自带的模块声明. 默认 UNIV2X_MODULES (5 个), Pyramid 用
+        PYRAMID_M1_MODULES = ("model",) (单模块). M4.9 v2 反思 #21.
     """
     rng = random.Random(seed)
     candidates: list[Config] = []
@@ -147,7 +151,8 @@ def random_search(
 
     while len(candidates) < n_candidates and attempts < max_attempts:
         attempts += 1
-        cfg_raw = sample_random_config(hw, rng=rng, lock_d_to_gpu_only=lock_d_to_gpu_only)
+        cfg_raw = sample_random_config(hw, modules=modules, rng=rng,
+                                        lock_d_to_gpu_only=lock_d_to_gpu_only)
 
         # 双向传播 + 收集改写报告 (A4 v1.1 API)
         cfg, changes = propagate_with_report(cfg_raw, hw)

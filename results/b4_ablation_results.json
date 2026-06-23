@@ -46,6 +46,11 @@
       [
         64,
         128,
+        128
+      ],
+      [
+        64,
+        128,
         256
       ]
     ],
@@ -57,13 +62,14 @@
       "(48, 128, 128)",
       "(64, 64, 256)",
       "pad64",
+      "(64, 128, 128)",
       "base"
     ],
     "hv_ref_nadir": [
       59137.2705,
       -0.51
     ],
-    "reference_hv": 6952.44085845,
+    "reference_hv": 6991.31033945,
     "reference_pareto": [
       {
         "label": "p75",
@@ -78,21 +84,33 @@
         "lat_us": 3010.51
       },
       {
-        "label": "(64, 64, 256)",
-        "sched": "tuned",
-        "ap70": 0.6362,
-        "lat_us": 5894.56
-      },
-      {
-        "label": "(48, 128, 128)",
+        "label": "(64, 128, 128)",
         "sched": "tuned",
         "ap70": 0.6369,
-        "lat_us": 21071.43
+        "lat_us": 5506.57
       }
     ],
     "greedy_order_note": "P->S is the only non-degenerate order: S is a per-width binary {default,tuned}, so a global 'S->P' pre-pick is ill-defined (each width owns its tuned engine). Reported P->S; S->P documented as degenerate, not run."
   },
   "wg_pg_pairs": [
+    {
+      "wg": [
+        48,
+        128,
+        128
+      ],
+      "pg": [
+        64,
+        128,
+        128
+      ],
+      "ap70": 0.6369,
+      "wg_tuned_us": 21071.43,
+      "pg_tuned_us": 5506.57,
+      "wg_tuned_ratio": 2.014,
+      "pg_tuned_ratio": 8.614,
+      "iso_ap_latency_ratio": 3.827
+    },
     {
       "wg": [
         48,
@@ -132,41 +150,41 @@
   ],
   "hv_distribution": {
     "A-joint": {
-      "mean": 6927.8543322000005,
-      "std": 42.58511264662574,
-      "min": 6854.09475345,
-      "max": 6952.44085845,
-      "pct_of_ref": 99.64636123124849
+      "mean": 6984.217368950001,
+      "std": 23.52472179755934,
+      "min": 6906.194693450001,
+      "max": 6991.31033945,
+      "pct_of_ref": 99.89854590690996
     },
     "A-noS": {
       "mean": 3336.9043934500005,
       "std": 0.0,
       "min": 3336.9043934500005,
       "max": 3336.9043934500005,
-      "pct_of_ref": 47.996156477826425
+      "pct_of_ref": 47.72931298187103
     },
     "A-serial": {
       "mean": 5978.34173945,
       "std": 9.094947017729282e-13,
       "min": 5978.341739450001,
       "max": 5978.341739450001,
-      "pct_of_ref": 85.98910600129624
+      "pct_of_ref": 85.51103368585854
     }
   },
   "hv_raw": {
     "A-joint": [
-      6952.44085845,
-      6952.44085845,
-      6952.44085845,
-      6952.44085845,
-      6952.44085845,
-      6854.09475345,
-      6952.44085845,
-      6952.44085845,
-      6854.09475345,
-      6952.44085845,
-      6854.09475345,
-      6952.44085845
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6991.31033945,
+      6906.194693450001,
+      6991.31033945
     ],
     "A-noS": [
       3336.9043934500005,
@@ -200,7 +218,7 @@
   "wilcoxon_joint_vs_serial": {
     "n": 12,
     "n_nonzero": 12,
-    "mean_diff": 949.5125927499988,
+    "mean_diff": 1005.8756294999994,
     "method": "scipy.wilcoxon",
     "statistic": 0.0,
     "p_value": 0.00048828125,
@@ -231,36 +249,36 @@
         "joint_lat_exact": 6152.04,
         "serial_lat_exact": 42355.27,
         "ratio_exact": 6.884752049726594,
-        "joint_lat_threshold": 5894.56,
+        "joint_lat_threshold": 5506.57,
         "serial_lat_threshold": 19404.95,
-        "ratio_threshold": 3.292009921011916
+        "ratio_threshold": 3.5239631930584743
       },
       {
         "ap70": 0.6309,
         "joint_lat_exact": 6319.98,
         "serial_lat_exact": 56321.21,
         "ratio_exact": 8.911612062063488,
-        "joint_lat_threshold": 5894.56,
+        "joint_lat_threshold": 5506.57,
         "serial_lat_threshold": 19404.95,
-        "ratio_threshold": 3.292009921011916
+        "ratio_threshold": 3.5239631930584743
       },
       {
         "ap70": 0.6362,
         "joint_lat_exact": 5894.56,
         "serial_lat_exact": 19404.95,
         "ratio_exact": 3.292009921011916,
-        "joint_lat_threshold": 5894.56,
+        "joint_lat_threshold": 5506.57,
         "serial_lat_threshold": 19404.95,
-        "ratio_threshold": 3.292009921011916
+        "ratio_threshold": 3.5239631930584743
       },
       {
         "ap70": 0.6369,
-        "joint_lat_exact": 21071.43,
+        "joint_lat_exact": 5506.57,
         "serial_lat_exact": 21071.43,
-        "ratio_exact": 1.0,
-        "joint_lat_threshold": 21071.43,
+        "ratio_exact": 3.8265980456073385,
+        "joint_lat_threshold": 5506.57,
         "serial_lat_threshold": 21071.43,
-        "ratio_threshold": 1.0
+        "ratio_threshold": 3.8265980456073385
       }
     ],
     "headline_exact": {
@@ -268,23 +286,47 @@
       "joint_lat_exact": 6319.98,
       "serial_lat_exact": 56321.21,
       "ratio_exact": 8.911612062063488,
-      "joint_lat_threshold": 5894.56,
+      "joint_lat_threshold": 5506.57,
       "serial_lat_threshold": 19404.95,
-      "ratio_threshold": 3.292009921011916
+      "ratio_threshold": 3.5239631930584743
     },
     "headline_threshold": {
-      "ap70": 0.5905,
-      "joint_lat_exact": 6152.04,
-      "serial_lat_exact": 42355.27,
-      "ratio_exact": 6.884752049726594,
-      "joint_lat_threshold": 5894.56,
-      "serial_lat_threshold": 19404.95,
-      "ratio_threshold": 3.292009921011916
+      "ap70": 0.6369,
+      "joint_lat_exact": 5506.57,
+      "serial_lat_exact": 21071.43,
+      "ratio_exact": 3.8265980456073385,
+      "joint_lat_threshold": 5506.57,
+      "serial_lat_threshold": 21071.43,
+      "ratio_threshold": 3.8265980456073385
     }
   },
   "structural_claim": {
-    "n_pairs": 2,
+    "n_pairs": 3,
     "per_pair": [
+      {
+        "wg": [
+          48,
+          128,
+          128
+        ],
+        "pg": [
+          64,
+          128,
+          128
+        ],
+        "ap70": 0.6369,
+        "iso_ap70_latency_ratio": 3.827,
+        "wg_tuned_us": 21071.43,
+        "pg_tuned_us": 5506.57,
+        "wg_tuned_ratio": 2.014,
+        "pg_tuned_ratio": 8.614,
+        "joint_reaches_pg_tuned": true,
+        "serial_reaches_pg_tuned": false,
+        "serial_drops_pg_all_starts": true,
+        "wg_is_locked_representative": true,
+        "n_starts_drop_pg": 96,
+        "n_starts": 96
+      },
       {
         "wg": [
           48,
@@ -306,8 +348,8 @@
         "serial_reaches_pg_tuned": false,
         "serial_drops_pg_all_starts": true,
         "wg_is_locked_representative": false,
-        "n_starts_drop_pg": 72,
-        "n_starts": 72
+        "n_starts_drop_pg": 96,
+        "n_starts": 96
       },
       {
         "wg": [
@@ -330,17 +372,18 @@
         "serial_reaches_pg_tuned": false,
         "serial_drops_pg_all_starts": true,
         "wg_is_locked_representative": true,
-        "n_starts_drop_pg": 72,
-        "n_starts": 72
+        "n_starts_drop_pg": 96,
+        "n_starts": 96
       }
     ],
     "all_pairs_pass": true,
     "headline_ratios": [
+      3.827,
       3.513,
       3.292
     ],
-    "n_multistart_runs": 72,
-    "n_starts_per_seed": 6
+    "n_multistart_runs": 96,
+    "n_starts_per_seed": 8
   },
   "closedloop_ds_axis": {
     "method": "model-estimated (NOT real closed-loop sim)",
@@ -348,6 +391,24 @@
     "scale_tier": "fp32",
     "beta": 0.0,
     "per_pair_ds_contrast": [
+      {
+        "wg": [
+          48,
+          128,
+          128
+        ],
+        "pg": [
+          64,
+          128,
+          128
+        ],
+        "ap70": 0.6369,
+        "wg_tuned_e2e_ms_est": 524.3,
+        "pg_tuned_e2e_ms_est": 201.7,
+        "wg_tuned_ds": 86.16,
+        "pg_tuned_ds": 95.83,
+        "ds_gain_pg_over_wg": 9.67
+      },
       {
         "wg": [
           48,
@@ -414,26 +475,14 @@
         {
           "width": [
             64,
-            64,
-            256
-          ],
-          "sched": "tuned",
-          "ap70": 0.6362,
-          "lat_us": 5894.6,
-          "e2e_orin_ms_est": 209.7,
-          "ds_model": 95.7
-        },
-        {
-          "width": [
-            48,
             128,
             128
           ],
           "sched": "tuned",
           "ap70": 0.6369,
-          "lat_us": 21071.4,
-          "e2e_orin_ms_est": 524.3,
-          "ds_model": 86.16
+          "lat_us": 5506.6,
+          "e2e_orin_ms_est": 201.7,
+          "ds_model": 95.83
         }
       ],
       "A-noS": [
@@ -603,6 +652,66 @@
       "seed": 0,
       "start_width": [
         48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 0,
+      "start_width": [
+        64,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 0,
+      "start_width": [
+        48,
         96,
         192
       ],
@@ -783,6 +892,66 @@
       "seed": 1,
       "start_width": [
         48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 1,
+      "start_width": [
+        64,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 1,
+      "start_width": [
+        48,
         96,
         192
       ],
@@ -935,6 +1104,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 2,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 2,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -1115,6 +1344,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 3,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 3,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -1295,6 +1584,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 4,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 4,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -1475,6 +1824,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 5,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 5,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -1655,6 +2064,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 6,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 6,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -1835,6 +2304,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 7,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 7,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -2015,6 +2544,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 8,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 8,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -2195,6 +2784,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 9,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 9,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -2375,6 +3024,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 10,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 10,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -2555,6 +3264,66 @@
         16,
         32,
         64
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 11,
+      "start_width": [
+        48,
+        128,
+        128
+      ],
+      "locked": [
+        [
+          16,
+          32,
+          64
+        ],
+        [
+          32,
+          64,
+          128
+        ],
+        [
+          48,
+          64,
+          256
+        ],
+        [
+          48,
+          128,
+          128
+        ]
+      ]
+    },
+    {
+      "seed": 11,
+      "start_width": [
+        64,
+        128,
+        128
       ],
       "locked": [
         [
@@ -2719,6 +3488,14 @@
         "tuned"
       ],
       [
+        "(64, 128, 128)",
+        "default"
+      ],
+      [
+        "(64, 128, 128)",
+        "tuned"
+      ],
+      [
         "(64, 64, 256)",
         "default"
       ],
@@ -2777,6 +3554,10 @@
         "default"
       ],
       [
+        "(64, 128, 128)",
+        "default"
+      ],
+      [
         "(64, 64, 256)",
         "default"
       ],
@@ -2817,6 +3598,10 @@
       [
         "(48, 64, 256)",
         "tuned"
+      ],
+      [
+        "(64, 128, 128)",
+        "default"
       ],
       [
         "(64, 64, 256)",

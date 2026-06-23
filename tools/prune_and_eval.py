@@ -100,13 +100,25 @@ def load_model_from_config(cfg_path, ckpt_path, device="cuda:0"):
             _module_path = os.path.dirname(cfg.plugin_dir).replace("/", ".")
             importlib.import_module(_module_path)
 
+    # Support both legacy single-agent (cfg.model) and new tiny configs
+    # which use cfg.model_ego_agent (single ego) or coop dual-agent layout.
+    model_dict = cfg.get("model", None) or cfg.get("model_ego_agent", None)
+    if model_dict is None:
+        raise AttributeError(
+            "Config has neither 'model' nor 'model_ego_agent'. "
+            "If using coop dual-agent config, prune ego separately."
+        )
     model = build_model(
-        cfg.model,
+        model_dict,
         train_cfg=cfg.get("train_cfg"),
         test_cfg=cfg.get("test_cfg"),
     )
 
-    checkpoint = load_checkpoint(model, ckpt_path, map_location="cpu")
+    # tiny ckpt may have 'model_ego_agent.' prefix; strip it for single-agent loading.
+    checkpoint = load_checkpoint(
+        model, ckpt_path, map_location="cpu",
+        revise_keys=[(r"^model_ego_agent\.", "")],
+    )
 
     if "CLASSES" in checkpoint.get("meta", {}):
         model.CLASSES = checkpoint["meta"]["CLASSES"]

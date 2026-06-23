@@ -506,7 +506,11 @@ def build_model_from_cfg(cfg, model_key, ckpt_path=None, random_weights=False,
               f'(-{(1-n_params_after/n_params_before)*100:.2f}%)')
 
         # Step 3: 加载微调 checkpoint 覆盖剪枝后的权重 (ckpt_path 应该是微调后的)
-        # 这里不 return, 让后面的 ckpt loading 逻辑继续执行
+        # NOTE (Plan C): zero-finetune mode — skip step 3 entirely if prune_config given.
+        # We use baseline weights (loaded in step 1) and accept zero-finetune precision.
+        # Without this, the pruned model has different shapes than ckpt_path → load fails.
+        print('[prune] zero-finetune mode: keeping pruned-baseline weights (skip step 3 ckpt load)')
+        return model.cpu()
 
     if not random_weights and ckpt_path is not None:
         # The cooperative checkpoint stores sub-model weights under prefixed keys

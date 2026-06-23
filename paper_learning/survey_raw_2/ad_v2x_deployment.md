@@ -12,7 +12,7 @@
 |---|---|---|
 | 硬件型号 | Orin Nano 8GB / NX 16GB / AGX 32/64GB / DRIVE Thor | 决定 ego/infra 节点可放入的模型大小 |
 | 算力分配 | GPU-only / DLA0 / DLA1 / GPU+DLA 协同 | 双模型并行时 DLA 可吸收 BEV backbone 负载 |
-| 精度 | FP32 / FP16 / INT8 / INT4 / 混合精度 | DLA 仅支持 FP16+INT8；TRT-10 显式量化迁移中 |
+| 精度 | FP32 / FP16 / INT8 / INT4 / 混合精度 |  仅支持 FP16+INT8；TRT-10 显式量化迁移中 |
 | 功耗/时钟 | nvpmodel 15W/30W/50W/MAXN、jetson_clocks | 直接决定峰值算力与热降频 |
 | 内存层级 | LPDDR5 容量、EMC 带宽 204GB/s、UMA、pinned/zero-copy | 多相机 + LiDAR + V2X 特征同驻内存的关键 |
 | 推理引擎 | TensorRT 8.x / 10.x、DeepStream、DriveOS、Triton | TRT 10 后 DLA INT8 显式量化是拦路虎 |

@@ -1,10 +1,11 @@
 # `e2e_bench_v1.csv` 指标含义参考
 
+> **Schema 版本**: v1.3 (2026-05-15) — lat 列精简至单 `throughput_fps` (见 §六 + `问题.md` 问题 2)
 > **测量对象**: HEAL Pyramid Fusion (DAIR-V2X-C, m1 LiDAR collab, N=2 agents)
 > **测量平台**: RTX 4090
-> **数据集**: DAIR-V2X-C cooperative-vehicle-infrastructure val 1789 frames (latency: 80 measure + 10 warmup; AP: 500 sample sweep, 来自 `data/_by_class/class_a_pyramid_full.parquet`)
-> **生成时间**: 2026-05-14
-> **生成脚本**: `scripts/phase2/e2e_bench_v1_orchestrator.py` + `scripts/phase2/augment_e2e_bench_v1.py`
+> **数据集**: DAIR-V2X-C cooperative-vehicle-infrastructure val 1789 frames (latency: 80 measure + 10 warmup; AP: 1789 full DAIR val)
+> **当前规模**: 48 行 × 31 列 (32 baseline + 16 mix variants, 2026-05-15)
+> **生成脚本**: `scripts/phase2/e2e_bench_v1_orchestrator.py` (build+lat) + `scripts/phase2/a1_run_one_anchor.py` (A.1 phase1 mix) + `scripts/phase2/augment_e2e_bench_v1.py` (schema 派生列)
 > **关联文档**:
 > - 搜索空间标准: `paper_learning/2. AAAI最终故事/搜索空间一览.md`
 > - 测量链路设计: `tools/export_onnx_pyramid_e2e.py` + `scripts/phase2/e2e_bench_pyramid.py`
@@ -134,63 +135,36 @@
 
 ---
 
-## 六、性能 — 延迟三段
+## 六、性能 — 延迟 (单列, schema v1.3 精简后)
 
-### 6.1 `lat_e2e_ms` — 端到端总延迟
+> **精简决议 (2026-05-15, 详见 `问题.md` 问题 2)**: 原 11 个 lat 列 (lat_e2e_{mean,p50,p99} + lat_trt_{mean,p50,p99} + lat_postproc_{mean,p50} + speedup_{e2e,trt}) 强相关 → LGB 特征归因混乱 + paper 表表头臃肿. 数据表只保留 `throughput_fps` 作 Pareto 唯一 lat 指标. lat breakdown 按需从 `models/e2e_cache*/<triplet>_<Q>_bench.json` 读取.
 
-| 列 | 含义 |
-|----|------|
-| `lat_e2e_mean_ms` | n_collected 样本 mean |
-| `lat_e2e_p50_ms` | p50 (中位数) |
-| `lat_e2e_p99_ms` | p99 (长尾) |
+### 6.1 `throughput_fps` — 端到端吞吐 (唯一 lat 指标)
 
-用 `torch.cuda.Event` 包整条链路 (PyTorch padding + TRT engine + PyTorch postproc 含 CUDA NMS) 测得的 wall-clock。**= 论文 §C "Pareto 主表" 的 latency 主指标**。
+| 列 | 公式 | 含义 |
+|----|------|------|
+| `throughput_fps` | `1000 / lat_e2e_mean_ms` | 端到端吞吐 (单 IP 单实例), 论文 §C Pareto 主指标 |
 
-**校准参照** (pyramid_fusion audit FP32 baseline):
-- PyTorch FP32 + Shapely NMS: 98.4 ms
-- PyTorch FP32 + mmcv CUDA NMS: 83.1 ms
-- **本次 TRT FP32 + mmcv CUDA NMS**: 9.8-12.3 ms (T1-T8) — TRT 编译给 6-9× 加速
+**校准参照** (T1_base+Q_fp32 baseline): throughput ≈ 88.8 fps (lat_e2e ≈ 11.26 ms).
 
-### 6.2 `lat_trt_ms` — TRT 引擎独立耗时
+### 6.2 按需诊断: 从 bench JSON 读 lat 三段 breakdown
 
-| 列 | 含义 |
-|----|------|
-| `lat_trt_mean_ms` | 仅 TRT engine forward (含 5 输入 H2D + `context.execute_async_v3` + 输出在 device) |
-| `lat_trt_p50_ms` | p50 |
-| `lat_trt_p99_ms` | p99 |
+每个 anchor 对应 `models/e2e_cache*/<triplet>_<Q>_bench.json` 含完整 lat breakdown:
 
-这是**量化/剪枝/精度选择真实可控的变量** — framework 的 Q/B/D 维度只对这部分有效, 不影响 postproc。
-
-### 6.3 `lat_postproc_ms` — 后处理耗时
-
-| 列 | 含义 |
-|----|------|
-| `lat_postproc_mean_ms` | post_processor.post_process 全程 (decode + dir + corners + CUDA NMS + range_mask) |
-| `lat_postproc_p50_ms` | p50 |
-
-**噪声大原因**: NMS 工作量 ∝ 通过 `score_threshold=0.2` 的 candidate 数; 候选框数依赖 cls_preds 分布, 对 INT8 / FP16 数值差异敏感 (样本间方差 ~ ±2 ms).
-
-### 6.4 三段关系
-
-```
-lat_e2e_ms ≈ lat_trt_ms + lat_postproc_ms + (padding wrapper ~0.1-0.5 ms)
+```json
+{
+  "lat_e2e_ms":      {"mean": ..., "p50": ..., "p99": ...},  // 端到端 wall-clock
+  "lat_trt_ms":      {"mean": ..., "p50": ..., "p99": ...},  // TRT engine forward (Q/B/D 真信号)
+  "lat_postproc_ms": {"mean": ..., "p50": ...},              // NMS+decode (FP32, 跟 Q 无关)
+  ...
+}
 ```
 
----
-
-## 七、性能 — Speedup + Throughput
-
-| 列名 | 类型 | 公式 | 含义 |
-|------|------|------|------|
-| **speedup_e2e_vs_baseline** | float | `lat_e2e_T1_base_Q_fp32 / lat_e2e_<this row>` | 端到端相对 baseline 加速倍率 (越大越快) |
-| **speedup_trt_vs_baseline** | float | `lat_trt_T1_base_Q_fp32 / lat_trt_<this row>` | TRT 引擎相对 baseline 加速倍率 |
-| **throughput_fps** | float | `1000 / lat_e2e_mean_ms` | 端到端吞吐 (单 IP 单实例) |
-
-**Baseline** = `(T1_base, Q_fp32)` row → lat_e2e = 11.264 ms, lat_trt = 5.648 ms.
-
-**典型观察**:
-- TRT INT8 speedup over FP32: 2.0-2.9× (引擎内 ~58% Conv 真量化)
-- E2E INT8 speedup over FP32: 1.3-1.5× (postproc 占 e2e 50%, 是稀释 INT8 gain 的主因)
+**何时读 bench JSON 而非数据表**:
+- **Q 维度对比 (INT8 vs FP16)** → `lat_trt_ms.mean` (e2e 含 NMS 噪声会反向, 见 `问题.md` 问题 2)
+- **B 维度对比 (channel alignment)** → `lat_trt_ms.mean` (alignment 异常在 TRT lat 上更明显)
+- **SLA 长尾 / 工程报告** → `lat_e2e_ms.p99` (用户实际体验)
+- **NMS workload 异常排查** → `lat_postproc_ms.mean` (postproc 异常多半因 score_threshold 候选数飙升)
 
 ---
 

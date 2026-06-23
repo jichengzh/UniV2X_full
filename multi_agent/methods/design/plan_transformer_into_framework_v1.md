@@ -68,6 +68,57 @@ transformer 算子。它天然有与 prune×quant×schedule 对应的三轴:
 
 ---
 
+---
+
+## §0.5 实验结果 (2026-06-23 已完成 T0 + T1-S)
+
+> ★ 新窗口读到这里: T0/T1-S 已完成, 直接从 T1-P/T1-Q 起跑。
+
+### T0 结果 (V2XTransformer sub-module breakdown)
+- V2XTransformer = 204ms = 98.2% of outer wrapper
+- 子模块: STTF≈5.9ms / HMSA×3≈9.3ms / **MSwin(PyramidWindowAttention)×3≈214ms** / FFN×3≈2.9ms
+- 错误假设: 最初以为 HMSA `to_qkv` Python loop 是瓶颈 → 实测仅 9ms, 非主因
+- 真热点: **MSwin×3 = 214ms = 92% of V2XTransformer**
+- 数据: `results/t1s_alt_v2.json`
+
+### T1-S 结果 (S轴实测 + bug fix)
+
+**根因分析** (`scripts/phase2/t1s_alt_mswin.py`):
+- MSwin内部精确计时: `to_qkv`=0.16ms / `rearrange`=0.25ms / `einsum q@k^T`=0.10ms /
+  `pos_embedding add`=**82.9ms** (这一步!) / `softmax`=0.14ms / `einsum attn@v`=0.69ms
+- **Bug**: `BaseWindowAttention.__init__` 用 `self.relative_indices = ...` (plain attribute),
+  `model.to('cuda')` 不移动它 → `relative_indices` 留在 CPU
+- 每次 forward: `pos_emb[relative_indices[:,:,0], relative_indices[:,:,1]]` 触发隐式
+  CPU→GPU H2D 传输 + CUDA stream 同步 = ~60ms per BWA call (ws=16 的 512KB relative_indices)
+- 9 个 BWA × ~60ms ≈ 540ms (3 层 × ws=16; ws=4/8 因 relative_indices 小影响不大)
+
+**Fix** (`HEAL/opencood/models/sub_modules/mswin.py`, 一行):
+```diff
+- self.relative_indices = get_relative_distances(window_size) + window_size - 1
++ self.register_buffer('relative_indices', get_relative_distances(window_size) + window_size - 1)
+```
+已 apply。
+
+**实测结果** (同一 synthetic inputs 对比):
+| 配置 | mean | p50 | min |
+|------|------|-----|-----|
+| Buggy (rel_idx on CPU) | 279.9ms | 254.5ms | 212.5ms |
+| Fixed (rel_idx on CUDA) | **30.9ms** | 30.6ms | 17.3ms |
+| **Speedup** | **9.1×** | | |
+
+ws=16 BWA: 90ms → 1.32ms (68×); 9 BWA total: ~10ms (vs ~270ms buggy)
+数据: `results/t1s_mswin_bugfix_v1.json`
+
+**T1-S gate**: **VIABLE ✓** — 9.1× from proper device placement. Proceed to T2.
+
+**fix 后的新瓶颈分布** (30.9ms total):
+STTF≈6ms / HMSA×3≈9ms / MSwin×3≈10ms / FFN×3≈3ms / 其他≈3ms
+
+**重要说明**: 这是 HEAL 代码库 pre-existing bug, 非框架新引入。框架 S轴的"调度实现质量"
+包含此类正确性修复。固定后, V2X-ViT transformer 对框架而言是可优化的 32ms 组件(非不可分析的 280ms)。
+
+---
+
 ## 1. 分阶段计划 (每阶段一个 gate, 实测优先)
 
 ### Phase T0 — 注意力算子级 breakdown (gate: 值不值得做)

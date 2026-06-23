@@ -144,3 +144,54 @@ main(orchestrator)
 2. **机理解释段**(~200 字): 延迟如何渐进降低 V2X 场景安全, 哪类场景最敏感, 加速(降 τ_ego)的安全收益。
 3. **数据表** `tau_curve_summary.csv`: 每档 τ_ego 的 n / mean DS / SE / 碰撞率 / 行人碰撞率。
 4. supervisor 反思日志(过程可信度档案)。
+
+---
+
+## §8 ★[2026-06-13 定论] 可用评测配置 + route-阈值方法学 (核验 h800_rootcause_investigation_v1.md)
+
+> 本节补充来自 `multi_agent/real_test/h800_rootcause_investigation_v1.md` §3 + 延伸验证的定论。整合后无需再读 HANDOFF_tau_curve_h800_defect_v1.md (其 premise 已证伪)。
+
+### 8.1 H800 平台健康确认(前提已满足)
+- **H800 无感知退化**: b-test 同 payload 同权重, 4090(torch1.10) vs H800(torch2.1) 检测框位逐位相同、conf 仅差 6e-5。H800 可直接用于延迟曲线实验(无需先"修感知")。
+- 旧"H800 te0 即崩 = torch2 感知退化"是误诊。真因 = CARLA ambient traffic 非确定(穷尽 B1→B2→B3 定源), 两机对称。详细嫌疑链排除见台账。
+
+### 8.2 可用评测配置(优先级排序)
+
+| 配置 | 优先级 | 可复现性 | V2X 场景保留 | 适用场景 |
+|------|--------|---------|-------------|---------|
+| **r104 类 clean route** | ★P0(推荐) | 带全量 traffic 仍 DS=100×N | ✅ 全量 ambient | 基础延迟曲线; 最接近真实部署环境 |
+| **`_1notraffic` config** | P1 | te0 确定锚=100(bit-exact); 边际档高方差需 N≥3 | ✅ V2X/RSU + Scenario3 脚本行人 | 需确定性锚点时; 高精度对比实验 |
+| ~~r6 knife-edge~~ | 不推荐 | 高方差, 边际档 n=1=伪信号 | — | 仅用作压力测试/探边 |
+
+**`_1notraffic` 关键属性**(2026-06-13 硬测确认):
+- `vehicle_amount=0, pedestrian_amount=0` 关闭所有 ambient NPC; 保留 Scenario3 脚本行人(定速横穿, spawn 固定=确定)和 RSU/V2X 协同(`disable_rsu=False`)。
+- te0 = bit-exact 确定基线 DS=100; 延迟曲线失败模式 = `collisions_pedestrian`(撞脚本行人, V2X 价值体现); colveh=0 三跑无车撞。
+- ⚠️ 边际档(临界阈值附近)仍有方差 — 余量 ~0.23m 落 CARLA 物理非确定带 → 需 N≥3 平均 + 报 mean±std + 碰撞率。
+
+### 8.3 延迟曲线方法学定论(★勘误历史"非单调")
+
+**历史"非单调曲线"是什么**: 多重缺陷叠加的伪象 = 平台混淆(te0/te219 在 4090, te50-500 在 H800) + 路线偏选 + n=1 噪声。见 `tau_curve_rootcause_v1.md`。
+
+**延迟阈值 route-dependent(2026-06-13 实测)**:
+
+| route | te0 | te219 | te500 | 形状 | 物理含义 |
+|-------|-----|-------|-------|------|---------|
+| r6(余量小 ~0.23m) | 100±0(0/3) | **37.5±18(3/3撞)** | 70.8±41(1/3) | **非单调**(谷@te219) | 中延迟相位最差; 极延迟 ego 降速保守部分恢复 |
+| r3(余量大) | 100±0(0/2) | 100±0(0/3) | **66.7±24(2/3撞)** | **晚发降级**(@te500) | 余量大→te219 仍避; te500 才崩 |
+
+**正确方法学(★取代旧"全 route 平均"方法)**:
+1. **逐 route 出独立曲线**: 各 route 失败阈值不同(由 Scenario3 避让余量决定)。跨 route 朴素平均 → 人工非单调伪象。
+2. **每档 N≥3(建议 ≥5, 边际档 ≥10)**: 边际档(余量~0.23m)高方差; 单次(n=1) = 纯运气。
+3. **报碰撞率 + DS mean±std**: 失败是概率分布, 非二值。非单调在均值/碰撞率层面可确认(r6 碰撞率 0%→100%→33%), 但需大 N 坐实。
+4. **`_1notraffic` 作方法标准化基础**: te0 确定基线消除 ambient 方差, 让延迟效应信号最纯。全量 traffic 版本在 clean route 同时跑验 robustness。
+5. **ZOH 机制(可选深化)**: 极延迟(te500)部分恢复 = ego 收 max_delay 上限后退化保守 → 降速等待 → 避率升; 但机制需 l1_debug=true 重跑 latency_align_audit.csv 直接证实。数据与此机制一致但未 dump 直观证。
+
+### 8.4 历史非单调曲线的机制解释
+
+"历史曲线各 route τ_ego 阈值不同" + "极延迟 ZOH 保守恢复" + "n=1 噪声" → 跨 route 朴素平均时必然出伪非单调。这不是真 V2X 延迟效应, 是方法学产物。**单 route 均值曲线 + 大 N 才能看到真延迟→驾驶分关系**。
+
+### 8.5 给 exp-runner / exp-supervisor 的实操更新
+
+- **推荐流**: 先用 `_1notraffic` × r104 类 clean route(4-5 条) × {te0, te219, te500} × N=5 做 pilot, 验单调性。supervisor 检查: ① te0 是否稳定 DS=100; ② 碰撞率是否随 τ 单调升; ③ 档间 CI 是否可分辨。
+- **不推荐**: 直接上 r6 knife-edge 或不统一 config 跨平台混测。
+- **clean route 选取参考**: r104(×4=100%, 无 Scenario3 挡车) / r3(×3: 50,50,100; 余量较大) / r17(×3: 100,50,100; 偶发) — 建议优先 r104 类无阻力 route 跑 te0 基线, 再扩到 Scenario3 有行人的 route。

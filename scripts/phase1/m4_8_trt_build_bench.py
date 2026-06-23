@@ -68,11 +68,18 @@ def _make_calibrator_class(base_cls):
             self.devs = {}
             n_total = None
             for k, p in self.npy_map.items():
-                a = np.load(p).astype(np.float32)
+                # Preserve native dtype (int32 for index inputs like voxel_coords)
+                a = np.load(p)
+                if a.dtype not in (np.int32, np.int64):
+                    a = a.astype(np.float32)
                 assert a.ndim >= 2
                 self.arrays[k] = a
+                torch_dtype = {
+                    np.float32: torch.float32, np.int32: torch.int32,
+                    np.int64: torch.int64,
+                }.get(a.dtype.type, torch.float32)
                 self.devs[k] = torch.zeros(
-                    (batch_size, *a.shape[1:]), dtype=torch.float32, device="cuda"
+                    (batch_size, *a.shape[1:]), dtype=torch_dtype, device="cuda"
                 )
                 if n_total is None:
                     n_total = a.shape[0]
@@ -212,6 +219,40 @@ def build_engine(
     config = builder.create_builder_config()
     config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace_mb << 20)
 
+    # --tactic D 维度: set TRT tactic sources (TRT 10)
+    tactic_mode = globals().get("_TACTIC_MODE")
+    if tactic_mode:
+        DEFAULT_TC = (
+            1 << int(trt.TacticSource.CUBLAS)
+            | 1 << int(trt.TacticSource.CUBLAS_LT)
+            | 1 << int(trt.TacticSource.EDGE_MASK_CONVOLUTIONS)
+            | 1 << int(trt.TacticSource.JIT_CONVOLUTIONS)
+        )
+        WITH_CUDNN = DEFAULT_TC | (1 << int(trt.TacticSource.CUDNN))
+        EDGE_ONLY = (
+            1 << int(trt.TacticSource.EDGE_MASK_CONVOLUTIONS)
+            | 1 << int(trt.TacticSource.JIT_CONVOLUTIONS)
+        )
+        CUBLAS_LT_ONLY = 1 << int(trt.TacticSource.CUBLAS_LT)
+        ALL_ENABLED = WITH_CUDNN  # 全部启用 = default + CUDNN
+        tactic_map = {
+            "default": DEFAULT_TC,
+            "with_cudnn": WITH_CUDNN,
+            "edge_only": EDGE_ONLY,
+            "cublas_lt": CUBLAS_LT_ONLY,
+            "all_enabled": ALL_ENABLED,
+        }
+        if tactic_mode not in tactic_map:
+            raise ValueError(f"unknown tactic {tactic_mode}")
+        config.set_tactic_sources(tactic_map[tactic_mode])
+        print(f"[build] tactic_sources = {tactic_mode}")
+
+    # --builder-opt-level D 子维度: TRT 10 builder_optimization_level
+    bl = globals().get("_BUILDER_OPT_LEVEL")
+    if bl is not None:
+        config.builder_optimization_level = bl
+        print(f"[build] builder_optimization_level = {bl}")
+
     calibrator = None
     if precision == "fp16":
         config.set_flag(trt.BuilderFlag.FP16)
@@ -228,8 +269,103 @@ def build_engine(
         print(f"[build] precision=INT8 (FP16 fallback) calibrator={calibrator_kind}")
     elif precision == "fp32":
         print("[build] precision=FP32")
+    elif precision == "mixed":
+        # Mixed precision: globally FP16, but layers matching --mixed-int8-pattern
+        # are forced INT8. Used for #3 (per-module q_bits dimension).
+        config.set_flag(trt.BuilderFlag.FP16)
+        config.set_flag(trt.BuilderFlag.INT8)
+        if calib_npy is None:
+            raise ValueError("Mixed precision needs INT8 calibrator for INT8 layers")
+        cls_map = {"minmax": NumpyCalibratorMinMax, "entropy": NumpyCalibratorEntropy}
+        calibrator = cls_map[calibrator_kind](calib_npy, batch_size=1, cache_path=calib_cache)
+        config.int8_calibrator = calibrator
+        print("[build] precision=MIXED FP16+INT8 (per-layer constraint via OBEY_PRECISION_CONSTRAINTS)")
+        # Caller will set per-layer precision via network.get_layer().set_precision()
+    elif precision == "fp16_sparse":
+        # NVIDIA 2:4 sparsity + FP16 (#4). Requires weights pre-sparsified to 2:4.
+        config.set_flag(trt.BuilderFlag.FP16)
+        config.set_flag(trt.BuilderFlag.SPARSE_WEIGHTS)
+        print("[build] precision=FP16 + SPARSE_WEIGHTS (2:4 sparsity if weights pre-sparsified)")
+    elif precision == "int8_sparse":
+        config.set_flag(trt.BuilderFlag.INT8)
+        config.set_flag(trt.BuilderFlag.FP16)
+        config.set_flag(trt.BuilderFlag.SPARSE_WEIGHTS)
+        if calib_npy is None:
+            raise ValueError("int8_sparse needs INT8 calibrator")
+        cls_map = {"minmax": NumpyCalibratorMinMax, "entropy": NumpyCalibratorEntropy}
+        calibrator = cls_map[calibrator_kind](calib_npy, batch_size=1, cache_path=calib_cache)
+        config.int8_calibrator = calibrator
+        print("[build] precision=INT8 + SPARSE_WEIGHTS (NVIDIA SparsityINT8)")
     else:
         raise ValueError(precision)
+
+    # Optional: per-layer mixed precision constraint (#3)
+    # Pass --mixed-int8-substr "Conv;BatchNorm" to force INT8 for layers whose name
+    # contains any substring; FP16 elsewhere.
+    if precision == "mixed" and getattr(config, "_mixed_int8_substr", None):
+        # Will be set by caller after network is parsed
+        pass
+
+    # Apply per-layer mixed precision (#3) BEFORE build
+    # Skip non-quantizable layer kinds (Shape/Identity/Constant/Cast/Slice/Concatenation
+    # that pass through Int64/Bool tensors). Setting INT8/FP16 on these makes TRT bail.
+    QUANTIZABLE_KINDS = {
+        trt.LayerType.CONVOLUTION,
+        trt.LayerType.DECONVOLUTION,
+        trt.LayerType.MATRIX_MULTIPLY,
+        trt.LayerType.ELEMENTWISE,
+        trt.LayerType.ACTIVATION,
+        trt.LayerType.POOLING,
+        trt.LayerType.SCALE,
+        trt.LayerType.SOFTMAX,
+        trt.LayerType.UNARY,
+        trt.LayerType.REDUCE,
+        trt.LayerType.NORMALIZATION,
+        # Note: GRID_SAMPLE (warp_affine) is NOT INT8-quantizable under OBEY_PRECISION_CONSTRAINTS
+        # Note: SHAPE / IDENTITY / CONSTANT / CAST / SLICE / CONCATENATION / GATHER pass through
+    }
+    def _set_layer_precision(substrs, match_int8: bool):
+        n_int8 = n_fp16 = n_skip = 0
+        for li in range(network.num_layers):
+            layer = network.get_layer(li)
+            if layer.type not in QUANTIZABLE_KINDS:
+                n_skip += 1
+                continue
+            hit = any(s and s.lower() in layer.name.lower() for s in substrs)
+            if hit == match_int8:  # match → INT8 (when match_int8=True), else FP16
+                layer.precision = trt.int8
+                n_int8 += 1
+            else:
+                layer.precision = trt.float16
+                n_fp16 += 1
+        # PREFER (not OBEY) so TRT can fall back to FP16/FP32 for layers that
+        # don't have INT8 kernels (e.g. GridSample, Equal, Myelin foreign nodes)
+        config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
+        return n_int8, n_fp16, n_skip
+
+    if precision == "mixed" and globals().get("_MIXED_INT8_SUBSTRS"):
+        substrs = globals()["_MIXED_INT8_SUBSTRS"]
+        n_int8, n_fp16, n_skip = _set_layer_precision(substrs, match_int8=True)
+        print(f"[build] mixed (INT8-match): {n_int8} INT8 / {n_fp16} FP16 / {n_skip} unconstrained "
+              f"(substrs={substrs})")
+    elif precision == "mixed" and globals().get("_MIXED_FP16_SUBSTRS"):
+        substrs = globals()["_MIXED_FP16_SUBSTRS"]
+        n_int8, n_fp16, n_skip = _set_layer_precision(substrs, match_int8=False)
+        print(f"[build] mixed (FP16-match): {n_fp16} FP16 / {n_int8} INT8 / {n_skip} unconstrained "
+              f"(substrs={substrs})")
+
+    # --w-only: 对 INT8 build 强制 Conv 输出 FP16 (activation 在层间保持 FP16, weight 仍 INT8)
+    # 实现机制: layer.set_output_type(0, trt.float16) 让 TRT 在 Conv 出口插入 dequant
+    if precision in ("int8", "int8_sparse") and globals().get("_W_ONLY", False):
+        n_conv_fp16 = 0
+        for li in range(network.num_layers):
+            layer = network.get_layer(li)
+            if layer.type == trt.LayerType.CONVOLUTION:
+                layer.set_output_type(0, trt.float16)
+                n_conv_fp16 += 1
+        config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
+        print(f"[build] W-only: forced {n_conv_fp16} Conv output_type → FP16 "
+              f"(weight INT8 + activation FP16 between layers)")
 
     print(f"[build] building engine (workspace={workspace_mb}MB) ...")
     t0 = time.time()
@@ -353,7 +489,17 @@ def benchmark_engine(
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--onnx", required=True)
-    p.add_argument("--precision", choices=["fp32", "fp16", "int8"], required=True)
+    p.add_argument("--precision",
+                   choices=["fp32", "fp16", "int8", "mixed", "fp16_sparse", "int8_sparse"],
+                   required=True,
+                   help="mixed: per-layer (caller specifies via --mixed-int8-substr); "
+                        "fp16_sparse/int8_sparse: NVIDIA 2:4 sparsity")
+    p.add_argument("--mixed-int8-substr", default="",
+                   help="For --precision mixed: comma-separated substrings — layers "
+                        "whose name contains any get INT8 precision; rest stay FP16")
+    p.add_argument("--mixed-fp16-substr", default="",
+                   help="For --precision mixed: layers matching these substrs stay FP16, "
+                        "rest become INT8 (use this when heads should stay FP16)")
     p.add_argument("--engine", required=True)
     p.add_argument("--report", required=True)
     p.add_argument("--workspace-mb", type=int, default=4096)
@@ -364,17 +510,46 @@ def parse_args():
     p.add_argument("--calib-cache", default=None, help="cache file for calibrator")
     p.add_argument("--calibrator", choices=["minmax", "entropy"], default="minmax",
                    help="INT8 calibrator (minmax=IInt8MinMaxCalibrator, entropy=IInt8EntropyCalibrator2)")
+    p.add_argument("--w-only", action="store_true",
+                   help="W-only mode: weights INT8 (per-channel default), activations FP16. "
+                        "Forces Conv layer output_type to FP16 — TRT keeps INT8 weights from "
+                        "calibrator but dequantizes activations between layers.")
+    p.add_argument("--tactic",
+                   choices=["default", "with_cudnn", "edge_only", "cublas_lt", "all_enabled"],
+                   default=None,
+                   help="TRT tactic_sources mode (D-dim D2-D4 sweep). Omit = TRT defaults.")
+    p.add_argument("--builder-opt-level", type=int, default=None,
+                   help="TRT builder_optimization_level ∈ [0, 5]. Omit = TRT default (3). "
+                        "0 = least tactic search (fastest build, noisiest lat); "
+                        "5 = full tactic search (slowest build, most deterministic lat). "
+                        "D-dim 3rd sub-dim — paper §C 噪声地板控制.")
     p.add_argument("--n-warmup", type=int, default=200)
     p.add_argument("--n-measure", type=int, default=200)
     p.add_argument("--input-shape", default="1,64,256,256")
     p.add_argument("--extra-input-shape", action="append", default=[],
                    help="additional input shape, format 'name:1,2,3,4' (repeatable)")
     p.add_argument("--skip-build", action="store_true", help="reuse existing engine")
+    p.add_argument("--skip-bench", action="store_true",
+                   help="build engine only, skip benchmark_engine (avoids random-data "
+                        "OOB on engines with index-typed inputs, e.g. e2e voxel_coords)")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
+    # Stash mixed precision substrings as module-global so build_engine sees them
+    if args.mixed_int8_substr:
+        globals()["_MIXED_INT8_SUBSTRS"] = [s.strip() for s in args.mixed_int8_substr.split(",")]
+    if args.mixed_fp16_substr:
+        globals()["_MIXED_FP16_SUBSTRS"] = [s.strip() for s in args.mixed_fp16_substr.split(",")]
+    if args.w_only:
+        globals()["_W_ONLY"] = True
+    if args.tactic:
+        globals()["_TACTIC_MODE"] = args.tactic
+    if args.builder_opt_level is not None:
+        if not 0 <= args.builder_opt_level <= 5:
+            raise ValueError(f"--builder-opt-level must be in [0,5], got {args.builder_opt_level}")
+        globals()["_BUILDER_OPT_LEVEL"] = args.builder_opt_level
     if not args.skip_build:
         # Support multi-input calibration data via --calib-multi name:path
         calib_arg = args.calib_data
@@ -393,18 +568,29 @@ def main():
         engine_path = args.engine
         build_secs = None
 
-    shape = tuple(int(x) for x in args.input_shape.split(","))
-    extra: dict[str, tuple] = {}
-    for spec in args.extra_input_shape:
-        name, dims = spec.split(":", 1)
-        extra[name.strip()] = tuple(int(x) for x in dims.split(","))
-    stats = benchmark_engine(engine_path, input_shape=shape,
-                             extra_input_shapes=extra,
-                             n_warmup=args.n_warmup, n_measure=args.n_measure)
-    stats["precision"] = args.precision
-    stats["onnx"] = args.onnx
-    stats["engine"] = args.engine
-    stats["build_secs"] = build_secs
+    if args.skip_bench:
+        stats = {
+            "precision": args.precision,
+            "onnx": args.onnx,
+            "engine": args.engine,
+            "build_secs": build_secs,
+            "engine_size_mb": Path(args.engine).stat().st_size / 1e6
+            if Path(args.engine).exists() else None,
+            "skipped_bench": True,
+        }
+    else:
+        shape = tuple(int(x) for x in args.input_shape.split(","))
+        extra: dict[str, tuple] = {}
+        for spec in args.extra_input_shape:
+            name, dims = spec.split(":", 1)
+            extra[name.strip()] = tuple(int(x) for x in dims.split(","))
+        stats = benchmark_engine(engine_path, input_shape=shape,
+                                 extra_input_shapes=extra,
+                                 n_warmup=args.n_warmup, n_measure=args.n_measure)
+        stats["precision"] = args.precision
+        stats["onnx"] = args.onnx
+        stats["engine"] = args.engine
+        stats["build_secs"] = build_secs
 
     Path(args.report).parent.mkdir(parents=True, exist_ok=True)
     with open(args.report, "w") as f:

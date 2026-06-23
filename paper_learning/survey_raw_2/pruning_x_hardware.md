@@ -148,47 +148,93 @@ cusparseLtMatmulPlanInit()
 
 ## 3. 剪枝 ↔ 调度 / 流水线
 
-### 3.1 动态剪枝的流水影响
+本节讨论的不是"有哪些剪枝方法",而是**剪枝方式如何影响推理流水线的可编排性**——
+即剪枝决策会保留、破坏、还是创造哪些调度机会。围绕四个维度展开:
+CUDA Graph / kernel fusion / static memory planning / multi-stream。
 
-**三种动态剪枝的硬件调度特征:**
+### 3.1 静态 vs 动态:流水线是否可被静态编排
 
-| 方法 | 剪枝粒度 | 决策时机 | GPU 友好度 |
-|------|--------|--------|-----------|
-| DynamicViT (NeurIPS'21) | token 级 | 预测模块每 N 层选 top-k | ⭐⭐⭐ 仍 dense GEMM，但 seq_len 变小 |
-| SkipNet / BlockDrop | 层级 (skip residual) | gating network 决定跳过 | ⭐⭐ 分支依赖打断 graph fusion |
-| Mixture-of-Depths (MoD, 2024) | token + 层 | router 分配 compute 预算 | ⭐⭐ 需要 gather/scatter |
-| CoDeNet / SBNet | 空间稀疏 | 输入驱动 mask | ⭐ 非规则 mask 回到非结构化稀疏 |
+按剪枝决策**发生时机**分两类,对流水线的影响根本不同:
 
-**DynamicViT 的关键观察:**
-- Token 剪枝后序列缩短 → 剩余 token 仍组成 **dense tensor**，attention/FFN 直接用 cuBLAS，无需稀疏 kernel。
-- 这是实现 "dynamic 但 hardware-friendly" 的关键——把动态稀疏转化为动态 shape。
-- 实测 66% token 剪枝 → 31-37% FLOPs 降低、**40% 吞吐提升**，精度损失 <0.5%。
+| 类别 | 代表方法 | 剪枝对象 | shape 是否静态 | 流水线影响 |
+|------|---------|---------|--------------|-----------|
+| **静态(编译期)** | 通道剪枝 / 2:4 / head pruning(永久删头) | 权重 | 完全静态 | **几乎不影响流水线**,只是每个 kernel 变快 |
+| **动态(运行期)** | DynamicViT(token 级) / SkipNet(层级 skip) / MoD(token+层) / CoDeNet/SBNet(空间稀疏) | 激活 | 每帧变化 | **破坏静态编排的四项前提**(见 3.2) |
 
-**分支预测 / 控制流开销:**
-- GPU 不支持硬件分支预测 (除了 warp-level predicate)。
-- 动态决策 (if x > threshold) 在 kernel 内造成 **warp divergence**。
-- 解决: 把决策放在 **两个 kernel 之间** (先跑 scorer kernel 产出 mask，再用 mask 做 compact 再跑下一个 kernel)，让每个 kernel 内部依然 uniform。
-- TensorRT 对动态 shape 的支持通过 **optimization profile**: min/opt/max shape。每个 profile 会 build 独立 engine tensor，profile 切换有 overhead (TensorRT 官方文档明确警告)。
+- **静态剪枝**: 离线固化到 engine 里,推理图 shape 完全静态。TRT engine / CUDA Graph / kernel fusion / static memory planning 都可直接使用。
+- **动态剪枝**: 每帧激活的 shape 或计算路径随输入变化(token 数、跳过哪些层、哪些空间位置被屏蔽),破坏编排。
 
-### 3.2 MoE 与 head pruning 的流水
+**两个需要澄清的混淆点:**
 
-**Megablocks (dropless MoE, 2022):**
-- 核心: 把 MoE 重构为单一 **block-sparse GEMM** (BCSR 格式，128×128 块)。
-- 相对 Tutel (带 capacity factor + padding/drop) 训练加速 **1.4×**；相对 Megatron-LM dense baseline **2.4×**。
-- 硬件维度: block size 必须 tune (太小不足以饱和 Tensor Core；太大会限制 expert 粒度)。经验 128 最优。
-- Hopper 版推荐 `grouped GEMM` 路径 (利用 TMA + WGMMA)。
+1. **head pruning 属于静态权重剪枝**,不是动态。它永久删掉整个注意力头的 QKV 投影参数;部署时 `heads` 维度静态缩小。它**能配合**多流调度(见 3.4),但本身不破坏流水线。
+2. **MegaBlocks(MoE)严格说不是剪枝**,而是条件计算(路由)。它出现在稀疏加速讨论里是因为把多 expert 的 batched GEMM 重构为一次 **block-sparse GEMM**(BCSR,128×128 块),**粒度变粗 / kernel 数下降** → 流水线角度与剪枝效果相近。训练 vs Tutel 1.4×,vs Megatron dense 2.4×;Hopper 推荐走 `grouped GEMM` + TMA + WGMMA。
 
-**多流 (multi-stream) 执行 (TensorRT-LLM PR #11520, 2026):**
-- MoE 和 MLA attention 已引入 **multi-stream orchestration**: shared expert 在 auxiliary CUDA stream 执行，与 routed expert 并行。
-- 必须用 begin/end/wait stream marker 显式同步。
-- 对 head pruning 场景的意义: 剪掉一部分头后，**剩余 heads 的 batched matmul 仍然序列化**——若 heads 异构 (如 GQA、DuoAttention retrieval vs streaming)，可以分配到不同 stream 并行。
-- DuoAttention (arXiv 2410.10819): retrieval heads (full KV cache) + streaming heads (constant KV) 两套，chunked prefill 天然适合 dual-stream。
+### 3.2 动态剪枝对流水线的四项破坏
 
-**Head 剪枝与 BEV encoder 的思考:**
-- UniV2X 的 BEV decoder 多头自注意力 (MHA) 若剪掉 25% 头，直接在 QKV projection 维度缩减。
-- 此时 attention matmul shape 变为 `(batch, heads_kept, seq, head_dim)` — 依然是 batched dense GEMM。
-- 加速比: FLOPs 降 25% → 延迟降 ~20% (考虑 memory-bound 层和 softmax 开销)。
-- 若想进一步并行剩余 heads，需要手写 CUDA kernel 或 FlashAttention variant。
+动态剪枝的 shape/路径随输入变化,直接打破以下四件事(按影响由大到小):
+
+| # | 被破坏的机制 | 失效原因 | 后果 |
+|---|-------------|---------|------|
+| 1 | **CUDA Graph** | Graph 捕获时 shape 固定,运行时不匹配需要 re-capture + re-instantiate | 高频 re-capture 开销 > Graph 带来的 launch 加速 |
+| 2 | **TRT optimization profile** | 动态 shape 需要 min/opt/max 三点;实际 shape 跨越 opt 点会走不同 tactic 路径 | profile 切换有 us 级 overhead(TRT 官方文档明确警告) |
+| 3 | **kernel fusion** | 动态决策点(if score > threshold)要等运行时值,fusion 边界被强制切开 | 本来可融合的 `Conv+BN+ReLU+Add` 被决策节点割裂为多段 |
+| 4 | **静态 memory planning** | 每帧 activation 大小不同,TRT/PyTorch 的 memory pool 无法静态规划 | 需要动态分配 workspace,额外 cudaMalloc 路径 |
+
+这是"动态剪枝虽然 FLOPs 少,但实测延迟节省未必成比例"的核心原因——**节省的是计算,损失的是编排**。
+
+### 3.3 动态决策的 kernel 切分模式
+
+如果必须做动态剪枝,正确的流水线组织是**把一个动态算子切成三段静态子流水**,而不是把决策写到单 kernel 内部:
+
+```
+  ┌─────────────────┐     ┌───────────────────┐     ┌───────────────────┐
+  │  scorer kernel  │ ──▶ │  mask / compact   │ ──▶ │  downstream kernel │
+  │ (均匀打分)       │     │ (整理连续张量)     │     │ (均匀 GEMM/Conv)    │
+  └─────────────────┘     └───────────────────┘     └───────────────────┘
+```
+
+**要害**: GPU 不支持硬件分支预测;`if x > threshold` 写在 kernel 内部会造成 warp divergence(half-warp 浪费算力)。把决策拆到 kernel 之间,每段内部 uniform,段之间通过 mask/compact 传递动态 shape 信息。
+
+**这是把"动态稀疏"转化为"动态 shape"的工程范式**——也是 DynamicViT 能 hardware-friendly 的核心:
+- Token 剪枝后剩余 token 仍组成 **dense tensor**,attention/FFN 直接用 cuBLAS,无需稀疏 kernel
+- 实测 66% token 剪枝 → 31-37% FLOPs 降低、**40% 吞吐提升**,精度损失 <0.5%
+
+相比之下 SkipNet(层级 skip) / CoDeNet(空间非规则)没做这种 compact 转化,回到非结构化稀疏路径,GPU 基本无收益。
+
+### 3.4 剪枝创造的并行调度机会
+
+前三节讲的是剪枝对既有流水线的"保持 / 破坏",本节讲剪枝**创造的新编排空间**。
+
+**(a) Head 异构 → multi-stream**
+
+Head pruning 本身保持 batched matmul 的序列化(所有剩余头共用一次 QKV GEMM)。
+**但如果剩余的头是异构的**,就能拆到不同 CUDA stream 并行:
+- **GQA**: 多组 Q 共享同一组 KV,KV projection 可与其它 Q 组并行
+- **DuoAttention** (arXiv 2410.10819): retrieval heads(full KV cache) + streaming heads(constant KV) 两套,chunked prefill 天然 dual-stream
+- **TensorRT-LLM PR #11520** (2026): MoE 和 MLA attention 已引入 multi-stream orchestration,shared expert 在 auxiliary CUDA stream 与 routed expert 并行;必须用 `cudaStreamWaitEvent` 做 begin/end/wait 显式同步
+
+**(b) MoE 路由 → kernel 边界粗化**
+
+MegaBlocks 把 N 个 expert 的 N 次 batched GEMM 合并为一次 block-sparse GEMM,kernel launch 数下降 → 流水线粒度变粗,launch 开销摊薄。
+
+**(c) BEV decoder head pruning 的具体账**
+
+- 若剪掉 25% 头: QKV 投影维度直接缩减
+- attention matmul shape 变 `(batch, heads_kept, seq, head_dim)`,仍是 batched dense GEMM
+- 加速比: FLOPs 降 25% → 延迟降 **~20%**(memory-bound 层与 softmax 稀释部分收益)
+- 若想进一步并行剩余 heads: 需要手写 CUDA kernel 或 FlashAttention variant
+
+**(d) 对 UniV2X 的整体建议**
+
+UniV2X 本就有 **ego + infra** 两条天然异构的流水线。剪枝侧的选择直接决定能否跨流并行:
+
+| 剪枝策略组合 | 流水线可编排性 | 推荐度 |
+|------------|--------------|-------|
+| 双模型都静态剪枝(通道 + 2:4 + head pruning 可选) | ego/infra 各占一 stream + MPS % 分 SM;**完整 CUDA Graph** | ⭐⭐⭐ |
+| 某模型混入动态激活剪枝 | 该路无法 CUDA Graph 化,成为系统尾延迟瓶颈 | ⭐ (仅在精度必需时) |
+| 双模型都保留动态剪枝 | 两路都走普通 launch,失去 Graph 和 MPS 协同 | — |
+
+**结论**: 车端部署以**静态剪枝为主**,不主动引入动态激活剪枝。这样流水线结构可被 TRT + CUDA Graph + MPS 完整编排,剪枝收益完整落地。
 
 ---
 

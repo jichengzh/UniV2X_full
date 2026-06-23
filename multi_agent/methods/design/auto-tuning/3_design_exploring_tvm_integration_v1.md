@@ -4,6 +4,8 @@
 > 1. **W_g 定义**: W_g = **单维(贪心所搜那一维)最优、但多维(全局)非最优**的点 = 单侧贪心搜索落入并卡住的**局部最优**(贪心选它因它单维最优; 非全局因到达真全局需接受贪心已丢弃的单维次优选择)。另设 P_g = 被错过的全局点(单维次优/多维最优)。
 > 2. **平台: 已迁移 TVM, 不以 TRT/INT8 为重心**。架构/实验主轴 = **TVM prune × schedule**(MetaSchedule); 量化(INT8)因 relax 无 INT8 pass 降为 **future/次要**, 不作主依赖。本文涉及 TRT/INT8 处相应降级为 future-note。
 
+> 3. ★**耦合口径统一(2026-06-22, 见 `1_design_space_building_v1.md §0.1`)**: 本文的外环(软件 P×Q, NSGA)↔内环(硬件 schedule, MetaSchedule)正是协同的两环。协同主张 = **内外环强耦合(经 P-hub)**, 强度按架构用**三臂消融测量**(非"if groups==1"规则); 可分离架构(如 CoDriving)是测量出 ≈1.0 的结果, 框架据耦合分数自适应分配内环预算(分流=连续预算非二元开关)。
+
 > **定位**: 把"导入一个网络 → 输出最优模型"做成**一条流水线**, 而不是现在 searcher_v0 那种"随机采样 + 约束过滤"或人工不断枚举试错。本设计严格基于三篇文献(ALT / CHaNAS / AutoTVM, 研读笔记 `references/study_joint_search_methods_v1.md`)与我们已打通的 TVM 基底(H800 TVM 0.20 改版 Unity, MetaSchedule 在 `tvm.s_tir.meta_schedule`)。
 >
 > **标注约定**: `[借鉴X]` = 直接来自某篇论文的方法; `[我们的设计]` = 本项目自建/改造; `[待定]` = 工程开放问题(结尾汇总)。

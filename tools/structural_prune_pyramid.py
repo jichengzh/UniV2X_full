@@ -155,7 +155,8 @@ def slice_grouped_conv2(w_old: torch.Tensor, out_idx: torch.Tensor,
 
 def transfer_weights(old_model, new_model,
                      num_filters_old: list, num_filters_new: list,
-                     groups: int = 32, width_per_group: int = 4):
+                     groups: int = 32, width_per_group: int = 4,
+                     skip_shrink_heads: bool = False):
     """Transfer weights from old PyramidFusion to new (smaller) one with L1 selection."""
     pb_old = old_model.pyramid_backbone
     pb_new = new_model.pyramid_backbone
@@ -271,19 +272,23 @@ def transfer_weights(old_model, new_model,
         if h_old.bias is not None:
             h_new.bias.data = h_old.bias.data.clone()
 
-    # 5. shrink_conv: input = sum(num_upsample_filter) = 384 (unchanged),
-    #    output = 256 (unchanged). Direct copy.
-    for k in old_model.shrink_conv.state_dict().keys():
-        new_model.shrink_conv.state_dict()[k].data.copy_(
-            old_model.shrink_conv.state_dict()[k].data
-        )
-
-    # 6. cls/reg/dir heads (unchanged shapes)
-    for h_name in ("cls_head", "reg_head", "dir_head"):
-        for k in getattr(old_model, h_name).state_dict().keys():
-            getattr(new_model, h_name).state_dict()[k].data.copy_(
-                getattr(old_model, h_name).state_dict()[k].data
+    # 5+6. shrink_conv + cls/reg/dir heads: direct copy (unchanged shapes).
+    #   skip_shrink_heads=True 时由 whole-net caller (wholenet_prune_pyramid) 自行重切,
+    #   因为整网剪枝会改 deblocks 输出 / shrink in_dim / in_head, 直接 copy 会 shape mismatch.
+    if not skip_shrink_heads:
+        # 5. shrink_conv: input = sum(num_upsample_filter) = 384 (unchanged),
+        #    output = 256 (unchanged). Direct copy.
+        for k in old_model.shrink_conv.state_dict().keys():
+            new_model.shrink_conv.state_dict()[k].data.copy_(
+                old_model.shrink_conv.state_dict()[k].data
             )
+
+        # 6. cls/reg/dir heads (unchanged shapes)
+        for h_name in ("cls_head", "reg_head", "dir_head"):
+            for k in getattr(old_model, h_name).state_dict().keys():
+                getattr(new_model, h_name).state_dict()[k].data.copy_(
+                    getattr(old_model, h_name).state_dict()[k].data
+                )
 
     # 7. encoder_m1 + backbone_m1 + aligner_m1: unchanged (we only prune pyramid_backbone)
     for mod in ("encoder_m1", "backbone_m1", "aligner_m1"):
@@ -297,10 +302,15 @@ def transfer_weights(old_model, new_model,
 # Build new HeterPyramidCollab with smaller num_filters
 # ---------------------------------------------------------------------------
 
-def build_smaller_model(orig_hypes_path: str, num_filters_new: list):
+def build_smaller_model(orig_hypes_path: str, num_filters_new: list,
+                        groups: int = 32, width_per_group: int = 4):
     hypes = load_yaml(orig_hypes_path)
     args = hypes["model"]["args"]
     args["fusion_backbone"]["num_filters"] = num_filters_new
+    if groups != 32:
+        args["fusion_backbone"]["resnext_groups"] = groups
+    if width_per_group != 4:
+        args["fusion_backbone"]["width_per_group"] = width_per_group
     # num_upsample_filter stays [128, 128, 128]
     model = HeterPyramidCollab(args)
     return model, hypes
@@ -316,11 +326,37 @@ def main():
     p.add_argument("--out-dir", default="/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_pruned50_2026_05_10")
     p.add_argument("--num-filters-new", default="32,64,128",
                    help="new num_filters [N0, N1, N2]; original is [64,128,256]")
+    p.add_argument("--groups", type=int, default=32,
+                   help="ResNeXt groups (default 32; use 8 for extreme prune)")
+    p.add_argument("--width-per-group", type=int, default=4,
+                   help="ResNeXt width_per_group (default 4; HEAL: width = int(p*wpg/64)*groups)")
     args = p.parse_args()
 
     nf_new = [int(x) for x in args.num_filters_new.split(",")]
+    groups = args.groups
+    wpg = args.width_per_group
+    # Validate: width = int(planes * wpg / 64) * groups; must be > 0 and
+    # width // groups (in_per_group) must be >= 1
+    for p_size in nf_new:
+        w = int(p_size * wpg / 64) * groups
+        ipg = w // groups
+        if w <= 0 or ipg < 1:
+            print(f"  ERROR: planes={p_size} + groups={groups} + wpg={wpg} → width={w} ipg={ipg}; infeasible")
+            sys.exit(1)
+        print(f"  validate: planes={p_size} groups={groups} wpg={wpg} → width={w} ipg={ipg}")
     orig_hypes = Path(args.orig_dir) / "config.yaml"
-    orig_ckpt = Path(args.orig_dir) / "net_epoch_bestval_at23.pth"
+    # Auto-detect bestval ckpt (don't hardcode epoch 23 — baselines may differ)
+    bestvals = sorted(Path(args.orig_dir).glob("net_epoch_bestval_at*.pth"))
+    if not bestvals:
+        print(f"  ERROR: no net_epoch_bestval_at*.pth in {args.orig_dir}")
+        sys.exit(1)
+    # Pick highest epoch
+    def _ep(p):
+        return int(p.stem.split("_at")[-1])
+    bestvals.sort(key=_ep)
+    orig_ckpt = bestvals[-1]
+    src_epoch = _ep(orig_ckpt)
+    print(f"  using bestval ckpt at epoch {src_epoch}: {orig_ckpt.name}")
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -330,12 +366,14 @@ def main():
     nf_old = old_model.pyramid_backbone.model_cfg["num_filters"]
     print(f"  Original num_filters: {nf_old}")
 
-    print(f"[2/4] Build smaller model with num_filters={nf_new}")
-    new_model, hypes = build_smaller_model(str(orig_hypes), nf_new)
+    print(f"[2/4] Build smaller model with num_filters={nf_new} groups={groups} wpg={wpg}")
+    new_model, hypes = build_smaller_model(str(orig_hypes), nf_new,
+                                           groups=groups, width_per_group=wpg)
     new_model.eval()
 
-    print(f"[3/4] Transfer weights with L1 selection")
-    transfer_weights(old_model, new_model, nf_old, nf_new)
+    print(f"[3/4] Transfer weights with L1 selection (groups={groups} wpg={wpg})")
+    transfer_weights(old_model, new_model, nf_old, nf_new,
+                     groups=groups, width_per_group=wpg)
 
     n_old = sum(p.numel() for p in old_model.parameters())
     n_new = sum(p.numel() for p in new_model.parameters())
@@ -360,14 +398,18 @@ def main():
           f"(expected large drift: pruned model needs finetune)")
 
     print(f"\n[4/4] Save pruned ckpt + smaller config")
-    out_ckpt = out_dir / "net_epoch_bestval_at23.pth"
+    out_ckpt = out_dir / f"net_epoch_bestval_at{src_epoch}.pth"
     torch.save({"model_state_dict": new_model.state_dict()}, out_ckpt)
     print(f"  saved {out_ckpt}  ({out_ckpt.stat().st_size / 1e6:.2f} MB)")
 
     # Patch hypes config → new num_filters, save as out_dir/config.yaml
     hypes_dict = load_yaml(str(orig_hypes))
     hypes_dict["model"]["args"]["fusion_backbone"]["num_filters"] = nf_new
-    hypes_dict["name"] = "Pyramid_DAIR_m1_pruned50"
+    if groups != 32:
+        hypes_dict["model"]["args"]["fusion_backbone"]["resnext_groups"] = groups
+    if wpg != 4:
+        hypes_dict["model"]["args"]["fusion_backbone"]["width_per_group"] = wpg
+    hypes_dict["name"] = f"Pyramid_DAIR_m1_pruned_g{groups}_" + "_".join(f"{n:03d}" for n in nf_new)
     out_yaml = out_dir / "config.yaml"
     with open(out_yaml, "w") as f:
         yaml.dump(hypes_dict, f, default_flow_style=False, allow_unicode=True)

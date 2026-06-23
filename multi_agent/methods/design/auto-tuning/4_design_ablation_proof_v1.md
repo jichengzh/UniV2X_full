@@ -119,8 +119,8 @@
 ### 4.1 载体模型(顺便证 model-dependent 判据)
 两个模型对比, 本身就是"协同价值条件化"的数据点:
 - **Pyramid (HEAL, grouped conv g=32)** = **预期显耦合**。grouped conv 的 in_per_g=2^k 约束 + INT8 对齐使"宽度↔schedule↔量化"强耦合 → A-serial 锁死宽度后下游受限明显 → **预期 A-joint 显著支配 A-serial**。已有公平 AP70 曲线: 0.631→0.590→0.564→0.530(stage_a, finetuned, DAIR val 1789), 配 TRT fp16 延迟。
-- **CoDriving (标准 conv)** = **预期可分离**。标准 conv 对宽度不挑, schedule 旋钮价值低(TVM 实测 2× vs Pyramid grouped 8-10×) → 三轴近独立 → **预期 A-joint ≈ A-serial**。已有 iso-budget 公平对照(base_isobudget AP50 0.626 > 所有剪枝档)。
-- **跨模型对比的论点**: Pyramid 显耦合(A-joint≫A-serial)+ CoDriving 可分离(A-joint≈A-serial)= **"协同搜索的价值 = 耦合强度的函数"** 这一 model-dependent 判据的直接证据。两个结果都"有用": 一个证联合必要, 一个划定可分离适用区。
+- **CoDriving (标准 conv)** = **已证可分离(SERIAL)** ★[2026-06-22 复核确认]。标准 conv 对宽度不挑, schedule 旋钮价值低(TVM 实测 2× vs Pyramid grouped 8-10×) → 三轴近独立。**C0c' 三臂实测 A-joint=A-serial=100%(SERIAL)** + C1cod 无宽度陷阱 + C6 高维 batch×width 无稳健陷阱 ⇒ 不再是"预期", 是干净阴性定论(详见 §9.8d')。已有 iso-budget 公平对照(base_isobudget AP50 0.626 > 所有剪枝档)。
+- **跨模型对比的论点**: Pyramid 显耦合(A-joint≫A-serial, **已实证** §9)+ CoDriving **预期**可分离(A-joint≈A-serial, **当前欠实测, 待 L3 多点真测定论**, 见 §9.8a)= **"协同搜索的价值 = 耦合强度的函数"** 这一 model-dependent 判据。两个结果都"有用": 一个证联合必要, 一个划定可分离适用区(若真可分离)。**叙事修正**: 框架对两模型都优化, 差别在"是否必须联合搜" → 真正贡献 = **可从架构预测联合搜必要性的判据**(对齐敏感度: grouped/depthwise 或 INT8 → 耦合), 非"1:1 只对 Pyramid 有效"。详见 §9.8a。
 
 ### 4.2 平台口径(铁律, 同旧 gap1 §8.3)
 - **主平台 = H800 TVM**(已迁移): schedule 搜索 + 相对延迟在 TVM 坐实机理(MetaSchedule evolutionary_search + xgb cost model); prune×schedule 是主轴。
@@ -198,67 +198,202 @@
 > 本节回写 §2 四层证据的**实测结果**。全部基于真测: 延迟 = H800 TVM 直接网格(`results/latency_lut_pyramid.json`, gap1_grid_corrected + lut_results_grid relaunch, 真 default/tuned µs); AP70 = stage_a DepGraph fp16 锚点 + DepGraph 扩展 finetune(`results/ap70_model_pyramid.json` `table`, DAIR val 1789)。驱动器 `framework/run_b4_ablation.py` + 内核 `framework/search_three_arm.py`; 审计 `scripts/phase2/b5_verify_convergence.py`。产物: `results/b4_ablation_results.json` / `results/b5_convergence_verification.json` / `multi_agent/figure/b4_{hv_boxplot,convergence,pointcloud}.png`。
 
 ### 9.1 搜索网格 + rank-flip 对(§2.2 构造成功)
-真测网格 = 8 宽度(均真 AP + 真延迟): p75/p50/base/trap25/pad64/mix_b/s1_64/mix_d。`detect_wg_pg_pairs` 从网格**自动识别** 2 组 default→tuned rank-flip 对(共享 (s1,s2), s0 失配 vs 补齐, 同 AP 由零填充权重恒等保证):
+真测网格 = 9 宽度(均真 AP + 真延迟): p75/p50/base/trap25/pad64/mix_b/s1_64/mix_d/**s2_128**。`detect_wg_pg_pairs` 从网格**自动识别** 3 组 default→tuned rank-flip 对(共享 (s1,s2), s0 失配 vs 补齐, 同 AP 由零填充权重恒等保证):
 
 | 对 | W_g(default 更快, 被串行锁/排) | P_g(tuned 更快) | 同 AP70 | W_g tuned 余量 | P_g tuned 余量 | iso-AP 倍率 |
 |---|---|---|---|---|---|---|
+| 3 | mix_d [48,128,128] | s2_128 [64,128,128] | 0.6369 | 2.01× | 8.61× | **3.83×**(最大) |
 | 1 | trap25 [48,96,192] | pad64 [64,96,192] | 0.5905 | 1.96× | 7.71× | 3.51× |
 | 2 | mix_b [48,64,256] | s1_64 [64,64,256] | 0.6362 | 2.14× | 7.88× | 3.29× |
 
-rank-flip 真实存在(§8 开放问题①闭合): 失配 s0(in_per_g=3)tuned 调优余量仅 ~2×, 补齐 s0→64(in_per_g=4)tuned 余量 ~7.9× → tuned 后 P_g 远快于 W_g, 与 default 排序翻转。(pair3 mix_d/s2_128 因 s2_128 TVM 持续 CUDA 崩降级, 见 §9.5。)
+rank-flip 真实存在(§8 开放问题①闭合): 失配 s0(in_per_g=3)tuned 调优余量仅 ~2×, 补齐 s0→64(in_per_g=4)tuned 余量 ~7.7–8.6× → tuned 后 P_g 远快于 W_g, 与 default 排序翻转。**三对独立复现, 跨三个 AP70 档(0.5905/0.6362/0.6369)。**
 
-### 9.2 层 2/3 — HV 分布 + 配对显著性(§2.3, 12 seed)
+**★[2026-06-21 收尾] pair3 已并入 3 对 ablation 重跑(L2 完成)**: s2_128 [64,128,128] 的 TVM 调优崩(seed=0 进化搜索为某 grouped conv 选出 OOB kernel, 在完整图 compile 时触发 CUDA illegal-access)已用 **seed=42 + fresh workdir + subprocess 验证前置** 修通(真测 `results/s2_128_fresh_tune_seed42.csv`: default 47435µs/tuned 5506µs/8.6×)。iso-AP 恒等已核实: s2_128 = mix_d 的 s0 零填充(48→64), AP70=0.6369(`ap70_model_pyramid.json` `table` 已含, 旧 T2 报的 0.590 系误填, 已弃)。**§9.2–9.4 的 HV/Wilcoxon/B5 已是 3 对网格重跑结果**(`run_b4_ablation --seeds 12` + `b5_verify_convergence`, 主控复跑核验)。
+
+### 9.1b ★HV(hypervolume / 超体积)指标:计算方法 + 直白解读
+> 三臂对比的主指标。下文先给精确算法(对应 `framework/search_three_arm.py::hypervolume_2d`),再用大白话说什么时候高/低。
+
+**(1) 目标空间**:每个候选配置 = 平面上一个点 `(延迟 lat_µs, AP70)`。我们要"延迟越低越好 + AP70 越高越好"。为统一成最小化问题,第二轴取 `−AP70`,于是点写成 `(lat, −AP70)`,**两轴都是越小越好**。
+
+**(2) 参考点 nadir `ref`**(右上角"最差角"):`ref = (网格内最大延迟 ×1.05, −(最小 AP70 − 0.02))`。它**离线算一次、对所有臂相同、从不喂给搜索器**(纪律:只用于打分,不泄露给搜索)。
+
+**(3) HV = 一个臂的 Pareto 前沿所"支配/覆盖"的面积**(以 nadir 为边界):
+1. 取该臂访问过的全部点 → 求非支配前沿(扔掉被别人"又快又准"盖过的点);
+2. 只留比 `ref` 在两轴都更优的点;
+3. 按延迟降序累加矩形:`HV = Σ (prev_lat − lat) × (ref_y − (−AP70))`。
+单位 = 延迟(µs)× AP,是**相对量**,只用于同口径(同一 `ref`)比臂。报表里 `%of ref` = 该臂 HV ÷ **全局真 Pareto** 的 HV(离线算的理论上界)。
+
+**(4) 什么时候 HV 高(大白话)**:**又快、又准、且前沿覆盖面广**。具体三种贡献叠加 ——
+- 前沿在**每个 AP 档都压到真正低的延迟**(例:找到了 tuned 后的 P_g 引擎,同精度延迟砍到 ~1/4);
+- 前沿**跨越完整 trade-off 范围**(从便宜低 AP 到昂贵高 AP 都有解);
+- 非支配点多、把曲线填满。
+
+**(5) 什么时候 HV 低**:**解慢、或精度低、或前沿有缺口(漏掉本可达的好点)**。例如 ——
+- 解被支配(又慢又不准):A-serial 锁死失配宽度 W_g,只能用它"调优很差"的引擎 → 同 AP 下延迟高一大截 → 覆盖面积缩水;
+- 前沿太短/有洞:A-serial 结构性**漏掉低延迟的 P_g** → 中段 AP 的延迟下不来;A-noS **从不调 schedule** → 几乎所有点都慢 → 面积最小。
+
+**(6) 为什么用它当主指标**:一个标量就把"延迟 × 精度 × 覆盖广度"三件事压成可比数,**不用人为挑某个工作点**(避免"挑对自己有利的工作点"的偏见)。本文落点正是如此:A-joint 拿到 tuned-P_g 低延迟点 → 面积最大(≈100%);A-serial 结构性漏 P_g → 中段延迟高 → 面积小一截(85%);A-noS 不调 schedule → 全慢 → 面积最小(48–57%)。HV 差距 + Wilcoxon 配对显著性(§9.2)共同支撑"串行系统性劣于联合"。
+
+### 9.2 层 2/3 — HV 分布 + 配对显著性(§2.3, 12 seed, 3 对网格, ref_hv=6.9913e3)
 | 臂 | mean HV | %of ref | std |
 |---|---|---|---|
-| **A-joint** | 6.928e3 | **99.6%** | 4.3e1 |
-| **A-serial** | 5.978e3 | **86.0%** | ~0 |
-| **A-noS** | 3.337e3 | **48.0%** | 0 |
+| **A-joint** | 6.984e3 | **99.9%** | 2.4e1 |
+| **A-serial** | 5.978e3 | **85.5%** | ~0 |
+| **A-noS** | 3.337e3 | **47.7%** | 0 |
 
-- **Wilcoxon A-joint vs A-serial: p=4.9e-4, rank-biserial=1.0**(12 seed 全偏向联合, 分布不重叠)。
+- **Wilcoxon A-joint vs A-serial: p=4.88e-4, rank-biserial=1.0**(12 seed 全偏向联合, 分布不重叠)。
 - A-serial std≈0: 锁死机制确定性(每 seed 收敛到同一被限可达集)。**这是 framing-independent 的主结果** —— 串行系统性、可重复地劣于联合, 与具体 pair 解读无关。期望序 A-joint ⪰ A-serial ⪰ A-noS 成立。
 
-### 9.3 层 1/4 — 结构性排除(§2.5, 跨 72 起点)
-每对均 **PASS**(2 pair × 12 seed × 6 起点 = 72 多起点 run):
-- A-joint 访问 (P_g, tuned): 两对都 **True**。
-- A-serial 访问 (P_g, tuned): 两对都 **False**(结构性排除 = stage-1 default 排序丢弃 P_g → 其 tuned 引擎从不构建)。
-- A-serial 跨全部 72 起点都丢弃 P_g(含**强制从 P_g 起步**的起点) → 结构性、非偶然/非起点差。
-- 注: pair1 中 W_g(trap25)本身也被 mix_b 在 default 下支配(`W_g locked-repr=False`), pair2 中 W_g(mix_b)是被锁代表(`True`)。**核心排除判据是"P_g 被丢弃", 不依赖"W_g 恰被锁"** —— 已据此泛化(旧硬编码单对 pad64 判据已修)。
+### 9.3 层 1/4 — 结构性排除(§2.5, 跨 96 起点/对)
+每对均 **PASS**(3 pair × 12 seed × 8 起点 = 96 多起点 run/对, STRUCTURAL RESULT: PASS):
+- A-joint 访问 (P_g, tuned): 三对都 **True**。
+- A-serial 访问 (P_g, tuned): 三对都 **False**(结构性排除 = stage-1 default 排序丢弃 P_g → 其 tuned 引擎从不构建)。
+- A-serial 跨全部 96 起点都丢弃 P_g(含**强制从 P_g 起步**的起点, 96/96) → 结构性、非偶然/非起点差。
+- 注: pair3(mix_d)/pair2(mix_b)的 W_g 是被锁代表(`W_g locked-repr=True`), pair1 中 W_g(trap25)本身也被 mix_b 在 default 下支配(`False`)。**核心排除判据是"P_g 被丢弃", 不依赖"W_g 恰被锁"** —— 已据此泛化(旧硬编码单对 pad64 判据已修)。
 
-### 9.4 ★诚实区分: shipped 协同赢 vs 仅机理(B5 审计)
-B5 审计**所有臂收敛 Pareto 解均为真测点**(latency∈直接网格, AP∈真 finetune)。但**两对的论证强度不同**:
+### 9.4 ★诚实区分: shipped 协同赢 vs 仅机理(B5 审计, 3 对)
+B5 审计**所有臂收敛 Pareto 解均为真测点**(latency∈直接网格, AP∈真 finetune)。**三对论证强度不同**(`b5_convergence_verification.json`):
 
 | 对 | 类型 | A-serial 出货 | A-joint 出货 | P_g 在全局 Pareto? | 倍率 |
 |---|---|---|---|---|---|
-| **2 (s1_64)** | **shipped 协同赢** | mix_b/tuned 19405µs | **s1_64/tuned 5895µs** | **是** | **3.29×** |
-| 1 (pad64) | 仅机理 | (无, trap25/pad64 均被支配) | (无) | **否(被 s1_64 支配)** | 3.51× |
+| **3 (s2_128)** | **shipped 协同赢** | mix_d/tuned 21071µs | **s2_128/tuned 5506µs** | **是** | **3.83×** |
+| 1 (pad64) | 仅机理 | (无, trap25/pad64 均被支配) | (无) | **否(被 s2_128 支配)** | 3.51× |
+| 2 (s1_64) | 仅机理 | mix_b/tuned 19405µs | (无, s1_64 被 s2_128 支配) | **否(被 s2_128 支配)** | 3.29× |
 
-- **pair2 是干净 headline**: iso-AP70=0.6362 下, A-joint 出货 s1_64/tuned(在全局 Pareto 上, 5895µs), A-serial 因 s1_64 未被锁→从不调优→只能出货 mix_b/tuned(19405µs)= **同精度 3.29× 更慢**, 两端点都真测、都在各自臂的 Pareto 上。这是真正的"串行漏掉一个联合能到的全局 Pareto 点"。
-- **pair1 仅机理**: trap25/pad64 清晰展示 rank-flip(2× vs 7.7×)+ 结构性排除, **但 pad64 在本网格被 s1_64 全局支配**(s1_64 更快 5895<6152 且 AP 更高 0.6362>0.5905)→ pad64 不在任何臂的出货 Pareto 上 → 3.51× 是"同 AP niche 内"的机理示数, **非出货解倍率**。诚实标注, 不当 headline。
-- **教训**: 真网格变大后(8 宽度), 低 AP 的 P_g 可能被高 AP 宽度全局支配。"shipped 协同赢"要求 P_g 在全局 Pareto 上。
+- **pair3 是干净 headline(新, 取代旧 pair2)**: iso-AP70=0.6369 下, A-joint 出货 s2_128/tuned(在全局 Pareto 上, 5506µs), A-serial 因 s2_128 未被锁→从不调优→只能出货 mix_d/tuned(21071µs)= **同精度 3.83× 更慢**, 两端点都真测、都在各自臂的 Pareto 上。这是真正的"串行漏掉一个联合能到的全局 Pareto 点", 且是三对中最大倍率。
+- **pair2 由 shipped 降为仅机理**: 加入 s2_128 后, s2_128(5506µs, AP0.6369)**全局支配** s1_64(5895µs, AP0.6362)—— 更快且 AP 更高 → s1_64 不再在全局 Pareto 上 → pair2 的 3.29× 退为机理示数(原 §9 旧版以 pair2 为 shipped headline, 已被 pair3 取代)。
+- **pair1 仍仅机理**: trap25/pad64 清晰展示 rank-flip(2× vs 7.7×)+ 结构性排除, **但 pad64 被 s2_128 全局支配** → 3.51× 是"同 AP niche 内"机理示数, 非出货解倍率。
+- **教训**: 真网格变大后(9 宽度), 低 AP 的 P_g 可能被更高 AP 且更快的宽度全局支配。"shipped 协同赢"要求 P_g 在全局 Pareto 上 —— 当前唯一满足者 = **pair3(3.83×)**。
 
 ### 9.5 闭环 DS 轴(用户要求, 已接入; AP 轴保留为主轴)
 方案 B(`closedloop_b4_plugin_v1.md`)接入: `CostModel.evaluate` 的 rec 附带 `ds_model`/`e2e_orin_ms_est`(model-estimated, 不进 HV/搜索)。**AP70 仍为主目标轴, 未删**。每对同 AP 下 P_g 驾驶分显著高于 W_g:
 
 | 对 | W_g tuned DS (e2e) | P_g tuned DS (e2e) | P_g 增益 |
 |---|---|---|---|
+| 3 (AP0.6369) | 86.2 (524.3ms) | 95.8 (201.7ms) | **+9.67 DS** |
 | 1 (AP0.5905) | 85.6 (535.6ms) | 95.6 (215.0ms) | **+10.0 DS** |
 | 2 (AP0.6362) | 87.8 (489.8ms) | 95.7 (209.7ms) | **+7.95 DS** |
 
-seed0 各臂出货 Pareto 的 DS: A-joint 在 AP0.6362 出 DS=95.7 vs A-serial 出 DS=87.8(同精度差 ~8 DS); A-noS(无调度)全程 DS 50–92(最差)。**闭环从驾驶安全独立支撑结构性论点**: 串行锁 W_g 的代价不止延迟, 还有驾驶分。**口径**: model-estimated(CoDriving τ_perc 曲线 + H800→Orin 线性缩放 ±30%), β=0(无真 AP→DS 数据), 非真 Pyramid 闭环(需装 CARLA), 不得写 "real closed-loop"。
+seed0 各臂出货 Pareto 的 DS: A-joint 在 AP0.6362 出 DS=95.7 vs A-serial 出 DS=87.8(同精度差 ~8 DS); A-noS(无调度)全程 DS 50–92(最差)。**闭环从驾驶安全独立支撑结构性论点**: 串行锁 W_g 的代价不止延迟, 还有驾驶分。**口径**: 当前表中数字 = model-estimated(CoDriving τ_perc 曲线 + H800→Orin 线性缩放 ±30%), β=0, **仅作占位**。★[2026-06-21 方法更新, 用户拍板] **延迟的正确口径 = Orin 真实 e2e 实测(不再用 H800→Orin 估算)**;真闭环 DS 实验(含 Orin 真测 τ)**已委托其他 agent 进行**, 产出后替换本表估算值。在此之前不得写 "real closed-loop"。
 
 > ★**[2026-06-21 DS 计算勘误 — 用户指出, 当前 DS 模型有结构性缺陷, 后续估算必须修]**
 > 当前 `DS = DS_lat(latency)`(β=0)= **把 Pyramid 延迟投影到 CoDriving 实测 τ→DS 曲线上, 这隐含假设 Pyramid 的感知精度/特征提取 = CoDriving** —— 不成立(两者不同模型、不同任务 DAIR vs V2Xverse)。后果: β=0 下**两个同延迟但不同 AP 的配置得到相同 DS**, 但低 AP = 漏检多 = 即便同延迟驾驶也更不安全。**DS 必须由 (AP, latency) 共同决定**, 不能只看延迟。
 > - **本节内 W_g/P_g 对比仍然有效**: 对内 W_g 与 P_g **AP 严格相等**(零填充权重恒等), 故 +7.95/+10 DS 纯由延迟差驱动, 与 β 取值无关 —— 这个结论可信、可留。
 > - **失效的是跨 AP 的 DS 比较**: 上面"各臂出货 Pareto DS"表跨配置 AP 不同(尤其 A-noS), β=0 下不可信, 仅作占位; 真正结论以 HV/Wilcoxon(§9.2)+ 对内 DS 差为准。
-> - **后续估算修法**: ① 至少给 β>0 让 AP 进入(但 β 无实测标定, 仍是假设); ② 正解 = 建 **Pyramid 专属 DS(AP, τ) 曲面**(真闭环里同时扫 AP 与延迟, 见 §9.7 + 新交接 `HANDOFF_codesign_nextstage_v1.md`), 替换借来的 CoDriving 纯延迟曲线。在此之前, DS 仅用于"同 AP 对内"对比, 不做跨 AP 论断。
+> - **修法(★已委托其他 agent 进行, 不列入本文档/handoff 的下一步计划)**: ① 延迟用 **Orin 真实 e2e 实测**(替换 H800→Orin 估算); ② 正解 = 建 **Pyramid 专属 DS(AP, τ) 曲面**(真闭环里同时扫 AP × Orin 真测延迟), 替换借来的 CoDriving 纯延迟曲线。**该真闭环 DS 实验由其他 agent 负责**(本团队不重复安排)。在此之前, 本文档 DS 仅用于"同 AP 对内"对比, 不做跨 AP 论断。
+> - **注**: 上述只针对**闭环 DS 的延迟口径**;**ablation rank-flip 延迟(§9.1–9.4)仍是 H800 TVM**(耦合本身是 TVM 调优余量现象, 非边缘部署数), 两者不混。
 
 ### 9.6 与 §5 判读规则对照 + 必带 caveat
 - **落点 = 故事 A 强版本**(Pyramid 显耦合): A-joint HV 分布显著高于 A-serial(p=4.9e-4 不重叠), 点云显示 P_g 分支被 A-serial 排除, 跨 72 起点一致 → **结构性局部最优成立**, 联合搜不可省。
-- **caveat(写论文必带)**: ① 网格 8 宽度偏小, 防"枚举"质疑靠"结构性排除在任何含 rank-flip 对的网格上成立 + 搜索器自主锁 W_g(非手挑)"立论(§3); 更大搜索需更多真 finetune(贵, 模型引导策略本为省它), 标 future。② AP 轴弱(过参数化, 单/混合剪枝 finetune 后 AP≈0.63 几乎不掉, 仅激进均匀剪枝才掉)但**保留为目标轴**。③ 延迟全程 H800, 不跨平台混。④ 闭环 = 估算非真 sim。⑤ pair1 是机理示范非出货倍率(§9.4)。
+- **caveat(写论文必带)**: ① 网格 9 宽度偏小, 防"枚举"质疑靠"结构性排除在任何含 rank-flip 对的网格上成立 + 搜索器自主锁 W_g(非手挑)"立论(§3); 更大搜索需更多真 finetune(贵, 模型引导策略本为省它), 标 future。② AP 轴 = **中段高原 + 高段 soft-knee**(§9.8f, 2026-06-22 真测): wholenet 剪枝 finetune 后 AP70 在 ≤84% 近平(高原, 坐实 iso-AP 框架——co-design 收益纯在延迟维), 84–93% 加速下降(AP70 0.585→0.537, total range 0.094=94× 噪声)→ AP 轴**有真信息非"平到没用"**;保留为目标轴。③ 延迟全程 H800, 不跨平台混。④ 闭环 = 估算非真 sim。⑤ pair1/pair2 是机理示范非出货倍率, **唯一 shipped headline = pair3(3.83×)**(§9.4)。
+
+### 9.8 ★[2026-06-22 更新] 跨阶段结果落地
+> **本轮(2026-06-22)全部完成**: (a) CoDriving 可分离 ✅ / (b) Q 量化轴真 int8 ✅ / (d) **三轴 P×Q×S ablation ✅(补齐"三轴强耦合"缺口)** / (e) L4 latency 网格扩充 ✅(3 对 + 边界刻画) / (f) **L4 AP 崖口 ✅(soft_knee, range 0.094)** / (c) 闭环 smoke ✅。全部未 commit(等用户授权)。
+
+**(a) CoDriving 对照臂 — ✅ [2026-06-22] fp16+int8 双轴均可分离(L3 复验完成, `codriving_coupling_verdict.md`)**
+复用同一三臂内核换 CoDriving 数据:A-joint=A-serial=100.0% / A-noS=96.3% / 0 rank-flip 对。**早先"欠实测暂不接受"已用真测 s0 探针 + int8 复验补齐**:
+
+| 模型 | A-joint | A-serial | A-noS | rank-flip 对 | 耦合类型 | 证据 |
+|---|---|---|---|---|---|---|
+| CoDriving | 100.0% | 100.0% | 96.3% | 0 | **可分离/弱** | ✅ s0 探针无 rank-flip(真测)+ int8 两宽度均 build 无陷阱(真测) |
+| Pyramid(本文) | 99.9% | 85.5% | 47.7% | 3 | **强/定性** | ✅ 多宽度真测 + 12 seed + 三轴 P×Q×S(§9.8d) |
+
+**可分离的真测依据(两条独立)**: ① **fp16 s0 失配探针**(固定 s1=128/s2=256, 仅变 s0, `codriving_s0probe_fp16.csv`): s0_32/48/64 default 单调、tuned 无对齐 rank-flip(s0_48 tuned 崩 = CUDA artifact 非耦合)。② **int8 复验**(G1, batch=2, groups=1, `codriving_int8_verify.json`): Cin=48(K÷16=27✓)和 Cin=64(K÷16=36✓)**均 build 成功**(int8 1.42×/1.32×, max_rel_err=0.0), **排序不变无 rank-flip** → 标准 conv int8 至多软效率惩罚, **无 Pyramid 那种定性 build-or-not 陷阱**。⇒ **CoDriving 可分离已坐实**(注: int8 WMMA 确认走 MetaSchedule DB trace + 数值 0.0, 非直接 CUDA grep —— relax VMExecutable 工具限制, 见 verdict §3 caveat; 但"能 build"的定性对照不依赖 WMMA/dp4a 核路径)。残留 caveat: 网格仍偏小, p25/p75 fp16 绝对值跨 batch 不可直接比(标记在案)。
+
+**★叙事修正(关键): 不是"1:1 对照(框架只对 Pyramid 有效)", 而是"可从架构预测联合搜必要性的判据"**:
+- 框架对**两个模型都优化**(CoDriving 也拿 2.07–2.26× TVM 加速);差别在**是否必须联合搜**。"co-design 何时必要"本身就是贡献, 不是"1 赢 1 输"。
+- **架构判据(原理)**: `prune×schedule 耦合 ⟺ 高效核可用性依赖某通道数是硬件 tile 整数倍`。Pyramid grouped conv 每组通道(in_per_g)须对齐 MMA-K → 剪枝改变 tensor-core 路径可用性 → 调优余量随宽度剧变(2× vs 7.9×)→ 耦合;标准稠密 conv(CoDriving)归约维连续, 任意宽度都良好 tile → 余量近常数 → 解耦。机理 iso 消融(stage0 主导)支持此判据。
+- **普适性**: grouped/depthwise conv 统治高效边缘网络(MobileNet/EfficientNet/ResNeXt/RegNet/ShuffleNet)→ 框架目标人群多数耦合;纯稠密 conv 是少数。
+- **★INT8 放大假设 — [2026-06-22] 已测, 对标准 conv 证否**: 原假设"INT8 WMMA K 需更严对齐 → 量化态连标准 conv 都变耦合"。**L3 int8 复验证否(对 CoDriving)**: Cin=48(K=432, ÷16=27)和 Cin=64(K=576, ÷16=36)都对齐 WMMA(K=Cin×9, Cin≥2 时 K÷16 总成立)→ 标准 conv 在 int8 下**仍可分离, 无 rank-flip**。⇒ 量化**不会**把标准 conv 变成 Pyramid 那种定性陷阱; 耦合仍是 **grouped conv 专属**(根因 = grouped 的 per-group in_per_g 极小 → NCHWc IC_BN=4 直接除不尽; 标准 conv 的 K=Cin×9 永远够大)。这反而**强化**了架构判据: 耦合 ⟺ 高效核可用性依赖小通道数对齐, 是 grouped/depthwise 的结构特征。
+
+**(b) Q 量化轴 — ✅ [2026-06-22] 真 int8 已实现 + 定性耦合机理证实(QDQ-ONNX 路线证否 → 直接 topi NCHWc dp4a/WMMA)**
+- **★关键负结果(已定论)**: **TVM relax QDQ-ONNX 路线对 grouped conv 出的是假 int8**(FP32-GEMM + QDQ overhead: TIR conv buffer=float32, int8-default 普遍比 fp16 慢 11–44%; 之前 `screenA` 的"WMMA/int8"是 groups=1 稠密 conv, 不能外推到 grouped)。⇒ QDQ-ONNX→relax 路线作废, 不可作 headline。
+- **★解决(本轮工程成果)**: **直接用 topi `conv2d_NCHWc_int8` 建 int8 grouped conv = 真 int8**, 主控独立核验(`results/q_int8_ms_stage0_result.json` + `int8_correctness_verify.json` + `q_int8_dp4a_pairs.csv` + `q_tvm_int8_verdict.md`):
+  - 生成 CUDA 含 `__dp4a` + PTX `dp4a.u32.s32`;MetaSchedule 在 sm90 选了更快的 **WMMA INT8**(`wmma::mma_sync` + INT8 fragment + INT32 累加 + 动态 shared mem)。
+  - **数值精确**: max_rel_error = **0.0**(int8×int8→int32 精确整数), spot 521.0==521.0。
+  - stage0 单 conv: int8 **150.1µs vs fp16 217.5µs = 1.45×**(H800-GPU6 真测)。
+- **★定性耦合(头条机理 — 比 fp16 的定量 rank-flip 更强)**: NCHWc int8 须 `in_per_g=s0/16` 整除 4(dp4a 4-int8 打包)。**s0=48(in_per_g=3)→ NCHWc IC_BN=4 结构性不可能 → int8 不可 build**(`q_int8_dp4a_pairs.csv` 真测 NOT_APPLICABLE);**s0=64(in_per_g=4)→ 可 build, 1.45×**。⇒ 对齐耦合从 fp16 定量(2× vs 7.9×)**升为 int8 定性(能/不能 build)**: 串行按 fp16-default 锁失配 W_g(s0=48)= 失去**快的 NCHWc-dp4a** int8 路径(★见 §9.8d' 精修: NCHW int8 fallback 仍在但与 fp16-tuned 打平→失配宽度无 int8 加速,对齐宽度才有 1.45×,这正是耦合本身)。
+- **int8 AP**(`results/q_int8_ap.json`): DAIR val 1789, Δap70 ≈ **-0.008**(TRT MinMax 真测, 非 simulated)。
+- **口径限制(务必带)**: int8 延迟数 = **stage0 单 conv 微基准(s0=64), 非全 backbone**; 3 个 P_g 对 stage0 维度相同 → 同 150µs, 不区分对。全 backbone int8(stage1/stage2)= 未做的后续工作。定性的"能/不能 build"判据是 robust 结果, int8 延迟量级是 proxy。
+
+**(d) ★[2026-06-22] 三轴 P×Q×S ablation — ✅ PASS(三轴强耦合已证, 补齐缺失的量化证明)**
+把定性 int8 buildability 约束接进 `framework/search_three_arm.py` 的 `CostModelPQS`(`enforce_int8_buildable` + 真测 1.449× 作 H800-pure uniform int8 proxy), 由 `framework/run_pqs_ablation.py` 跑 12 seed 三臂 P×Q×S(`results/pqs_ablation_results.json`):
+
+| 臂 | HV(% of A-joint) | 解释 |
+|---|---|---|
+| **A-joint-PQS** | **100.0%** | 同搜 P×Q×S → 在 4 个对齐宽度(s0=64)上拿到 int8 |
+| **A-serial-PQS**(公平串行) | **85.3%** | stage1 锁 fp16-default 宽度 → stage2 调 schedule×quant(**不禁 int8**) |
+| A-noS-PQS | 56.7% | P×Q 不调 schedule |
+
+- **Wilcoxon A-joint vs A-serial: p=4.88e-4, rank-biserial=1.0**(12 seed 配对全胜)。
+- **★三轴耦合机理(最强形态)**: A-serial 的 stage1 fp16-default 锁定前沿 = `[16,32,64],[32,64,128],[48,64,256],[48,128,128]` —— **全部 int8 不可 build**(s0∈{16,32,48}, in_per_g 不整除 4), 因为 **fp16-default-fast 前沿本身就被失配-s0 宽度支配**。⇒ A-serial 即使在 stage2 主动调 quant, 锁定的宽度也建不出 int8 → **int8 命中 0 个宽度**;A-joint 在 **4 个对齐宽度**上拿到 int8。**同一个 s0 对齐属性同时 gate 剪枝宽度选择、schedule 可调性、int8 可 build 性 = 三轴强耦合**(`categorical_pass=True`, `serial_misaligned_int8_on_pareto=False`)。
+- 图: `multi_agent/figure/pqs_hv_boxplot.png` + `pqs_pareto_int8.png`。
+- **口径**: int8 延迟 = H800 fp16/1.449 uniform proxy(全 H800, 不混 4090); 定性 buildability 是 robust 主结果, 延迟量级是 proxy。这补齐了 §0 诚实表里"三轴强耦合 ❌ 未证"的缺口 → **现为 ✅ 已证**。
+
+**(d') ★[2026-06-22] 耦合叙事统一 — 三臂消融 = 耦合"度量仪"; 主张从"三轴不可约"改为"内外环(软×硬)耦合, P-hub"**
+
+★**口径统一(与 doc1 §0.1 一致)**: 我们要主张的协同**不是 P/Q/S 三轴各自独立不可约**, 而是 **内环(硬件调度 S)↔外环(软件 P×Q)的强耦合**, 经 **P(IC_BN)枢纽**。而 **(d) 的三臂消融(A-joint vs A-serial vs A-noS)本身就是普适的"耦合度量仪"**: HV 比量化每个架构的内外环耦合强度 —— **"耦合/可分离"是被这把尺子测量出来的, 不是手写规则**。Pyramid 测出强耦合(A-serial 85.3%<A-joint), CoDriving 测出可分离(C0c' A-serial=A-joint=100%), V2X-ViT 居中。`grouped conv→小 IC_BN→强耦合` 是**机理 insight(科学发现)**, 非 operative 规则。
+
+(d) 的三臂 ablation PASS(A-joint 100% > A-serial 85.3%, Wilcoxon p=4.88e-4)**本身有效不撤** —— 它真实证明了"联合搜 > 串行搜"(即内外环不可独立优化)。但后续 coupling-map 逐 cell 深挖(`coupling_map_v1.md` + `results/coupling_map/`, trackA+main 双核验)**精修了机制解读**, 把曾经设想的"三维独立不可约"诚实降级:
+
+| 机制 | 原设想 | 复核后真相 | 是否经 P |
+|---|---|---|---|
+| mech1 (int8 buildability gate) | 硬约束/独立腿 | **format 障壁,延迟中性** —— C3 best-vs-best(全 tuned): misaligned IC=96 上 FP16-tuned(139.29µs)≈ INT8-NCHW(140.92µs)打平, **都快过**对齐后 padded-NCHWc-tuned(149.45µs); "建不出 int8"实为"建不出**快的 NCHWc-dp4a** int8", padding 修对齐不划算; INT8 优势仅 vs 未调优 FP16 | 经 P(IC_BN) |
+| mech2 (IC_BN→MS gain scaling) | 第三条独立腿 | **REAL, 唯一存活的真核心** —— C2 确认 argmin_S rank-flip(native-WMMA@IC_BN16 → padded-WMMA@IC_BN4), 最优 (Q,S) 对 IC_BN 依赖 | 经 P(IC_BN) |
+| mech3 (Q×S 独立于 P) | "不经 P"的最强腿 | **FALSE = BACKEND_ARTIFACT** —— FP16 **也走 WMMA half**(g8 gain 8.59×/g32 1.64×); 原"FP16-MS 0/100 valid"是 `count_db_valid()` 解析 bug + `write_c7_verdict.py:44` 硬编码 literal(g8 从未测) | — |
+
+**诚实结论**:
+- (d) 的三轴耦合**机理全部经 s0/IC_BN(=P)枢纽**(line 329 原文"同一个 s0 对齐属性同时 gate 三者"本就是 P-hub 表述)。深挖后确认: **没有"不经 P 的不可约 Q×S 耦合"的干净证据**(mech3 倒)。⇒ 正确表述 = **P(IC_BN) 是 hub 的 P×(Q+S) 联合依赖**, 框架仍须联合搜(因 P 牵动 Q、S 的可行域与最优 schedule), 但**不是**三轴彼此独立纠缠的"三维不可约"。
+- (d) 的 int8 proxy(fp16/1.449)代表**NCHWc-dp4a 张量化 int8**; A-serial"int8 命中 0 宽度"应精确读作"**快 NCHWc-int8** 命中 0", A-joint 的优势 = 在对齐宽度上锁定**快 int8 路径**。这不削弱 ablation(joint 仍独得快 int8), 但把二元"可/不可 build int8"修正为"NCHWc-张量化可/不可"。
+- **CoDriving 对照(标准 conv groups=1)**: C0c' 三臂 SERIAL(A-joint=A-serial=100%) + C1cod 无宽度陷阱 + C6 高维 batch×width 无稳健陷阱 ⇒ **三轴耦合是 grouped-conv(Pyramid)特有, 非普适**; 标准 conv 可分离。这是 goal② 的干净阴性结论。
+- 本轮复核拦下 3 处假阳性(C1cod p25 cast-artifact / C6 batch 噪声 rank-flip / mech3 DB-bug+硬编码), 共同教训: **int8-vs-fp16 绝对速度不是耦合判据(cast-chain artifact); 后端规则覆盖缺失 ≠ 算法本征不可约**。汇总矩阵: `results/coupling_map_matrix.json`(9/9 cell)。
+
+**(e) ★[2026-06-22] L4 网格扩充 — rank-flip 是 (s1,s2) 条件性的(边界刻画, 诚实负结果)**
+G2 在 GPU6 真测扩了 8 对(s0=48 vs s0=64), 结果: **仅原 3 对是严格 rank-flip, 新增 5 对均非翻转**(`results/l4_new_widths.csv` + `latency_lut_pyramid_l4.json`):
+
+| pair | W_g(s0=48) | P_g(s0=64) | default 赢家 | P_g tuned | flip? | AP70 |
+|---|---|---|---|---|---|---|
+| 1 trap25/pad64 | 42355 | 47407 | **s0=48** | 7.71× | ✅ | 0.5905 |
+| 2 mix_b/s1_64 | 41460 | 46445 | **s0=48** | 7.88× | ✅ | 0.6362 |
+| 3 mix_d/s2_128 | 42447 | 47435 | **s0=48** | 8.61× | ✅ | 0.6369 |
+| 5 [48,32,128]/[64,32,128] | 43203 | 40468 | s0=64 | 3.58× | ✗ | — |
+| 7 [48,128,192]/[64,128,192] | 60129 | 51992 | s0=64 | 7.18× | ✗ | — |
+| 8 [48,96,128]/[64,96,128] | 49382 | 42786 | s0=64 | 2.91× | ✗ | — |
+| 4 [48,96,256]/[64,96,256] | 54060(min, 干净复测) | 51622 | **s0=64** | 7.47× | ✗ | 0.5996 |
+
+- **诚实结论**: rank-flip **不是普适的, 是 (s1,s2)-regime 特定的**。翻转需两条件同时成立: ① s0=48 在 default 下领先(latency 更低); ② s0=64 tuned 余量 7-8×(而 s0=48 仅 ~2×)。新 (s1,s2) 组合里 **dlight 默认已偏好 s0=64**(8 对中 5 对 s0=64 default 更快)→ 贪心直接选对齐宽度 → 无 trap。
+- **机理精化**: 失配(s0=48, in_per_g=3)不仅 tuned 余量小, 连 **default schedule 也常被惩罚** —— 即使通道更少 FLOPs 更低, 对某些 (s1,s2) 其 default 延迟反而 > 对齐的 s0=64。trap 只出现在"失配的 default 惩罚还没盖过 FLOPs 优势"的窄区(原 3 对的 (s1,s2))。
+- **pair4 干净复测定论(主控亲跑, GPU6)**: 原 default=103297µs 确是 contention glitch, 但**干净复测 default = 61137µs(mean)/54060µs(min), 仍 > partner iso_s1 的 51622µs** → s0=64 default-faster → **pair4 确认 non-flip**(`b1_results/wg_pair4_default_remeasure.json`)。它有真 AP70=0.5996 但因 default 排序不构成贪心陷阱, **不 ship**。⇒ 严格 rank-flip 锁定为 **3 对**(诚实, 不强凑第 4)。
+- **这反而让故事更强(不是更弱)**: 我们能**刻画 trap 何时发生**(贪心陷阱的边界条件), 而非空泛宣称"剪枝总是陷阱"。3 对是 shipped 证据(已在 §9.2–9.4 ablation 内), 不需重跑。
+
+**(f) ★[2026-06-22] L4 AP 崖口(DELIVERABLE A)— ✅ 完成: soft-knee, AP 轴从高原变真曲线(`ap_cliff_l4.json`)**
+G3 在 4090 跑 **wholenet 剪枝**(backbone+deblocks+shrink 一起剪, 之前 backbone-only 封顶 ≤67% 是"无崖"假象的根因)到 84/89/93% 总压缩 + stage_a finetune(DAIR val 1789 真测, 全部 weights_loaded_verified=True/rc=0):
+
+| total prune% | params | AP70 | slope/5% |
+|---|---|---|---|
+| 0.0%(base) | 5.46M | 0.6309 | — |
+| 75.3%(all3_hard) | 1.35M | 0.5900 | −0.0027 |
+| 83.9%(wn_80) | 0.879M | 0.5850 | −0.0029(高原) |
+| 89.2%(wn_87) | 0.593M | 0.5613 | −0.0224(**8× 加速**) |
+| 93.3%(wn_93) | 0.368M | 0.5369 | −0.0298(继续陡) |
+
+- **判读 = `soft_knee`**(非 hard cliff): `cliff_found=False`(无单步 >0.03), 但 **AP70 total range = 0.094 = ~94× 管线噪声(0.001)** → **AP 轴携带真信息**, 拐点在 **~84–89%**(高原后斜率 8× 加速)。
+- **★对 headline 的意义(双向都有用)**: ① **75–84% 高原区**(AP 几乎不动)**坐实 iso-AP 框架** —— 我们的 3 对 rank-flip/三轴耦合都建在"同 AP 不同延迟"的 iso-AP 恒等上, AP 在中等剪枝率近平 = co-design 收益纯在**延迟维**, 正是这条故事线的前提。② **>84% 的加速下降**给 AP 轴**真实操作范围**(span 0.094), 把"AP 轴弱"(§9.6 caveat ②)从"平到没信息"修正为"中段平→高段有真 trade-off"。
+- **诚实**: 这是 soft knee 非戏剧性悬崖(DAIR 对 Pyramid 过参数化, 与 CLAUDE.md §7 一致); backbone-only ref(cliff_a 62.3% AP0.5755)在 JSON 里标为**不同剪枝策略**, 不混入 wholenet 崖口曲线。图: `multi_agent/figure/ap_cliff_wholenet.png`。
+
+**(c) 真闭环 RSU smoke — ✅ G1 PASS(可行性证明)**
+Pyramid→V2Xverse 移植 P1–P5 经核验**实际已完成**(原 handoff "CARLA 未装/闭环不可运行" 是 stale)。RSU-enabled Pyramid 闭环 r0 真跑通: **DS=100 / RC=100 / status=Completed, 无 Traceback**(`results_driving_pyr_rsu_smoke/.../results.json`)→ Pyramid+RSU 闭环可行性确认。τ_perc sweep 4 档 config 已建。**DS(AP,τ) 2D 曲面(修 §9.5 勘误)仍待 G3–G6**(见 §9.7)。
 
 ### 9.7 未完成 / 下一步
-> **执行计划 + agent 分工见 `multi_agent/methods/progress/HANDOFF_codesign_nextstage_v1.md`。**
-- **量化轴 Q**(§8 开放问题②, 用户强调别忘): prune×**quant**×schedule 三轴, 需真 TRT INT8(relax 无 INT8 pass, simulated 不可信), 跨口径不混。INT8 会放大 W_g/P_g 但不改本质。
-- **pair3 补全**: s2_128 [64,128,128] TVM 调优持续 CUDA illegal-access 崩(2× exit134), 需排查后补第 3 个 AP 档的对。
-- **CoDriving 对照臂**(§4.1): 预期 A-joint≈A-serial(可分离), 跑通则坐实"协同价值=耦合强度函数"的双模型判据。
-- **真闭环 + Pyramid DS 曲面**: Pyramid→V2Xverse 移植 + CARLA 装好后, ① 用真 Orin e2e τ_perc sweep 替换 DS 估算; ② 建 **Pyramid 专属 DS(AP, τ) 二维曲面**(同时扫 AP 与延迟), 修 §9.5 勘误的"DS 须由 AP+latency 共同决定"。
+> **下一阶段执行计划 + agent 并行分工见 `multi_agent/methods/progress/HANDOFF_codesign_nextstage_v2.md`(取代 v1)。**
+
+| 项 | 状态 | 下一步 |
+|---|---|---|
+| pair3 补全(L2) | ✅ **完成** — 延迟 rank-flip 3.83× 真测 + 并入 3 对 b4/b5 重跑 + iso-AP0.6369 恒等确认 + shipped headline 转 pair3 | — |
+| CoDriving 对照臂 | ✅ **[2026-06-22] 完成** — fp16 s0 探针无 rank-flip + int8 两宽度均 build 无陷阱(1.42×/1.32×, max_rel_err=0.0)= 可分离坐实(`codriving_coupling_verdict.md`, `codriving_int8_verify.json`) | (可选)更大网格;int8 WMMA 直接 CUDA grep(relax VM 工具限制待解) |
+| Q 量化轴 + 三轴 ablation | ✅ **[2026-06-22] 完成** — 真 int8(dp4a/WMMA, max_rel_err=0.0, 1.45×)+ 定性耦合(s0=48 结构性建不出**快 NCHWc-dp4a** int8;NCHW fallback 仍在但失对齐加速,§9.8d')+ **三轴 P×Q×S ablation PASS**(A-joint 100%/A-serial 85.3%, Wilcoxon p=4.88e-4, §9.8d;机制为 P-hub 非三维独立,§9.8d') | 全 backbone int8(可选, 把延迟从 proxy 升真测)|
+| 真闭环 DS 曲面 | 🔄 G1 smoke PASS | ★**已委托其他 agent**(本团队不安排)。延迟口径 = **Orin 真测**(非估算);DS 须 (AP,latency) 共同决定。本团队仅按需提供 body 延迟/AP |
+| 网格扩充 T1b(L4 latency) | ✅ **[2026-06-22] 实测定论** — 扩 8 对真测, **仅原 3 对 rank-flip**; 新 5 对非翻转(含 pair4 干净复测 default 54060>51622 = 确认 non-flip)→ **rank-flip 是 (s1,s2) 条件性**(边界刻画, §9.8e) | — (诚实锁定 3 对, 不强凑) |
+| AP 崖口(L4 DELIVERABLE A) | ✅ **[2026-06-22] 完成** — wholenet 84/89/93% finetune(DAIR val 1789): AP70 0.585/0.561/0.537, **soft_knee**(range 0.094=94×噪声, 拐点 84-89%), AP 轴从"高原"变"真曲线"(§9.8f, `ap_cliff_l4.json`) | (可选)补 78/86% 加密拐点 |
+
+- **DS(AP,τ) 修法**: 真闭环里同时扫 AP(剪枝/量化档)× 延迟(τ)→ 建 Pyramid 专属 2D 曲面替换借来的 CoDriving 纯延迟曲线, 修 §9.5 勘误。

@@ -312,6 +312,18 @@ CUDA_VISIBLE_DEVICES=2 bash scripts/eval_driving_e2e.sh 0 40000 smoke 0 codrivin
 | 7 | 500ms | 500 | 10 | 500ms (=MAX 封顶) | **CoBEVFlow 测试上界**; 恰 = MAX_DELAY_FRAMES×50ms, 封顶边界 |
 | 8 | **无路侧** | — (关 RSU) | n/a | n/a | ego-only 下界对照 (见 ③) |
 
+#### ★4090 注入档 (用户 2026-06-09 追加 — 数据中心级 RSU 对照)
+现有注入档 1-8 的物理依据是 **Orin AGX 实测**(边缘设备, E7)。追加 **4090 档**代表"路侧单元配数据中心级 GPU"情形:
+
+| 档名 | inject_ms | Δ=ceil(L/50) 帧 | game-time 滞后 | 来源/口径 (★诚实标注) |
+|------|-----------|----------------|--------------|---------------------|
+| **4090_fp32** | 35.31 | **1** | 50ms | M4.6.0 4090 e2e, **OPV2V 口径 + autocast**(非 DAIR 同口径, 见 caveat) |
+| **4090_fp16** | 26.70 | **1** | 50ms | M4.6.0 4090 e2e FP16 autocast, 同上 caveat |
+
+- **关键结论**: 4090 e2e ~27-35ms **< 50ms(一个 CARLA 帧)⇒ Δ 恒 = 1 帧**(最小非零延迟)。即数据中心级 RSU 在 20Hz 下对车辆"近乎无感延迟", 与 Orin 边缘(Δ=3-5)形成"强力 RSU vs 边缘 RSU"对照, 锚定时延曲线低端。
+- **⇒ 4090 档在帧对齐上等价于档 2(50ms, Δ=1)**: 不产生新 Δ 值, 但作为**带 4090 出处的标注数据点**有价值(证"datacenter RSU = 亚帧延迟")。`latency_ms_source` 标 `measured_on_4090_M4.6.0_OPV2V_autocast`。
+- **⚠️ caveat + 待办**: 35.31/26.70 是 OPV2V 口径 autocast, 与 Orin 的 DAIR 合成口径(pre-body+body+NMS)**不完全可比**。要干净的 DAIR 同口径 4090 e2e, 应让 **hw-optimizer 用 4090 TRT 引擎实测**(team 有引擎; 合成 = 4090 pre-body + 4090 TRT body + 4090 NMS)。但无论口径, **4090 e2e < 50ms ⇒ Δ=1 结论稳**。
+
 #### ① 每档 Δ 折算 (50ms/帧, ceil)
 Δ = ceil(inject_ms/50)，封顶 min(Δ, 10)。档 4(150ms,Δ=3) 与档 3(108ms,Δ=3) 折算同帧数 = **有意设计的折算自洽校验点**: 若两者驾驶分一致, 证明"game-time 影响只由 Δ 决定、与 ms 原值无关"(§3.2 不变量); 若不一致 = ZOH/审计逻辑有 bug, 反过来当回归检验。
 
