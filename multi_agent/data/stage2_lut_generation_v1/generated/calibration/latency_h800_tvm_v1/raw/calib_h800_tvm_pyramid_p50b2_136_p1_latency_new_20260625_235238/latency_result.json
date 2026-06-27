@@ -1,0 +1,22 @@
+{
+  "batch_size": 1,
+  "error": "RuntimeError(\"none of the candidate paths exists: ['/exdata/jichengzhi/s2_tvm/models/p50b2_136_backbone.onnx', '/exdata/jichengzhi/s2_tvm/models/p50b2_136.onnx', '/home/jichengzhi/UniV2X/models/stage_a_cache/p50b2_136.onnx']\")",
+  "gpu": "0",
+  "label": "p50b2_136",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": null,
+  "phase": "p1_latency_new",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_p50b2_136_p1_latency_new_20260625_235238",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 465, in measure_latency\n    result[\"onnx_path\"] = result[\"onnx_path\"] or resolve_first(job[\"onnx_candidates\"])\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 312, in resolve_first\n    raise RuntimeError(f\"none of the candidate paths exists: {paths}\")\nRuntimeError: none of the candidate paths exists: ['/exdata/jichengzhi/s2_tvm/models/p50b2_136_backbone.onnx', '/exdata/jichengzhi/s2_tvm/models/p50b2_136.onnx', '/home/jichengzhi/UniV2X/models/stage_a_cache/p50b2_136.onnx']\n",
+  "warmup_iters": 1,
+  "width": [
+    32,
+    64,
+    136
+  ],
+  "work_dir": null
+}

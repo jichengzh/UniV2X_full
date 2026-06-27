@@ -280,7 +280,7 @@ def run(n_seeds=12, budget=60, pop=8, verbose=True, manifest=None):
                                   "(uniform proxy from real H800 stage0 WMMA int8; "
                                   "H800-pure, no 4090 cross-hardware)",
             "int8_ap_delta": -0.008,
-            "int8_ap_source": "real DAIR val 1789 TRT INT8 MinMaxCalib (median)",
+            "int8_ap_source": "historical_trt_evidence:median_DAIR_val_1789_int8_minmax_ap_delta",
             "structural_constraint": "int8 buildable iff in_per_g(=s0//16) % 4 == 0 "
                 "(NCHWc IC_BN=4 / dp4a 4-int8 packing); s0=48 MEASURED-excluded "
                 "(q_int8_dp4a_pairs.csv), s0=16/32 excluded by same rule",

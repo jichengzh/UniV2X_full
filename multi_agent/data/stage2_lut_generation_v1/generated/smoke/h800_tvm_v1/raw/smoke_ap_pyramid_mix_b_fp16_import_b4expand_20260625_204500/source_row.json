@@ -1,0 +1,24 @@
+{
+  "tag": "mix_b",
+  "num_filters": [
+    48,
+    64,
+    256
+  ],
+  "s0": 48,
+  "s1": 64,
+  "s2": 256,
+  "comment": "s0=48 misaligned (W_g) → pad→[64,64,256]=s1_64 (P_g)",
+  "ap30": 0.8185807520379588,
+  "ap50": 0.7804962518701479,
+  "ap70": 0.6361597419498289,
+  "n_samples": 1789,
+  "n_trt_path": 1618,
+  "ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_b_2026_06_20/net_epoch_bestval_at31.pth",
+  "ckpt_dir": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_b_2026_06_20",
+  "engine": "/home/jichengzhi/V2X/models/b4expand_cache/b4expand_mix_b_fp16.engine",
+  "protocol": "structural_prune_pyramid (L1) + train_ddp (epoches=31, half) + TRT_FP16_DAIR_1789",
+  "matches_stage_a": true,
+  "source": "b4expand_finetune_TRT_FP16_DAIR_1789",
+  "status": "OK"
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "stage2_h800_validation_measurement_command_v1",
+  "mode": "reuse_existing_ms_db",
+  "gpu": "3",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_base",
+  "expected_tuned_ms_range": [
+    5.5,
+    7.5
+  ],
+  "run_id": "validation_pyramid_base_reuse_msdb_20260625_182315"
+}

@@ -1,0 +1,11 @@
+{
+  "label": "pg_pair6",
+  "onnx": "pg_pair6_backbone.onnx",
+  "trials": 2,
+  "reps": 50,
+  "default_us": 42210.01,
+  "tuned_us": 42545.17,
+  "e2e_ratio": 0.992,
+  "tune_s": 16.0,
+  "status": "DONE"
+}

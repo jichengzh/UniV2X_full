@@ -1,0 +1,11 @@
+{
+  "schema": "stage2_h800_latency_medium_retry_command_v1",
+  "mode": "medium_clean_retry_g1_reuse_existing_ms_db",
+  "gpu": "2",
+  "label": "mix_b",
+  "run_id": "calib_h800_tvm_pyramid_mix_b_fp16_medium_clean_retry_g1_20260625_205310",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_b_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_b",
+  "measure_iters": 500,
+  "repeat": 5
+}

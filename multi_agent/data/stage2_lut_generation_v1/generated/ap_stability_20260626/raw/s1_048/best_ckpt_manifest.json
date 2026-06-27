@@ -1,0 +1,44 @@
+{
+  "best_ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/net_epoch_bestval_at29.pth",
+  "best_ckpt_sha256": "6ea24f149d57e61e3671a92bd100ce8c8084765a05b494561efa32c5bb36b19d",
+  "checkpoints": [
+    {
+      "epoch": 25,
+      "name": "net_epoch25.pth",
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/net_epoch25.pth",
+      "sha256": "5e23af0190e2836fba871b76201c67c03b0dd0dc37c32e9feae598abb17dc442",
+      "size_bytes": 20289285
+    },
+    {
+      "epoch": 27,
+      "name": "net_epoch27.pth",
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/net_epoch27.pth",
+      "sha256": "6a61908dfc46218fa016510b0cbbf2dd67651aade3693d8eaf52af65a32328a3",
+      "size_bytes": 20289285
+    },
+    {
+      "epoch": 29,
+      "name": "net_epoch29.pth",
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/net_epoch29.pth",
+      "sha256": "2c895b9023c176e1b51404209cd05bc6a8974cd71c051e26065666d1ea9ab40a",
+      "size_bytes": 20289285
+    },
+    {
+      "epoch": 29,
+      "name": "net_epoch_bestval_at29.pth",
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/net_epoch_bestval_at29.pth",
+      "sha256": "6ea24f149d57e61e3671a92bd100ce8c8084765a05b494561efa32c5bb36b19d",
+      "size_bytes": 20293637
+    },
+    {
+      "epoch": 31,
+      "name": "net_epoch31.pth",
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/net_epoch31.pth",
+      "sha256": "9eeec84d4b69e9c7f91a8c2cfe8558968f4062b6fee527a8139a9af838f46714",
+      "size_bytes": 20289285
+    }
+  ],
+  "ckpt_dir": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26",
+  "config_path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26/config.yaml",
+  "config_sha256": "10fc558bd14ab179e125f7d3db0e77f2c16253c275a812f228129a806e339c67"
+}

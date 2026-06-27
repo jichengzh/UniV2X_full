@@ -1,0 +1,13 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "label": "s2_128",
+  "width": [
+    64,
+    128,
+    128
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/s2_128_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_bumped_s2_128_v2",
+  "gpu": "6",
+  "run_id": "calib_h800_tvm_pyramid_s2_128_fp16_tuned_20260625_201500"
+}

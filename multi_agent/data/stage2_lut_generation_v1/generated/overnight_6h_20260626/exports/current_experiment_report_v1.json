@@ -1,0 +1,927 @@
+{
+  "base": "multi_agent/data/stage2_lut_generation_v1/generated/overnight_6h_20260626",
+  "failures": [
+    {
+      "job_id": "ap_gpu4:pad64",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu4_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu4:s0_16",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu4_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu4:s2_128",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu4_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu4:mix_c",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu4_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu4:mix_e",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu4_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu5:s0_32",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu5_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu5:s1_32",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu5_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "ap_gpu5:s2_64",
+      "reason": "Traceback (most recent call last):",
+      "state": "ap_gpu5_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "energy_gpu3:mix_a",
+      "reason": "[02:25:09] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_t",
+      "state": "energy_gpu3_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu0:r19:pad64",
+      "reason": "[03:06:27] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jicheng",
+      "state": "latency_cont_gpu0_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu0:r08:mix_a",
+      "reason": "[03:19:29] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_t",
+      "state": "latency_cont_gpu0_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu0:r24:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu0_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu0:r13:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu0_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu0:r18:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu0_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu0:r23:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu0_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r01:pad64",
+      "reason": "[02:35:08] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jicheng",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r06:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r11:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r16:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r05:mix_a",
+      "reason": "[03:08:35] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_t",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r21:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r10:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r15:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu1:r20:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu1_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu2:r08:pad64",
+      "reason": "[02:41:49] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jicheng",
+      "state": "latency_cont_gpu2_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu2:r13:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu2_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu2:r18:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu2_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu2:r23:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu2_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu2:r17:mix_a",
+      "reason": "[03:36:41] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_t",
+      "state": "latency_cont_gpu2_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu2:r22:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu2_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu4:r09:mix_a",
+      "reason": "[03:22:16] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_t",
+      "state": "latency_cont_gpu4_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu4:r14:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu4_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu4:r19:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu4_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu4:r24:mix_a",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu4_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu5:r12:pad64",
+      "reason": "[02:47:58] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jicheng",
+      "state": "latency_cont_gpu5_job_state.jsonl",
+      "status": "failed"
+    },
+    {
+      "job_id": "latency_cont_gpu5:r17:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu5_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_cont_gpu5:r22:pad64",
+      "reason": "quarantined_bad_db",
+      "state": "latency_cont_gpu5_job_state.jsonl",
+      "status": "skipped"
+    },
+    {
+      "job_id": "latency_gpu2:p50b2_136",
+      "reason": "{\"event\": \"latency_failed\", \"label\": \"p50b2_136\", \"run_id\": \"overnight_6h_20260626_latency_p50b2_136_gpu2\", \"error\": \"FileNotFoundError(2, 'No such file or directory')\"}",
+      "state": "latency_gpu2_job_state.jsonl",
+      "status": "failed"
+    }
+  ],
+  "latest_latency_rows": [
+    {
+      "label": "mix_e",
+      "ms": 42.764688,
+      "run_id": "overnight_6h_20260626_cont_r21_latency_mix_e_gpu4_default",
+      "schedule": "default"
+    },
+    {
+      "label": "mix_e",
+      "ms": 14.666772000000002,
+      "run_id": "overnight_6h_20260626_cont_r21_latency_mix_e_gpu4_metaschedule_tuned",
+      "schedule": "metaschedule_tuned"
+    },
+    {
+      "label": "mix_d",
+      "ms": 42.434688,
+      "run_id": "overnight_6h_20260626_cont_r22_latency_mix_d_gpu0_default",
+      "schedule": "default"
+    },
+    {
+      "label": "mix_d",
+      "ms": 21.076843,
+      "run_id": "overnight_6h_20260626_cont_r22_latency_mix_d_gpu0_metaschedule_tuned",
+      "schedule": "metaschedule_tuned"
+    },
+    {
+      "label": "mix_b",
+      "ms": 41.411987,
+      "run_id": "overnight_6h_20260626_cont_r24_latency_mix_b_gpu5_default",
+      "schedule": "default"
+    },
+    {
+      "label": "mix_b",
+      "ms": 19.38972,
+      "run_id": "overnight_6h_20260626_cont_r24_latency_mix_b_gpu5_metaschedule_tuned",
+      "schedule": "metaschedule_tuned"
+    },
+    {
+      "label": "mix_c",
+      "ms": 30.733065999999997,
+      "run_id": "overnight_6h_20260626_cont_r24_latency_mix_c_gpu0_default",
+      "schedule": "default"
+    },
+    {
+      "label": "mix_c",
+      "ms": 5.10117,
+      "run_id": "overnight_6h_20260626_cont_r24_latency_mix_c_gpu0_metaschedule_tuned",
+      "schedule": "metaschedule_tuned"
+    },
+    {
+      "label": "mix_d",
+      "ms": 42.448506,
+      "run_id": "overnight_6h_20260626_cont_r23_latency_mix_d_gpu4_default",
+      "schedule": "default"
+    },
+    {
+      "label": "mix_d",
+      "ms": 21.069468,
+      "run_id": "overnight_6h_20260626_cont_r23_latency_mix_d_gpu4_metaschedule_tuned",
+      "schedule": "metaschedule_tuned"
+    },
+    {
+      "label": "mix_e",
+      "ms": 42.74067899999999,
+      "run_id": "overnight_6h_20260626_cont_r23_latency_mix_e_gpu5_default",
+      "schedule": "default"
+    },
+    {
+      "label": "mix_e",
+      "ms": 14.658412,
+      "run_id": "overnight_6h_20260626_cont_r23_latency_mix_e_gpu5_metaschedule_tuned",
+      "schedule": "metaschedule_tuned"
+    }
+  ],
+  "pids": {
+    "ap_gpu4.pid": "not_running",
+    "ap_gpu5.pid": "not_running",
+    "energy_cont_gpu3.pid": "not_running",
+    "energy_gpu3.pid": "not_running",
+    "finalize_overnight_6h.pid": "not_running",
+    "finalize_overnight_6h_v2.pid": "not_running",
+    "latency_cont_gpu0.pid": "not_running",
+    "latency_cont_gpu1.pid": "not_running",
+    "latency_cont_gpu2.pid": "not_running",
+    "latency_cont_gpu4.pid": "not_running",
+    "latency_cont_gpu5.pid": "not_running",
+    "latency_gpu0.pid": "not_running",
+    "latency_gpu1.pid": "not_running",
+    "latency_gpu2.pid": "not_running"
+  },
+  "quarantine": [
+    {
+      "config_id": "overnight_h800_tvm_pyramid_mix_a_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T18:25:19Z",
+      "failure_reason": "[02:25:09] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_tuning_record.json\n{\"event\": \"energy_failed\", \"label\": \"mix_a\", \"run_id\": \"overnight_6h_20260626_energy_mix_a_gpu3\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "energy_gpu3:mix_a",
+      "job_type": "generate_energy_lut",
+      "lut_kind": "energy",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_pad64_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T18:35:18Z",
+      "failure_reason": "[02:35:08] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"pad64\", \"run_id\": \"overnight_6h_20260626_cont_r01_latency_pad64_gpu1\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu1:r01:pad64",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_pad64_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T18:41:59Z",
+      "failure_reason": "[02:41:49] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"pad64\", \"run_id\": \"overnight_6h_20260626_cont_r08_latency_pad64_gpu2\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu2:r08:pad64",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_pad64_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T18:48:08Z",
+      "failure_reason": "[02:47:58] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"pad64\", \"run_id\": \"overnight_6h_20260626_cont_r12_latency_pad64_gpu5\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu5:r12:pad64",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_pad64_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T19:06:37Z",
+      "failure_reason": "[03:06:27] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"pad64\", \"run_id\": \"overnight_6h_20260626_cont_r19_latency_pad64_gpu0\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu0:r19:pad64",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_mix_a_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T19:08:45Z",
+      "failure_reason": "[03:08:35] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"mix_a\", \"run_id\": \"overnight_6h_20260626_cont_r05_latency_mix_a_gpu1\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu1:r05:mix_a",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_mix_a_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T19:19:39Z",
+      "failure_reason": "[03:19:29] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"mix_a\", \"run_id\": \"overnight_6h_20260626_cont_r08_latency_mix_a_gpu0\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu0:r08:mix_a",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_mix_a_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T19:22:27Z",
+      "failure_reason": "[03:22:16] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"mix_a\", \"run_id\": \"overnight_6h_20260626_cont_r09_latency_mix_a_gpu4\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu4:r09:mix_a",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    },
+    {
+      "config_id": "overnight_h800_tvm_pyramid_mix_a_fp16_metaschedule_tuned",
+      "created_at": "2026-06-25T19:36:52Z",
+      "failure_reason": "[03:36:41] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_bumped_mix_a/database_tuning_record.json\n{\"event\": \"latency_failed\", \"label\": \"mix_a\", \"run_id\": \"overnight_6h_20260626_cont_r17_latency_mix_a_gpu2\", \"error\": \"InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')\"}\nterminate called after throwing an instance of 'tvm::ffi::Error'\n  what():  Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered",
+      "job_id": "latency_cont_gpu2:r17:mix_a",
+      "job_type": "generate_latency_lut",
+      "lut_kind": "latency",
+      "model": "Pyramid-LiDAR",
+      "schema": "lut_bad_db_quarantine_row_v1",
+      "status": "active"
+    }
+  ],
+  "row_counts": {
+    "ap": 11,
+    "energy": 400,
+    "latency": 844,
+    "quarantine": 9
+  },
+  "schema": "stage2_overnight_current_report_v1",
+  "states": {
+    "ap_gpu4_job_state.jsonl": {
+      "failed": 5,
+      "rows": 20,
+      "running": 10,
+      "succeeded": 5
+    },
+    "ap_gpu5_job_state.jsonl": {
+      "failed": 3,
+      "rows": 18,
+      "running": 9,
+      "succeeded": 6
+    },
+    "energy_cont_gpu3_job_state.jsonl": {
+      "rows": 768,
+      "running": 384,
+      "succeeded": 384
+    },
+    "energy_gpu3_job_state.jsonl": {
+      "failed": 1,
+      "rows": 34,
+      "running": 17,
+      "succeeded": 16
+    },
+    "latency_cont_gpu0_job_state.jsonl": {
+      "failed": 2,
+      "rows": 170,
+      "running": 83,
+      "skipped": 4,
+      "succeeded": 81
+    },
+    "latency_cont_gpu1_job_state.jsonl": {
+      "failed": 2,
+      "rows": 167,
+      "running": 80,
+      "skipped": 7,
+      "succeeded": 78
+    },
+    "latency_cont_gpu2_job_state.jsonl": {
+      "failed": 2,
+      "rows": 168,
+      "running": 82,
+      "skipped": 4,
+      "succeeded": 80
+    },
+    "latency_cont_gpu4_job_state.jsonl": {
+      "failed": 1,
+      "rows": 169,
+      "running": 83,
+      "skipped": 3,
+      "succeeded": 82
+    },
+    "latency_cont_gpu5_job_state.jsonl": {
+      "failed": 1,
+      "rows": 170,
+      "running": 84,
+      "skipped": 2,
+      "succeeded": 83
+    },
+    "latency_gpu0_job_state.jsonl": {
+      "rows": 14,
+      "running": 7,
+      "succeeded": 7
+    },
+    "latency_gpu1_job_state.jsonl": {
+      "rows": 12,
+      "running": 6,
+      "succeeded": 6
+    },
+    "latency_gpu2_job_state.jsonl": {
+      "failed": 1,
+      "rows": 12,
+      "running": 6,
+      "succeeded": 5
+    }
+  },
+  "summary_rows": [
+    {
+      "ap70": 0.6308636231895992,
+      "ap_n": 1,
+      "default_ms_med": 56.304893,
+      "default_n": 25,
+      "energy_j_max": 1.249705060841514,
+      "energy_j_med": 0.9244993800624306,
+      "energy_j_min": 0.22319163315146717,
+      "energy_n": 25,
+      "label": "base",
+      "speedup_med": 9.064883631820612,
+      "tuned_ms_max": 6.218929,
+      "tuned_ms_med": 6.21132,
+      "tuned_ms_min": 6.1996970000000005,
+      "tuned_ms_std": 0.00484695037523591,
+      "tuned_n": 25,
+      "width": [
+        64,
+        128,
+        256
+      ]
+    },
+    {
+      "ap70": 0.6299191671696608,
+      "ap_n": 1,
+      "default_ms_med": 51.227744,
+      "default_n": 25,
+      "energy_j_max": 3.3476030302271242,
+      "energy_j_med": 2.23690773071798,
+      "energy_j_min": 1.0523554528674057,
+      "energy_n": 25,
+      "label": "iso_s0",
+      "speedup_med": 2.3564166537869924,
+      "tuned_ms_max": 21.750728,
+      "tuned_ms_med": 21.73968,
+      "tuned_ms_min": 21.726213,
+      "tuned_ms_std": 0.006345240042215062,
+      "tuned_n": 25,
+      "width": [
+        48,
+        128,
+        256
+      ]
+    },
+    {
+      "ap70": 0.6335990600322648,
+      "ap_n": 1,
+      "default_ms_med": 51.611523,
+      "default_n": 25,
+      "energy_j_max": 1.443517195489494,
+      "energy_j_med": 0.9912913857705459,
+      "energy_j_min": 0.5512159955206052,
+      "energy_n": 25,
+      "label": "iso_s1",
+      "speedup_med": 7.463358967718202,
+      "tuned_ms_max": 6.927042999999999,
+      "tuned_ms_med": 6.915321,
+      "tuned_ms_min": 6.904523,
+      "tuned_ms_std": 0.005457974621902608,
+      "tuned_n": 25,
+      "width": [
+        64,
+        96,
+        256
+      ]
+    },
+    {
+      "ap70": 0.6338902378413247,
+      "ap_n": 1,
+      "default_ms_med": 51.986353,
+      "default_n": 25,
+      "energy_j_max": 1.5783489180424466,
+      "energy_j_med": 0.9699120515367301,
+      "energy_j_min": 0.016921046833697433,
+      "energy_n": 25,
+      "label": "iso_s2",
+      "speedup_med": 7.167520101209892,
+      "tuned_ms_max": 7.264188,
+      "tuned_ms_med": 7.253046,
+      "tuned_ms_min": 7.242258,
+      "tuned_ms_std": 0.004848254436048801,
+      "tuned_n": 25,
+      "width": [
+        64,
+        128,
+        192
+      ]
+    },
+    {
+      "ap70": 0.6287552124269079,
+      "ap_n": 1,
+      "default_ms_med": 35.810701,
+      "default_n": 11,
+      "energy_j_max": null,
+      "energy_j_med": null,
+      "energy_j_min": null,
+      "energy_n": 0,
+      "label": "mix_a",
+      "speedup_med": 6.327489869765104,
+      "tuned_ms_max": 5.662229999999999,
+      "tuned_ms_med": 5.659542999999999,
+      "tuned_ms_min": 5.65108,
+      "tuned_ms_std": 0.0037149485179350013,
+      "tuned_n": 11,
+      "width": [
+        32,
+        96,
+        192
+      ]
+    },
+    {
+      "ap70": 0.6361597419498289,
+      "ap_n": 1,
+      "default_ms_med": 41.446318,
+      "default_n": 25,
+      "energy_j_max": 3.0270578021911416,
+      "energy_j_med": 1.9725468549818685,
+      "energy_j_min": 0.6503856516391102,
+      "energy_n": 25,
+      "label": "mix_b",
+      "speedup_med": 2.1359584920370374,
+      "tuned_ms_max": 19.419082999999997,
+      "tuned_ms_med": 19.404083999999997,
+      "tuned_ms_min": 19.386595,
+      "tuned_ms_std": 0.00972085955938724,
+      "tuned_n": 25,
+      "width": [
+        48,
+        64,
+        256
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 30.740959,
+      "default_n": 25,
+      "energy_j_max": 1.117163412041965,
+      "energy_j_med": 0.6721421112857802,
+      "energy_j_min": 0.03728680104538828,
+      "energy_n": 25,
+      "label": "mix_c",
+      "speedup_med": 6.017596712623306,
+      "tuned_ms_max": 5.112823000000001,
+      "tuned_ms_med": 5.108511,
+      "tuned_ms_min": 5.095765,
+      "tuned_ms_std": 0.004824359931638645,
+      "tuned_n": 25,
+      "width": [
+        16,
+        128,
+        128
+      ]
+    },
+    {
+      "ap70": 0.6369383152509643,
+      "ap_n": 1,
+      "default_ms_med": 42.434839,
+      "default_n": 25,
+      "energy_j_max": 4.111666600063888,
+      "energy_j_med": 2.3603965245903167,
+      "energy_j_min": 1.1212829088563692,
+      "energy_n": 25,
+      "label": "mix_d",
+      "speedup_med": 2.015329719356376,
+      "tuned_ms_max": 21.076843,
+      "tuned_ms_med": 21.056027999999998,
+      "tuned_ms_min": 21.041738000000002,
+      "tuned_ms_std": 0.010338115478976931,
+      "tuned_n": 25,
+      "width": [
+        48,
+        128,
+        128
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 42.758604,
+      "default_n": 25,
+      "energy_j_max": 2.555009157122282,
+      "energy_j_med": 1.8663351663925554,
+      "energy_j_min": 0.8734198129425339,
+      "energy_n": 25,
+      "label": "mix_e",
+      "speedup_med": 2.9160595492985983,
+      "tuned_ms_max": 14.672168,
+      "tuned_ms_med": 14.663145,
+      "tuned_ms_min": 14.648013,
+      "tuned_ms_std": 0.006007312816337538,
+      "tuned_n": 25,
+      "width": [
+        64,
+        64,
+        128
+      ]
+    },
+    {
+      "ap70": 0.5641315043713827,
+      "ap_n": 1,
+      "default_ms_med": 26.215159,
+      "default_n": 25,
+      "energy_j_max": 0.43927056642544066,
+      "energy_j_med": 0.26715712451545903,
+      "energy_j_min": 0.18503177622830952,
+      "energy_n": 25,
+      "label": "p50",
+      "speedup_med": 8.72917123822951,
+      "tuned_ms_max": 3.012677,
+      "tuned_ms_med": 3.003167,
+      "tuned_ms_min": 2.997351,
+      "tuned_ms_std": 0.003970473450778033,
+      "tuned_n": 25,
+      "width": [
+        32,
+        64,
+        128
+      ]
+    },
+    {
+      "ap70": 0.6425296366136182,
+      "ap_n": 1,
+      "default_ms_med": null,
+      "default_n": 0,
+      "energy_j_max": null,
+      "energy_j_med": null,
+      "energy_j_min": null,
+      "energy_n": 0,
+      "label": "p50b2_136",
+      "speedup_med": null,
+      "tuned_ms_max": null,
+      "tuned_ms_med": null,
+      "tuned_ms_min": null,
+      "tuned_ms_std": 0.0,
+      "tuned_n": 0,
+      "width": [
+        32,
+        64,
+        136
+      ]
+    },
+    {
+      "ap70": 0.5299883430444458,
+      "ap_n": 1,
+      "default_ms_med": 12.678372,
+      "default_n": 25,
+      "energy_j_max": 0.12757685056744317,
+      "energy_j_med": 0.07556123730741988,
+      "energy_j_min": 0.0,
+      "energy_n": 25,
+      "label": "p75",
+      "speedup_med": 26.29985686725994,
+      "tuned_ms_max": 0.48618599999999995,
+      "tuned_ms_med": 0.48207,
+      "tuned_ms_min": 0.475628,
+      "tuned_ms_std": 0.0038848659084538034,
+      "tuned_n": 25,
+      "width": [
+        16,
+        32,
+        64
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 47.396104,
+      "default_n": 11,
+      "energy_j_max": null,
+      "energy_j_med": null,
+      "energy_j_min": null,
+      "energy_n": 0,
+      "label": "pad64",
+      "speedup_med": 7.697606659594247,
+      "tuned_ms_max": 6.161802,
+      "tuned_ms_med": 6.157252000000001,
+      "tuned_ms_min": 6.153252,
+      "tuned_ms_std": 0.0033062403531392993,
+      "tuned_n": 11,
+      "width": [
+        64,
+        96,
+        192
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 39.454463000000004,
+      "default_n": 25,
+      "energy_j_max": 1.2133143790819496,
+      "energy_j_med": 0.6690815481823339,
+      "energy_j_min": 0.4419186927815934,
+      "energy_n": 25,
+      "label": "s0_16",
+      "speedup_med": 6.743680587045771,
+      "tuned_ms_max": 5.860377000000001,
+      "tuned_ms_med": 5.850582999999999,
+      "tuned_ms_min": 5.841064,
+      "tuned_ms_std": 0.005283622171389679,
+      "tuned_n": 25,
+      "width": [
+        16,
+        128,
+        256
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 44.657637,
+      "default_n": 25,
+      "energy_j_max": 1.4788519593963314,
+      "energy_j_med": 0.8191801097047764,
+      "energy_j_min": 0.280007879124555,
+      "energy_n": 25,
+      "label": "s0_32",
+      "speedup_med": 7.47292210898828,
+      "tuned_ms_max": 5.983562,
+      "tuned_ms_med": 5.9759269999999995,
+      "tuned_ms_min": 5.966276,
+      "tuned_ms_std": 0.004465891246250107,
+      "tuned_n": 25,
+      "width": [
+        32,
+        128,
+        256
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 41.865097999999996,
+      "default_n": 25,
+      "energy_j_max": 0.830825942577917,
+      "energy_j_med": 0.5253046164053893,
+      "energy_j_min": 0.24838039472796253,
+      "energy_n": 25,
+      "label": "s1_32",
+      "speedup_med": 11.124517779257557,
+      "tuned_ms_max": 3.7767440000000003,
+      "tuned_ms_med": 3.7633180000000004,
+      "tuned_ms_min": 3.755019,
+      "tuned_ms_std": 0.005599440254763627,
+      "tuned_n": 25,
+      "width": [
+        64,
+        32,
+        256
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 47.437881000000004,
+      "default_n": 25,
+      "energy_j_max": 1.1659999304718442,
+      "energy_j_med": 0.7914667065334834,
+      "energy_j_min": 0.3627919956419227,
+      "energy_n": 25,
+      "label": "s2_128",
+      "speedup_med": 8.61397603776809,
+      "tuned_ms_max": 5.5102,
+      "tuned_ms_med": 5.507083,
+      "tuned_ms_min": 5.497573,
+      "tuned_ms_std": 0.004009790434257862,
+      "tuned_n": 25,
+      "width": [
+        64,
+        128,
+        128
+      ]
+    },
+    {
+      "ap70": null,
+      "ap_n": 0,
+      "default_ms_med": 43.570186,
+      "default_n": 25,
+      "energy_j_max": 1.1065992200460015,
+      "energy_j_med": 0.6870687695534701,
+      "energy_j_min": 0.3424765279496224,
+      "energy_n": 25,
+      "label": "s2_64",
+      "speedup_med": 8.647724717322626,
+      "tuned_ms_max": 5.044504,
+      "tuned_ms_med": 5.038341,
+      "tuned_ms_min": 5.032659,
+      "tuned_ms_std": 0.003712098160070641,
+      "tuned_n": 25,
+      "width": [
+        64,
+        128,
+        64
+      ]
+    },
+    {
+      "ap70": 0.5904723815291678,
+      "ap_n": 1,
+      "default_ms_med": 42.345552000000005,
+      "default_n": 25,
+      "energy_j_max": 3.5518178384206402,
+      "energy_j_med": 2.436056912675078,
+      "energy_j_min": 1.3070709786508463,
+      "energy_n": 25,
+      "label": "trap25",
+      "speedup_med": 1.9591819965435198,
+      "tuned_ms_max": 21.630129,
+      "tuned_ms_med": 21.613894000000002,
+      "tuned_ms_min": 21.591974999999998,
+      "tuned_ms_std": 0.009515398977972767,
+      "tuned_n": 25,
+      "width": [
+        48,
+        96,
+        192
+      ]
+    }
+  ]
+}

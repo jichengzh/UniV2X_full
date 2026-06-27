@@ -1,0 +1,18 @@
+{
+  "schema": "calibration_latency_worker_log_v1",
+  "job": {
+    "label": "iso_s1",
+    "width": [
+      64,
+      96,
+      256
+    ],
+    "onnx": "/exdata/jichengzhi/s2_tvm/models/iso_s1_backbone.onnx",
+    "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s1_retest",
+    "gpu": "4",
+    "run_id": "calib_h800_tvm_pyramid_iso_s1_fp16_tuned_20260625_201500"
+  },
+  "returncode": 0,
+  "stdout": "{\"batch_size\": 1, \"build_default_s\": 4.872, \"build_tuned_s\": 7.922, \"default_max_us\": 51621.297, \"default_min_us\": 51618.176, \"default_repeats_us\": [51621.297, 51618.523, 51619.285, 51618.176, 51618.871], \"default_us\": 51619.23, \"gpu\": \"4\", \"input_shape\": {\"spatial_features\": [2, 64, 128, 256]}, \"label\": \"iso_s1\", \"measure_iters\": 500, \"onnx_path\": \"/exdata/jichengzhi/s2_tvm/models/iso_s1_backbone.onnx\", \"ratio\": 7.467637, \"repeat\": 5, \"run_id\": \"calib_h800_tvm_pyramid_iso_s1_fp16_tuned_20260625_201500\", \"schema\": \"stage2_h800_calibration_latency_result_v1\", \"status\": \"success\", \"tuned_max_us\": 6912.505, \"tuned_min_us\": 6912.332, \"tuned_repeats_us\": [6912.355, 6912.374, 6912.505, 6912.391, 6912.332], \"tuned_us\": 6912.391, \"warmup_iters\": 1, \"width\": [64, 96, 256], \"work_dir\": \"/exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s1_retest\"}\n",
+  "stderr": "[19:24:13] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s1_retest/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s1_retest/database_tuning_record.json\n"
+}

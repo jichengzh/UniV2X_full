@@ -1,0 +1,16 @@
+{
+  "schema": "stage2_h800_smoke_latency_command_v1",
+  "mode": "reuse_existing_ms_db_codriving_batch_fallback",
+  "gpu": "7",
+  "model": "codriving",
+  "label": "base",
+  "width": [
+    64,
+    128,
+    256
+  ],
+  "batch": 2,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/codriving_cache/base_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_cod_base",
+  "run_id": "smoke_h800_tvm_codriving_base_fp16_tuned_20260625_193000"
+}

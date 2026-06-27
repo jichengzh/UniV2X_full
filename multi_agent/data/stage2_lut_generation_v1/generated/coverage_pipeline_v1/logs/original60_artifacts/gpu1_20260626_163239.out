@@ -1,0 +1,753 @@
+2026-06-26 16:32:50 [INFO] Logging directory: /exdata/jichengzhi/s2_tvm/workdirs/s0_040/logs
+2026-06-26 16:32:50 [INFO] LocalBuilder: max_workers = 112
+2026-06-26 16:32:51 [INFO] LocalRunner: max_workers = 1
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #0: "fused_conv2d14_add8_relu6"
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #1: "fused_conv2d13_add9"
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #2: "fused_conv2d15_add8_relu6"
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #3: "fused_conv2d11_add8_relu6"
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #4: "fused_conv2d10_add7_relu5"
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #5: "reshape4"
+2026-06-26 16:32:53 [INFO] [task_scheduler.cc:172] Initializing Task #6: "fused_conv2d9_add4_relu3"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #7: "fused_conv2d12_add9_add10_relu7"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #8: "fused_conv2d8_add4_relu3"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #9: "fused_conv2d5_add4_relu3"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #10: "reshape"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #11: "fused_conv2d2_add1"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #12: "reshape1"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #13: "fused_conv2d2_add1_add2_relu1"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #14: "fused_conv2d_add_relu"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #15: "fused_conv2d3_add_relu"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #16: "reshape2"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #17: "fused_conv2d1_add_relu"
+2026-06-26 16:32:54 [INFO] [task_scheduler.cc:172] Initializing Task #18: "fused_conv2d4_add3_relu2"
+2026-06-26 16:32:55 [INFO] [task_scheduler.cc:172] Initializing Task #19: "reshape3"
+2026-06-26 16:32:55 [INFO] [task_scheduler.cc:172] Initializing Task #20: "fused_conv2d7_add5"
+2026-06-26 16:32:55 [INFO] [task_scheduler.cc:172] Initializing Task #21: "fused_conv2d6_add5_add6_relu4"
+2026-06-26 16:32:55 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |            N/A |          N/A |                   N/A |      0 |      
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |      
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2026-06-26 16:32:55 [INFO] [task_scheduler.cc:193] TaskScheduler picks Task #0: "fused_conv2d14_add8_relu6"
+2026-06-26 16:32:57 [INFO] [task_scheduler.cc:206] Sending 32 sample(s) to builder
+2026-06-26 16:33:33 [INFO] [task_scheduler.cc:208] Sending 32 sample(s) to runner
+2026-06-26 16:33:56 [DEBUG] XGB iter   0: tr-p-rmse: 0.877736	tr-a-peak@32: 0.843350	tr-rmse: 0.579359	tr-rmse: 0.579359
+2026-06-26 16:34:06 [DEBUG] XGB iter  25: tr-p-rmse: 0.151770	tr-a-peak@32: 1.000000	tr-rmse: 0.631103	tr-rmse: 0.631103
+2026-06-26 16:34:13 [DEBUG] XGB iter  50: tr-p-rmse: 0.151770	tr-a-peak@32: 1.000000	tr-rmse: 0.631103	tr-rmse: 0.631103
+2026-06-26 16:34:13 [DEBUG] XGB stopped. Best iteration: [22] tr-p-rmse:0.15177	tr-a-peak@32:1.00000	tr-rmse:0.63110	tr-rmse:0.63110 
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:250] [Updated] Task #0: "fused_conv2d14_add8_relu6"
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |      
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |      
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #0 has finished. Remaining task(s): 21
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |      
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #1 has finished. Remaining task(s): 20
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |      
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #2 has finished. Remaining task(s): 19
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #3 has finished. Remaining task(s): 18
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |      
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #4 has finished. Remaining task(s): 17
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |      
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #5 has finished. Remaining task(s): 16
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #6 has finished. Remaining task(s): 15
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |      
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #7 has finished. Remaining task(s): 14
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |      
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #8 has finished. Remaining task(s): 13
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #9 has finished. Remaining task(s): 12
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #10 has finished. Remaining task(s): 11
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #11 has finished. Remaining task(s): 10
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |      
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #12 has finished. Remaining task(s): 9
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #13 has finished. Remaining task(s): 8
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #14 has finished. Remaining task(s): 7
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |      
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #15 has finished. Remaining task(s): 6
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |      
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #16 has finished. Remaining task(s): 5
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |      
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #17 has finished. Remaining task(s): 4
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #18 has finished. Remaining task(s): 3
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |      
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #19 has finished. Remaining task(s): 2
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |      
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #20 has finished. Remaining task(s): 1
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |      
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:273] Task #21 has finished. Remaining task(s): 0
+2026-06-26 16:34:13 [INFO] [task_scheduler.cc:333] 
+ ID |                            Name |       FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+------------------------------------------------------------------------------------------------------------------------------------
+  0 |       fused_conv2d14_add8_relu6 | 1077936128 |      7 |     14229.4140 |      75.7541 |              530.2785 |     32 |    Y 
+  1 |             fused_conv2d13_add9 |  269484032 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  2 |       fused_conv2d15_add8_relu6 |  608174080 |      7 |            N/A |          N/A |                   N/A |      0 |    Y 
+  3 |       fused_conv2d11_add8_relu6 |  608174080 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  4 |       fused_conv2d10_add7_relu5 | 2164260864 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+  5 |                        reshape4 |          1 |     16 |            N/A |          N/A |                   N/A |      0 |    Y 
+  6 |        fused_conv2d9_add4_relu3 |  612368384 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  7 | fused_conv2d12_add9_add10_relu7 | 1076887552 |      8 |            N/A |          N/A |                   N/A |      0 |    Y 
+  8 |        fused_conv2d8_add4_relu3 | 1082130432 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+  9 |        fused_conv2d5_add4_relu3 |  612368384 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 10 |                         reshape |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 11 |              fused_conv2d2_add1 |  338165760 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 12 |                        reshape1 |          1 |      4 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 13 |   fused_conv2d2_add1_add2_relu1 |  343408640 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 14 |           fused_conv2d_add_relu |  545259520 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 15 |          fused_conv2d3_add_relu |  343932928 |      2 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 16 |                        reshape2 |          1 |     19 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 17 |          fused_conv2d1_add_relu |  159383552 |      3 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 18 |        fused_conv2d4_add3_relu2 | 1375731712 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 19 |                        reshape3 |          1 |      6 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 20 |              fused_conv2d7_add5 |  169869312 |      1 |            N/A |          N/A |                   N/A |      0 |    Y 
+ 21 |   fused_conv2d6_add5_add6_relu4 | 1080033280 |      5 |            N/A |          N/A |                   N/A |      0 |    Y 
+------------------------------------------------------------------------------------------------------------------------------------
+Total trials: 32
+Total latency (us): 530.279
+
+[16:34:13] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/workdirs/s0_040/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/workdirs/s0_040/database_tuning_record.json
+{"failed": 0, "job_plan": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu1.jsonl", "job_state": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/artifact_build_state_original60_gpu1.jsonl", "ran": 10, "schema": "stage2_original60_tvm_artifact_worker_summary_v1"}

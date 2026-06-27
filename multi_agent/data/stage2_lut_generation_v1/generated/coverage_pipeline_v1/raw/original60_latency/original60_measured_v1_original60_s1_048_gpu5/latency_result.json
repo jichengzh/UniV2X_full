@@ -1,0 +1,48 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.541,
+  "build_tuned_s": 4.441,
+  "default_max_us": 44311.084,
+  "default_mean_us": 44299.193,
+  "default_min_us": 44291.577,
+  "default_repeats_us": [
+    44291.577,
+    44294.917,
+    44311.084
+  ],
+  "default_us": 44294.917,
+  "gpu": "5",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "s1_048",
+  "measure_iters": 100,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_048_backbone.onnx",
+  "phase": "original60_measured_v1",
+  "ratio": 0.996449,
+  "repeat": 3,
+  "run_id": "original60_measured_v1_original60_s1_048_gpu5",
+  "schema": "stage2_h800_overnight_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 44470.308,
+  "tuned_mean_us": 44458.594,
+  "tuned_min_us": 44452.72,
+  "tuned_repeats_us": [
+    44452.754,
+    44452.72,
+    44470.308
+  ],
+  "tuned_us": 44452.754,
+  "warmup_iters": 30,
+  "width": [
+    64,
+    48,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s1_048"
+}

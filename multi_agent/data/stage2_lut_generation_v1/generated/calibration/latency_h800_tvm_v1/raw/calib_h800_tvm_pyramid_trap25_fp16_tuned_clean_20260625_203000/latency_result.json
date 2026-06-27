@@ -1,0 +1,49 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.543,
+  "build_tuned_s": 8.189,
+  "default_max_us": 42327.602,
+  "default_min_us": 42326.172,
+  "default_repeats_us": [
+    42326.172,
+    42326.938,
+    42326.879,
+    42327.602,
+    42326.789
+  ],
+  "default_us": 42326.876,
+  "gpu": "5",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "trap25",
+  "measure_iters": 500,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/trap25_backbone.onnx",
+  "ratio": 1.95911,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_trap25_fp16_tuned_clean_20260625_203000",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 21605.453,
+  "tuned_min_us": 21604.943,
+  "tuned_repeats_us": [
+    21604.943,
+    21605.193,
+    21605.453,
+    21605.021,
+    21605.191
+  ],
+  "tuned_us": 21605.161,
+  "warmup_iters": 1,
+  "width": [
+    48,
+    96,
+    192
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_trap25"
+}

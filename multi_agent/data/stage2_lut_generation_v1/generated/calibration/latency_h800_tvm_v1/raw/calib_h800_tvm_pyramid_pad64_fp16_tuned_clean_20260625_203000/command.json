@@ -1,0 +1,13 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "label": "pad64",
+  "width": [
+    64,
+    96,
+    192
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/trap25_pad64_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest",
+  "gpu": "6",
+  "run_id": "calib_h800_tvm_pyramid_pad64_fp16_tuned_clean_20260625_203000"
+}

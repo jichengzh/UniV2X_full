@@ -1,0 +1,76 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.13,
+  "build_tuned_s": 8.758,
+  "default_max_us": 26239.143,
+  "default_mean_us": 26238.782,
+  "default_min_us": 26238.277,
+  "default_repeats_us": [
+    26239.023,
+    26239.143,
+    26238.277,
+    26239.043,
+    26238.426
+  ],
+  "default_us": 26239.023,
+  "gpu": "0",
+  "idle_history_tail": [
+    {
+      "gpu": "0",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T23:40:09+0800",
+      "util": 0
+    },
+    {
+      "gpu": "0",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T23:40:15+0800",
+      "util": 0
+    },
+    {
+      "gpu": "0",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T23:40:20+0800",
+      "util": 0
+    }
+  ],
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "p50",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+  "phase": "p2_latency_repeat",
+  "ratio": 8.71605,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_p50_p2_latency_repeat_20260625_234009",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 3010.874,
+  "tuned_mean_us": 3010.513,
+  "tuned_min_us": 3010.25,
+  "tuned_repeats_us": [
+    3010.25,
+    3010.617,
+    3010.426,
+    3010.874,
+    3010.397
+  ],
+  "tuned_us": 3010.426,
+  "warmup_iters": 1,
+  "width": [
+    32,
+    64,
+    128
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50"
+}

@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 10.097,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 21051.074,
+  "latency_mean_us": 21050.296,
+  "latency_min_us": 21049.58,
+  "latency_p50_us": 21050.262,
+  "measure_iters": 500,
+  "notes": "p2_latency_repeat; mix_d; metaschedule_tuned; backbone-only; no fresh tune",
+  "provenance": "H800 TVM p2_latency_repeat measured on clean target GPU; metaschedule_tuned; reuse existing artifacts",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_mix_d_p2_latency_repeat_20260625_234914",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_mix_d_p2_latency_repeat_20260625_234914",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/mix_d_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_d",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_mix_d_p2_latency_repeat_20260625_234914/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

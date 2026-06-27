@@ -1,0 +1,1271 @@
+{
+  "active_quarantine_count": 0,
+  "artifact_root": "/exdata/jichengzhi/s2_tvm",
+  "candidate_count": 60,
+  "is_complete": true,
+  "missing_artifact_count": 0,
+  "original60_artifact_ready_count": 60,
+  "rows": [
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x128x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s0_024/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s0_024/database_workload.json",
+      "label": "s0_024",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s0_024_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s0_024",
+      "width": [
+        24,
+        128,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x128x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s0_040/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s0_040/database_workload.json",
+      "label": "s0_040",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s0_040_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s0_040",
+      "width": [
+        40,
+        128,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x128x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s0_056/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s0_056/database_workload.json",
+      "label": "s0_056",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s0_056_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s0_056",
+      "width": [
+        56,
+        128,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x48x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_048/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_048/database_workload.json",
+      "label": "s1_048",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_048_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s1_048",
+      "width": [
+        64,
+        48,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x64x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_064/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_064/database_workload.json",
+      "label": "s1_064",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_064_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s1_064",
+      "width": [
+        64,
+        64,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x80x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_080/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_080/database_workload.json",
+      "label": "s1_080",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_080_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s1_080",
+      "width": [
+        64,
+        80,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x112x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_112/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s1_112/database_workload.json",
+      "label": "s1_112",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_112_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s1_112",
+      "width": [
+        64,
+        112,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x128x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s2_096/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s2_096/database_workload.json",
+      "label": "s2_096",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s2_096_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s2_096",
+      "width": [
+        64,
+        128,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x128x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s2_160/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s2_160/database_workload.json",
+      "label": "s2_160",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s2_160_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s2_160",
+      "width": [
+        64,
+        128,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x128x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/s2_224/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/s2_224/database_workload.json",
+      "label": "s2_224",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s2_224_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/s2_224",
+      "width": [
+        64,
+        128,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x64x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_01/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_01/database_workload.json",
+      "label": "lhc_01",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_01_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_01",
+      "width": [
+        24,
+        64,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x96x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_02/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_02/database_workload.json",
+      "label": "lhc_02",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_02_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_02",
+      "width": [
+        32,
+        96,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x128x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_03/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_03/database_workload.json",
+      "label": "lhc_03",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_03_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_03",
+      "width": [
+        40,
+        128,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x48x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_04/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_04/database_workload.json",
+      "label": "lhc_04",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_04_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_04",
+      "width": [
+        48,
+        48,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x80x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_05/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_05/database_workload.json",
+      "label": "lhc_05",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_05_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_05",
+      "width": [
+        56,
+        80,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x112x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_06/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_06/database_workload.json",
+      "label": "lhc_06",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_06_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_06",
+      "width": [
+        64,
+        112,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x48x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_07/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_07/database_workload.json",
+      "label": "lhc_07",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_07_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_07",
+      "width": [
+        24,
+        48,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x80x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_08/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_08/database_workload.json",
+      "label": "lhc_08",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_08_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_08",
+      "width": [
+        32,
+        80,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x112x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_09/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_09/database_workload.json",
+      "label": "lhc_09",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_09_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_09",
+      "width": [
+        40,
+        112,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x32x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_10/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_10/database_workload.json",
+      "label": "lhc_10",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_10_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_10",
+      "width": [
+        48,
+        32,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x64x64:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_11/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_11/database_workload.json",
+      "label": "lhc_11",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_11_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_11",
+      "width": [
+        56,
+        64,
+        64
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x96x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_12/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_12/database_workload.json",
+      "label": "lhc_12",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_12_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_12",
+      "width": [
+        64,
+        96,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x64x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_14/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_14/database_workload.json",
+      "label": "lhc_14",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_14_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_14",
+      "width": [
+        32,
+        64,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x96x64:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_15/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_15/database_workload.json",
+      "label": "lhc_15",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_15_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_15",
+      "width": [
+        40,
+        96,
+        64
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x128x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_16/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_16/database_workload.json",
+      "label": "lhc_16",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_16_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_16",
+      "width": [
+        48,
+        128,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x48x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_17/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_17/database_workload.json",
+      "label": "lhc_17",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_17_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_17",
+      "width": [
+        56,
+        48,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x80x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_18/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_18/database_workload.json",
+      "label": "lhc_18",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_18_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_18",
+      "width": [
+        64,
+        80,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w16x112x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_19/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_19/database_workload.json",
+      "label": "lhc_19",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_19_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_19",
+      "width": [
+        16,
+        112,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x32x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_20/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_20/database_workload.json",
+      "label": "lhc_20",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_20_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_20",
+      "width": [
+        24,
+        32,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x80x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_21/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_21/database_workload.json",
+      "label": "lhc_21",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_21_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_21",
+      "width": [
+        40,
+        80,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x112x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_22/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_22/database_workload.json",
+      "label": "lhc_22",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_22_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_22",
+      "width": [
+        48,
+        112,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x32x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_23/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_23/database_workload.json",
+      "label": "lhc_23",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_23_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_23",
+      "width": [
+        56,
+        32,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x64x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_24/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_24/database_workload.json",
+      "label": "lhc_24",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_24_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_24",
+      "width": [
+        64,
+        64,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w16x96x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_25/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_25/database_workload.json",
+      "label": "lhc_25",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_25_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_25",
+      "width": [
+        16,
+        96,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x128x64:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_26/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_26/database_workload.json",
+      "label": "lhc_26",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_26_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_26",
+      "width": [
+        24,
+        128,
+        64
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x64x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_01/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_01/database_workload.json",
+      "label": "frontier_01",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_01_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_01",
+      "width": [
+        24,
+        64,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x64x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_02/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_02/database_workload.json",
+      "label": "frontier_02",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_02_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_02",
+      "width": [
+        40,
+        64,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x48x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_03/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_03/database_workload.json",
+      "label": "frontier_03",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_03_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_03",
+      "width": [
+        32,
+        48,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x80x128:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_04/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_04/database_workload.json",
+      "label": "frontier_04",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_04_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_04",
+      "width": [
+        32,
+        80,
+        128
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x64x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_05/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_05/database_workload.json",
+      "label": "frontier_05",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_05_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_05",
+      "width": [
+        32,
+        64,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w32x64x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_06/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_06/database_workload.json",
+      "label": "frontier_06",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_06_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_06",
+      "width": [
+        32,
+        64,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x48x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_07/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_07/database_workload.json",
+      "label": "frontier_07",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_07_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_07",
+      "width": [
+        24,
+        48,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x80x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_08/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_08/database_workload.json",
+      "label": "frontier_08",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_08_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_08",
+      "width": [
+        40,
+        80,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w24x32x64:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_10/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_10/database_workload.json",
+      "label": "frontier_10",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_10_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_10",
+      "width": [
+        24,
+        32,
+        64
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w16x48x64:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_11/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_11/database_workload.json",
+      "label": "frontier_11",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_11_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_11",
+      "width": [
+        16,
+        48,
+        64
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w16x32x96:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_12/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_12/database_workload.json",
+      "label": "frontier_12",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_12_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_12",
+      "width": [
+        16,
+        32,
+        96
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x96x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_14/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_14/database_workload.json",
+      "label": "frontier_14",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_14_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_14",
+      "width": [
+        40,
+        96,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x96x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_15/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_15/database_workload.json",
+      "label": "frontier_15",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_15_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_15",
+      "width": [
+        56,
+        96,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x80x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_16/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_16/database_workload.json",
+      "label": "frontier_16",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_16_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_16",
+      "width": [
+        48,
+        80,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x112x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_17/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_17/database_workload.json",
+      "label": "frontier_17",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_17_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_17",
+      "width": [
+        48,
+        112,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x96x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_18/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_18/database_workload.json",
+      "label": "frontier_18",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_18_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_18",
+      "width": [
+        48,
+        96,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x96x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_19/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_19/database_workload.json",
+      "label": "frontier_19",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_19_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_19",
+      "width": [
+        48,
+        96,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x112x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_20/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_20/database_workload.json",
+      "label": "frontier_20",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_20_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_20",
+      "width": [
+        56,
+        112,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x80x192:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_22/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_22/database_workload.json",
+      "label": "frontier_22",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_22_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_22",
+      "width": [
+        64,
+        80,
+        192
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x96x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25/database_workload.json",
+      "label": "frontier_25",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_25_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25",
+      "width": [
+        64,
+        96,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w56x80x160:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_26/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_26/database_workload.json",
+      "label": "frontier_26",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_26_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_26",
+      "width": [
+        56,
+        80,
+        160
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w64x112x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_27/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_27/database_workload.json",
+      "label": "frontier_27",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_27_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_27",
+      "width": [
+        64,
+        112,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x112x256:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_31/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_31/database_workload.json",
+      "label": "frontier_31",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_31_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_31",
+      "width": [
+        48,
+        112,
+        256
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w48x128x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_32/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_32/database_workload.json",
+      "label": "frontier_32",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_32_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_32",
+      "width": [
+        48,
+        128,
+        224
+      ],
+      "worker_status": "succeeded"
+    },
+    {
+      "candidate_id": "coverage:pyramid_lidar:w40x112x224:fp16",
+      "checks": {
+        "database_tuning_record_readable": true,
+        "database_workload_readable": true,
+        "onnx_exists": true,
+        "workdir_exists": true
+      },
+      "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_33/database_tuning_record.json",
+      "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_33/database_workload.json",
+      "label": "frontier_33",
+      "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_33_backbone.onnx",
+      "status": "ready",
+      "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_33",
+      "width": [
+        40,
+        112,
+        224
+      ],
+      "worker_status": "succeeded"
+    }
+  ],
+  "schema": "stage2_original60_artifact_readiness_v1"
+}

@@ -1,0 +1,32 @@
+{
+  "batch_size": 2,
+  "build_status": "success",
+  "build_time_s": 21.689,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      256,
+      512
+    ]
+  },
+  "latency_max_us": 8040.326,
+  "latency_mean_us": 8039.149,
+  "latency_min_us": 8037.569,
+  "latency_p50_us": 8039.149,
+  "measure_iters": 500,
+  "notes": "codriving base smoke latency; dense-core/backbone-only; no fresh tune; dynamic batch substituted",
+  "provenance": "H800 TVM productized latency smoke; CoDriving batch substitution + dlight fallback; reuse existing MetaSchedule DB",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_codriving_base_fp16_tuned_20260625_193000",
+  "repeat": 5,
+  "run_id": "smoke_h800_tvm_codriving_base_fp16_tuned_20260625_193000",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/codriving_cache/base_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_cod_base",
+    "/exdata/jichengzhi/s2_tvm/s2_codriving_e2e.py",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_codriving_base_fp16_tuned_20260625_193000/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db_dlight_fallback",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

@@ -1,0 +1,76 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.118,
+  "build_tuned_s": 9.654,
+  "default_max_us": 41451.797,
+  "default_mean_us": 41443.438,
+  "default_min_us": 41426.773,
+  "default_repeats_us": [
+    41451.797,
+    41450.039,
+    41445.578,
+    41426.773,
+    41443.004
+  ],
+  "default_us": 41445.578,
+  "gpu": "2",
+  "idle_history_tail": [
+    {
+      "gpu": "2",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:53:11+0800",
+      "util": 0
+    },
+    {
+      "gpu": "2",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:53:16+0800",
+      "util": 0
+    },
+    {
+      "gpu": "2",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:53:22+0800",
+      "util": 0
+    }
+  ],
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "mix_b",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_b_backbone.onnx",
+  "preflight_status": "clean",
+  "ratio": 2.137494,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_mix_b_fp16_medium_clean_retry_g1_20260625_205310",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 19391.707,
+  "tuned_mean_us": 19390.051,
+  "tuned_min_us": 19388.428,
+  "tuned_repeats_us": [
+    19388.428,
+    19391.037,
+    19389.803,
+    19391.707,
+    19389.279
+  ],
+  "tuned_us": 19389.803,
+  "warmup_iters": 1,
+  "width": [
+    48,
+    64,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_b"
+}

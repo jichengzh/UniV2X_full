@@ -1,0 +1,1 @@
+{"attempt": 1, "failure_reason": "quarantined_bad_db", "finished_at": null, "job_id": "original60_latency_gpu3:original60_retry1:frontier_25", "log_path": null, "output_row_id": null, "preflight_path": null, "returncode": null, "schema": "lut_job_state_row_v1", "started_at": null, "status": "skipped", "worker_id": "zs-nj-tap-gpu18:pid3476812"}

@@ -1,0 +1,90 @@
+{
+  "created_at": "2026-06-25T23:52:58+0800",
+  "results": [
+    {
+      "index": 0,
+      "kind": "energy",
+      "label": "base",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_energy_base.log",
+      "returncode": 1
+    },
+    {
+      "index": 1,
+      "kind": "energy",
+      "label": "p50",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_energy_p50.log",
+      "returncode": 1
+    },
+    {
+      "index": 2,
+      "kind": "energy",
+      "label": "p75",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_energy_p75.log",
+      "returncode": 1
+    },
+    {
+      "index": 3,
+      "kind": "energy",
+      "label": "mix_b",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_energy_mix_b.log",
+      "returncode": 1
+    },
+    {
+      "index": 4,
+      "kind": "energy",
+      "label": "mix_d",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_energy_mix_d.log",
+      "returncode": 1
+    },
+    {
+      "index": 0,
+      "kind": "latency_repeat",
+      "label": "base",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_repeat_base.log",
+      "returncode": 0
+    },
+    {
+      "index": 1,
+      "kind": "latency_repeat",
+      "label": "p50",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_repeat_p50.log",
+      "returncode": 0
+    },
+    {
+      "index": 2,
+      "kind": "latency_repeat",
+      "label": "trap25",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_repeat_trap25.log",
+      "returncode": 0
+    },
+    {
+      "index": 3,
+      "kind": "latency_repeat",
+      "label": "mix_b",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_repeat_mix_b.log",
+      "returncode": 0
+    },
+    {
+      "index": 4,
+      "kind": "latency_repeat",
+      "label": "mix_d",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_repeat_mix_d.log",
+      "returncode": 0
+    },
+    {
+      "index": 0,
+      "kind": "latency_new",
+      "label": "p50b2_136",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_new_p50b2_136.log",
+      "returncode": 1
+    },
+    {
+      "index": 1,
+      "kind": "latency_new",
+      "label": "mix_e_64_64_128",
+      "log_path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/logs/p1_p2_child_latency_new_mix_e_64_64_128.log",
+      "returncode": 1
+    }
+  ],
+  "schema": "stage2_h800_p1_p2_gpu012_summary_v1"
+}

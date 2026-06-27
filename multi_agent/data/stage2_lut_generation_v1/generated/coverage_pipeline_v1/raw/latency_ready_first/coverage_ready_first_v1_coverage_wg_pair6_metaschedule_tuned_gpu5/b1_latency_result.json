@@ -1,0 +1,11 @@
+{
+  "label": "wg_pair6",
+  "onnx": "wg_pair6_backbone.onnx",
+  "trials": 2,
+  "reps": 50,
+  "default_us": 37216.25,
+  "tuned_us": 21157.07,
+  "e2e_ratio": 1.759,
+  "tune_s": 17.0,
+  "status": "DONE"
+}

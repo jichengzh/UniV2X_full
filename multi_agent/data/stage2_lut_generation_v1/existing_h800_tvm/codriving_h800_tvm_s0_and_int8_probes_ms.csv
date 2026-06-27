@@ -1,0 +1,12 @@
+model,backend,scope,precision,label,dims,default_ms,tuned_ms,speedup_default_over_tuned,trials,evidence_status,source_file,notes
+codriving,h800_tvm_relax_metaschedule,s0_probe,fp16,s0_64_base,"[64,128,256]",16.6805,8.0578,2.071,1000,measured_probe,results/codriving_s0probe_fp16.csv,well_tuned_pow2
+codriving,h800_tvm_relax_metaschedule,s0_probe,fp16,s0_32,"[32,128,256]",15.0963,11.2176,1.346,500,measured_probe,results/codriving_s0probe_fp16.csv,undertuned_ms_quality
+codriving,h800_tvm_relax_metaschedule,s0_probe,fp16,s0_48,"[48,128,256]",15.6013,,,500,measured_probe,results/codriving_s0probe_fp16.csv,apply_crash_non_pow2_stage_mix
+codriving,h800_tvm_relax_metaschedule,s0_or_s1_micro_probe,int8,p75_s0,"cin=16,k=144,k_div32=0,k_mod32=16",0.05945,0.01976,3.009,,measured_micro_probe,results/codriving_s0probe_int8.csv,relax_seed42_b2+screen_b1
+codriving,h800_tvm_relax_metaschedule,s0_or_s1_micro_probe,int8,p50_s0,"cin=32,k=288,k_div32=1,k_mod32=0",0.21441,0.07608,2.818,,measured_micro_probe,results/codriving_s0probe_int8.csv,relax_seed42_b2+screen_b1
+codriving,h800_tvm_relax_metaschedule,s0_or_s1_micro_probe,int8,p25_s0,"cin=48,k=432,k_div32=0,k_mod32=16",0.25828,0.08091,3.192,,measured_micro_probe,results/codriving_s0probe_int8.csv,relax_seed42_b2+screen_b1
+codriving,h800_tvm_relax_metaschedule,s0_or_s1_micro_probe,int8,base_s0,"cin=64,k=576,k_div32=1,k_mod32=0",0.40747,0.09671,4.213,,measured_micro_probe,results/codriving_s0probe_int8.csv,relax_seed42_b2+screen_b1
+codriving,h800_tvm_relax_metaschedule,s0_or_s1_micro_probe,int8,p25_s1,"cin=96,k=864,k_div32=1,k_mod32=0",0.10686,0.03792,2.818,,measured_micro_probe,results/codriving_s0probe_int8.csv,relax_seed42_b2+screen_b1
+codriving,h800_tvm_relax_metaschedule,s0_or_s1_micro_probe,int8,base_s1,"cin=128,k=1152,k_div32=1,k_mod32=0",0.12638,0.14911,0.848,,measured_micro_probe,results/codriving_s0probe_int8.csv,relax_seed42_b2+screen_b1
+codriving,h800_tvm_wmma_int8,stage0_standard_conv_micro,int8_vs_fp16,cin48_p25_s0,"cin=48,cout=48,K=432",,0.05398,1.42,300,trusted_measured_micro_no_rank_flip,results/codriving_int8_verify.json,fp16_ms=0.07649; numerical_pass=True; buildable=True
+codriving,h800_tvm_wmma_int8,stage0_standard_conv_micro,int8_vs_fp16,cin64_base_s0,"cin=64,cout=64,K=576",,0.06789,1.32,300,trusted_measured_micro_no_rank_flip,results/codriving_int8_verify.json,fp16_ms=0.08961; numerical_pass=True; buildable=True

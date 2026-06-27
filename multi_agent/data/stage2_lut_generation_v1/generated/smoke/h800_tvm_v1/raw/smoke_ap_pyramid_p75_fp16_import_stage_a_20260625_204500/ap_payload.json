@@ -1,0 +1,25 @@
+{
+  "metric": "AP70",
+  "metric_value": 0.5299883430444458,
+  "secondary_metrics": {
+    "AP30": 0.8159088887034824,
+    "AP50": 0.7566691198482532,
+    "n_trt_path": 1618
+  },
+  "dataset": "DAIR-V2X",
+  "eval_split": "val_1789",
+  "num_samples": 1789,
+  "ckpt_path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_pruned75_2026_05_10",
+  "ckpt_digest": "unknown",
+  "finetune_protocol": "pruned_finetuned_23_epochs",
+  "training_budget": "historical_stage_a",
+  "eval_command": "import stage_a_ap_real.csv anchor=pruned75 precision=fp16",
+  "provenance": "DAIR validation AP anchor imported from real stage_a_ap_real.csv through generate_ap_lut",
+  "run_id": "smoke_ap_pyramid_p75_fp16_import_stage_a_20260625_204500",
+  "source_files": [
+    "data/stage_a_ap_real.csv",
+    "results/stage_a/sA_pruned75_fp16.json"
+  ],
+  "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_ap_pyramid_p75_fp16_import_stage_a_20260625_204500",
+  "notes": "true measured AP anchor; hardware-independent; imported for AP smoke supplement, not placeholder"
+}

@@ -1,0 +1,87 @@
+{
+  "schema": "stage2_evidence_registry_v1",
+  "model": "pyramid_lidar",
+  "hardware_target": {
+    "name": "H800 Hopper",
+    "backend": "h800_tvm"
+  },
+  "manifest": {
+    "path": "/home/jichengzhi/V2X/framework/partitions/pyramid_lidar_partition.yaml",
+    "scope": "rsu_dense_core",
+    "provenance": "stage1_partition_manifest"
+  },
+  "latency_lut": {
+    "path": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/latency/latency_lut_rows_v1.jsonl",
+    "measurement_status": "measured",
+    "backend": "h800_tvm",
+    "scope": "dense_core",
+    "provenance": "canonical latency_lut_rows_v1",
+    "coverage": {
+      "expected_cells": 4,
+      "measured_cells": 4,
+      "failed_cells": 0,
+      "proxy_cells": 0
+    }
+  },
+  "ap_anchors": {
+    "path": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/ap/ap_anchor_rows_v1.jsonl",
+    "measurement_status": "measured",
+    "backend": "model_eval",
+    "scope": "model_accuracy",
+    "provenance": "canonical ap_anchor_rows_v1",
+    "metric": "AP70",
+    "coverage": {
+      "expected_cells": 6,
+      "measured_cells": 6,
+      "failed_cells": 0,
+      "proxy_cells": 0
+    }
+  },
+  "quant_evidence": {
+    "path": "/home/jichengzhi/V2X/results/latency_lut_pyramid_q.json",
+    "measurement_status": "historical",
+    "backend": "historical_trt",
+    "scope": "backbone_only",
+    "provenance": "historical RTX 4090 TRT quant context; not H800 measured",
+    "coverage": {
+      "expected_cells": 10,
+      "measured_cells": 0,
+      "failed_cells": 0,
+      "proxy_cells": 10
+    }
+  },
+  "energy_lut": {
+    "path": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/energy/energy_lut_rows_v1.jsonl",
+    "measurement_status": "measured",
+    "backend": "h800_tvm_power_telemetry",
+    "scope": "dense_core",
+    "provenance": "canonical energy_lut_rows_v1",
+    "coverage": {
+      "expected_cells": 2,
+      "measured_cells": 2,
+      "failed_cells": 0,
+      "proxy_cells": 0
+    }
+  },
+  "downstream_objective": {
+    "path": null,
+    "measurement_status": "not_available",
+    "backend": "not_available",
+    "scope": {
+      "model": "pyramid_lidar",
+      "reason": "CoDriving/Town05/clean6 DS map is not cross-model evidence"
+    },
+    "provenance": "not_collected_for_pyramid",
+    "mode_policy": "blocked_cross_model",
+    "coverage": {
+      "expected_cells": 0,
+      "measured_cells": 0,
+      "failed_cells": 0,
+      "proxy_cells": 0
+    }
+  },
+  "unsupported_conclusions": [
+    "historical_trt_as_h800_measured_quant_evidence",
+    "cross_model_ds_map_for_pyramid"
+  ]
+}

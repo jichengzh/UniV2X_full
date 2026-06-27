@@ -1,0 +1,55 @@
+{
+  "created_at": "2026-06-25T20:31:38+0800",
+  "jobs": 9,
+  "plan": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/job_plan_medium_clean_g012.jsonl",
+  "process_results": [
+    {
+      "exitcode": 0,
+      "gpu": "0",
+      "label": "s0_16"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "1",
+      "label": "s0_32"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "2",
+      "label": "s1_32"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "0",
+      "label": "s1_64"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "1",
+      "label": "s2_64"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "2",
+      "label": "mix_a"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "0",
+      "label": "mix_b"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "1",
+      "label": "mix_c"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "2",
+      "label": "mix_d"
+    }
+  ],
+  "run_group": "calib_latency_medium_reuse_clean_g012_20260625_202323",
+  "schema": "calibration_latency_medium_clean_g012_runner_summary_v1",
+  "state": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/job_state_medium_clean_g012.jsonl"
+}

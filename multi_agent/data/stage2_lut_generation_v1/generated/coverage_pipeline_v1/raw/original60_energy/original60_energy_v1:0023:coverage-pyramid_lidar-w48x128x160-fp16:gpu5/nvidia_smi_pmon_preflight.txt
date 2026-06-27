@@ -1,0 +1,10 @@
+# gpu         pid  type    sm    mem    enc    dec     fb   ccpm    command
+# Idx           #   C/G     %      %      %      %     MB     MB    name
+    0    3719659     C     0     0     -     -   532     0   python3        
+    1    3719645     C     0     0     -     -   532     0   python3        
+    2    3661504     C    23     0     -     -   720     0   python3        
+    3    3708931     C    16     0     -     -   636     0   python3        
+    4    3719946     C     1     0     -     -   532     0   python3        
+    5          -     -     -     -     -     -     -     -   -              
+    6          -     -     -     -     -     -     -     -   -              
+    7          -     -     -     -     -     -     -     -   -              

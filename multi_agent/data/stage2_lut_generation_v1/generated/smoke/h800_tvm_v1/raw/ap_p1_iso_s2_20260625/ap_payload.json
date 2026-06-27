@@ -1,0 +1,22 @@
+{
+  "ckpt_digest": "unknown",
+  "ckpt_path": "unknown",
+  "dataset": "DAIR-V2X",
+  "eval_command": "import true AP evidence through stage2_generate_ap_lut",
+  "eval_split": "val",
+  "finetune_protocol": "b2_iso_s2_structural_prune_finetune_TRT_FP16_DAIR_1789",
+  "metric": "AP70",
+  "metric_value": 0.6338902378413247,
+  "notes": "AP P1 supplement; imported true eval evidence, not predicted AP",
+  "num_samples": 1789,
+  "provenance": "true AP anchor imported from results/b2_eval/b2_iso_s2_fp16.json via generate_ap_lut",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/ap_p1_iso_s2_20260625",
+  "secondary_metrics": {
+    "AP30": 0.8212674468185364,
+    "AP50": 0.783870689064531
+  },
+  "source_files": [
+    "/home/jichengzhi/V2X/results/b2_eval/b2_iso_s2_fp16.json"
+  ],
+  "training_budget": "existing_true_eval_anchor"
+}

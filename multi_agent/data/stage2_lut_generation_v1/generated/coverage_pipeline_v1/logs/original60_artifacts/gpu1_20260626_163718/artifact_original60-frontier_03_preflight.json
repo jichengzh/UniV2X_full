@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-06-26T08:48:05Z",
+  "gpu": 1,
+  "job_id": "artifact_original60:frontier_03",
+  "memory_used_mib": 4,
+  "ok": true,
+  "pmon_command": [
+    "nvidia-smi",
+    "pmon",
+    "-c",
+    "1"
+  ],
+  "pmon_returncode": 0,
+  "pmon_stderr": "",
+  "pmon_stdout": "# gpu         pid  type    sm    mem    enc    dec    command\n# Idx           #   C/G     %      %      %      %    name\n    0    2640375     C     -     -     -     -   python         \n    1          -     -     -     -     -     -   -              \n    2    2674653     C    20     0     -     -   python         \n    3    2674751     C     0     0     -     -   python         \n    4    2656988     C     0     0     -     -   python         \n    5          -     -     -     -     -     -   -              \n    6          -     -     -     -     -     -   -              \n    7    2323317     C    35     9     -     -   python         \n",
+  "query_command": [
+    "nvidia-smi",
+    "--query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,pstate",
+    "--format=csv"
+  ],
+  "query_returncode": 0,
+  "query_stderr": "",
+  "query_stdout": "index, name, utilization.gpu [%], memory.used [MiB], memory.total [MiB], power.draw [W], pstate\n0, NVIDIA H800, 0 %, 529 MiB, 81559 MiB, 117.57 W, P0\n1, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 67.93 W, P0\n2, NVIDIA H800, 0 %, 1323 MiB, 81559 MiB, 113.52 W, P0\n3, NVIDIA H800, 0 %, 26 MiB, 81559 MiB, 116.56 W, P0\n4, NVIDIA H800, 0 %, 795 MiB, 81559 MiB, 115.53 W, P0\n5, NVIDIA H800, 0 %, 453 MiB, 81559 MiB, 118.71 W, P0\n6, NVIDIA H800, 0 %, 7 MiB, 81559 MiB, 73.55 W, P0\n7, NVIDIA H800, 40 %, 8479 MiB, 81559 MiB, 152.24 W, P0\n",
+  "reason": "gpu_idle",
+  "schema": "stage2_original60_gpu_preflight_v1",
+  "utilization_gpu_pct": 0
+}

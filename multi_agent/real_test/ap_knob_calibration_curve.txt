@@ -1,0 +1,7 @@
+APCALIB_RESULT drop=0.000 veh_ap50=0.8411 veh_ap70=0.7222 ped_ap50=0.2944 cyc_ap50=0.4021
+APCALIB_RESULT drop=0.100 veh_ap50=0.8411 veh_ap70=0.7222 ped_ap50=0.2944 cyc_ap50=0.4021
+APCALIB_RESULT drop=0.250 veh_ap50=0.7828 veh_ap70=0.6832 ped_ap50=0.2911 cyc_ap50=0.3862
+APCALIB_RESULT drop=0.500 veh_ap50=0.5588 veh_ap70=0.5158 ped_ap50=0.2241 cyc_ap50=0.2811
+APCALIB_RESULT drop=0.750 veh_ap50=0.3100 veh_ap70=0.2908 ped_ap50=0.1544 cyc_ap50=0.2086
+APCALIB_RESULT drop=0.900 veh_ap50=0.2663 veh_ap70=0.2499 ped_ap50=0.1428 cyc_ap50=0.2031
+=== APCALIB SWEEP DONE ===

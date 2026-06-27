@@ -1,0 +1,44 @@
+{
+  "blocked_latency": {
+    "first_clean_failure_raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_204246",
+    "label": "s1_64",
+    "latest_raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_210525",
+    "reason": "metaschedule_tuned VM reproducibly fails with CUDA illegal memory access on clean GPU1/GPU2; default diagnostic completed but raw job status is failed, so no canonical row was written"
+  },
+  "created_at": "2026-06-25T21:19:58+0800",
+  "decision": "GO_LATENCY_BACKGROUND_EXCLUDING_BLOCKED_S1_64__NO_GO_FULL_TRI_AXIS",
+  "medium_clean_rows": 16,
+  "medium_complete_labels": [
+    "s0_16",
+    "s0_32",
+    "s1_32",
+    "s2_64",
+    "mix_a",
+    "mix_b",
+    "mix_c",
+    "mix_d"
+  ],
+  "medium_missing_or_blocked": [
+    {
+      "label": "s1_64",
+      "missing_schedules": [
+        "default",
+        "metaschedule_tuned"
+      ],
+      "present_schedules": []
+    }
+  ],
+  "notes": "small clean rows retained; medium clean rows retained for 8/9 labels; s1_64 tuned DB/kernel is blocked; contaminated medium rows remain quarantined",
+  "quarantine_jsonl": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/latency/latency_lut_rows_quarantine_medium_contaminated_20260625_194602.jsonl",
+  "quarantined_medium_rows": 18,
+  "quick_review_csv": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/compare/latency_calibration_valid_quick_review_v1.csv",
+  "schema": "calibration_latency_progress_summary_v2",
+  "small_rows": 18,
+  "valid_config_count": 17,
+  "valid_jsonl": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/latency/latency_lut_rows_v1.jsonl",
+  "valid_latency_rows": 34,
+  "valid_schedules": [
+    "default",
+    "metaschedule_tuned"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.424,
+  "build_tuned_s": 15.017,
+  "default_max_us": 51206.797,
+  "default_min_us": 51185.547,
+  "default_repeats_us": [
+    51185.547,
+    51193.711,
+    51186.125,
+    51206.797,
+    51186.578
+  ],
+  "default_us": 51191.752,
+  "gpu": "3",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "iso_s0",
+  "measure_iters": 500,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/iso_s0_backbone.onnx",
+  "ratio": 2.356586,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_iso_s0_fp16_tuned_clean_20260625_203000",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 21723.42,
+  "tuned_min_us": 21722.418,
+  "tuned_repeats_us": [
+    21723.42,
+    21723.004,
+    21722.561,
+    21722.799,
+    21722.418
+  ],
+  "tuned_us": 21722.84,
+  "warmup_iters": 1,
+  "width": [
+    48,
+    128,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s0_retest"
+}

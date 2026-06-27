@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python",
+    "/home/jichengzhi/V2X/tools/export_onnx_pyramid_collab.py",
+    "--ckpt",
+    "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s2_160_2026_06_26/net_epoch_bestval_at25.pth",
+    "--hypes",
+    "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s2_160_2026_06_26/config.yaml",
+    "--out",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s2_160/s2_160.onnx",
+    "--feat-h",
+    "128",
+    "--feat-w",
+    "256"
+  ],
+  "cwd": "/home/jichengzhi/V2X",
+  "env": {
+    "CUDA_VISIBLE_DEVICES": "4",
+    "PYTHONPATH": "/home/jichengzhi/heal_research/HEAL:"
+  },
+  "timeout_s": 600
+}

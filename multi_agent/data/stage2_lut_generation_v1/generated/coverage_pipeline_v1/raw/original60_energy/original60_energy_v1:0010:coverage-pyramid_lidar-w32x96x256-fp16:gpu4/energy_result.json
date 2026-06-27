@@ -1,0 +1,15 @@
+{
+  "elapsed_s": 322.37427830696106,
+  "gpu": "4",
+  "idle_watt_avg": 148.8163636363636,
+  "joule_per_inference": 1.7742354898716406,
+  "label": "lhc_02",
+  "phase": "original60_measured_v1",
+  "run_id": "original60_energy_v1:0010:coverage-pyramid_lidar-w32x96x256-fp16:gpu4",
+  "sample_window_ms": 322374,
+  "schema": "stage2_h800_overnight_energy_result_v1",
+  "status": "success",
+  "watt_avg": 157.07184,
+  "watt_p50": 155.06,
+  "watt_p90": 182.42
+}

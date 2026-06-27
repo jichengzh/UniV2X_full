@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python",
+    "tools/structural_prune_pyramid.py",
+    "--orig-dir",
+    "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29",
+    "--out-dir",
+    "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s0_024_2026_06_26",
+    "--num-filters-new",
+    "24,128,256",
+    "--width-per-group",
+    "4",
+    "--groups",
+    "32"
+  ],
+  "cwd": "/home/jichengzhi/V2X",
+  "env": {
+    "CUDA_VISIBLE_DEVICES": "0",
+    "PYTHONPATH": "/home/jichengzhi/heal_research/HEAL:"
+  },
+  "timeout_s": 900
+}

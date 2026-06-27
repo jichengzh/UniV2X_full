@@ -1,0 +1,13 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "label": "p75",
+  "width": [
+    16,
+    32,
+    64
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/p75_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p75_retest",
+  "gpu": "7",
+  "run_id": "calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000"
+}

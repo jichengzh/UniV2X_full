@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 10.22,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 21439.648,
+  "latency_mean_us": 21179.171,
+  "latency_min_us": 21044.248,
+  "latency_p50_us": 21137.158,
+  "measure_iters": 500,
+  "notes": "latency calibration medium clean; mix_b; tuned; backbone-only; no fresh tune",
+  "provenance": "H800 TVM latency calibration medium clean; tuned; reuse existing artifacts",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_mix_b_fp16_medium_20260625_194602",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_mix_b_fp16_medium_20260625_194602",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/mix_b_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_b",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_mix_b_fp16_medium_20260625_194602/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

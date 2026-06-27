@@ -1,0 +1,1 @@
+{"jobs_run": 1, "results": [{"job_id": "latency_gpu1:coverage:wg_pair4:metaschedule_tuned", "returncode": 0, "status": "succeeded"}], "schema": "lut_worker_summary_v1", "state": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/ready_first_latency/latency_job_state_gpu1.jsonl"}

@@ -1,0 +1,63 @@
+{
+  "ap_invalid_config_ids": [
+    "pyr_64-128-256_INT8_orin_E6",
+    "pyr_32-64-128_INT8_orin_E6",
+    "pyr_16-32-64_INT8_orin_E6"
+  ],
+  "ap_valid_rows": 63,
+  "columns": 93,
+  "dataset_src_counts": {
+    "E3_orin_dla_pipe_v1": 2,
+    "E4_energy_v1": 13,
+    "E6_orin_p03": 6,
+    "P0_1_p25_trap": 2,
+    "P0_2_136": 2,
+    "P12_collab2_throughput": 3,
+    "complete_points_v1": 7,
+    "pathA_forced_int8": 3,
+    "pathB_head_int8": 2,
+    "perstage_AP_v2": 22,
+    "v2xvit_A1A2_ap": 3,
+    "v2xvit_dair_real_timing": 1
+  },
+  "duplicate_config_id": {
+    "pyr_16-32-64_III": 2
+  },
+  "files": {
+    "ap_valid_63_csv": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing/dataset_v2_ap_valid_63.csv",
+    "ap_valid_63_jsonl": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing/dataset_v2_ap_valid_63.jsonl",
+    "front_32_csv": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing/dataset_v2_front_32.csv",
+    "full_66_csv": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing/dataset_v2_full_66.csv"
+  },
+  "front_rows": 32,
+  "full_rows": 66,
+  "hardware_counts": {
+    "orin_agx": 8,
+    "rtx4090": 58
+  },
+  "latency_kind_counts": {
+    "NA_pending_trt_build": 3,
+    "body_subnet_collab2": 41,
+    "body_subnet_collab2_orin": 6,
+    "dla_pipeline_e2e_single_frame": 2,
+    "engine_board_energy": 13,
+    "forward_hook_pytorch_fp32": 1
+  },
+  "model_class_counts": {
+    "pyramid_fusion": 62,
+    "v2x_vit": 4
+  },
+  "output_root": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1",
+  "regime_counts": {
+    "ablation_guardrail_off": 9,
+    "ablation_perstage_dominated": 18,
+    "ablation_throughput_saturation": 3,
+    "ap_reference_pending_trt": 4,
+    "front": 32
+  },
+  "rows_with_energy": 60,
+  "rows_with_engine_size": 51,
+  "rows_with_latency": 63,
+  "schema": "stage2_lut_generation_existing_dataset_summary_v1",
+  "source": "/home/jichengzhi/V2X/multi_agent/data/dataset_v2.csv"
+}

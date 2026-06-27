@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 5.133,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 44705.166,
+  "latency_mean_us": 44704.546,
+  "latency_min_us": 44703.799,
+  "latency_p50_us": 44704.673,
+  "measure_iters": 100,
+  "notes": "original60_measured_v1; s0_040; metaschedule_tuned; backbone-only; no fresh tune",
+  "provenance": "H800 TVM original60_measured_v1 measured on clean target GPU; metaschedule_tuned; reuse existing artifacts",
+  "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_latency/original60_measured_v1_original60_s0_040_gpu1",
+  "repeat": 3,
+  "run_id": "original60_measured_v1_original60_s0_040_gpu1",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/s0_040_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/workdirs/s0_040",
+    "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_latency/original60_measured_v1_original60_s0_040_gpu1/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 30
+}

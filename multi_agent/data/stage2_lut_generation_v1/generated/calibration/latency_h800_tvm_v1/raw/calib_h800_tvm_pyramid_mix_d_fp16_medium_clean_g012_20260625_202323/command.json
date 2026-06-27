@@ -1,0 +1,14 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "mode": "medium_clean_g012_reuse_existing_ms_db",
+  "label": "mix_d",
+  "width": [
+    48,
+    128,
+    128
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/mix_d_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_d",
+  "gpu": "2",
+  "run_id": "calib_h800_tvm_pyramid_mix_d_fp16_medium_clean_g012_20260625_202323"
+}

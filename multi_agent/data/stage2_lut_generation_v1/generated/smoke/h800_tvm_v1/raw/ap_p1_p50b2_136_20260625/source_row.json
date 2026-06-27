@@ -1,0 +1,17 @@
+{
+  "ap30": 0.8270852477130309,
+  "ap50": 0.7876921123503781,
+  "ap70": 0.6425296366136182,
+  "elapsed_secs": 224.60906887054443,
+  "engine": null,
+  "engine_collab": "/home/jichengzhi/UniV2X/models/stage_a_cache/p50b2_136_fp16.engine",
+  "mean_per_sample_lat_ms": 36.54950260782855,
+  "n_pytorch_fallback": 171,
+  "n_samples": 1789,
+  "n_trt_collab_path": 1618,
+  "n_trt_path": 1618,
+  "n_trt_single_path": 0,
+  "p50_per_sample_lat_ms": 16.16048812866211,
+  "p99_per_sample_lat_ms": 494.6763801574705,
+  "tag": "p0_2_p50b2_136_fp16"
+}

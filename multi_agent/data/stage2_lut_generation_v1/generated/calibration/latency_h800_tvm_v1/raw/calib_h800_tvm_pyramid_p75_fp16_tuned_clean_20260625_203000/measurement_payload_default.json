@@ -1,0 +1,31 @@
+{
+  "latency_p50_us": 12674.737,
+  "latency_mean_us": 12674.737,
+  "latency_min_us": 12674.201,
+  "latency_max_us": 12675.296,
+  "warmup_iters": 1,
+  "measure_iters": 500,
+  "repeat": 5,
+  "batch_size": 1,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "tvm_target": "cuda",
+  "tvm_strategy": "relax_default",
+  "build_status": "success",
+  "build_time_s": 5.458,
+  "provenance": "H800 TVM latency calibration small clean; default schedule from same real measurement raw",
+  "run_id": "calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000_default_schedule",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/p75_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_p75_retest",
+    "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000/latency_result.json"
+  ],
+  "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000",
+  "notes": "latency calibration small clean; p75; default schedule; backbone-only"
+}

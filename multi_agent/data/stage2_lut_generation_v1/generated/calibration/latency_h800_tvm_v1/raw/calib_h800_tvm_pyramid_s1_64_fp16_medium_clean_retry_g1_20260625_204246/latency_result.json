@@ -1,0 +1,66 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.342,
+  "build_tuned_s": 8.126,
+  "default_max_us": 46416.234,
+  "default_mean_us": 46414.995,
+  "default_min_us": 46414.266,
+  "default_repeats_us": [
+    46414.48,
+    46416.234,
+    46414.852,
+    46415.145,
+    46414.266
+  ],
+  "default_us": 46414.852,
+  "error": "InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')",
+  "gpu": "1",
+  "idle_history_tail": [
+    {
+      "gpu": "1",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:42:46+0800",
+      "util": 0
+    },
+    {
+      "gpu": "1",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:42:52+0800",
+      "util": 0
+    },
+    {
+      "gpu": "1",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:42:57+0800",
+      "util": 0
+    }
+  ],
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "s1_64",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_64_backbone.onnx",
+  "preflight_status": "clean",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_204246",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/latency_medium_retry_g1_serial.py\", line 242, in measure\n    tuned_stats = time_vm(vm2, args, dev, MEASURE_ITERS, REPEAT)\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/latency_medium_retry_g1_serial.py\", line 129, in time_vm\n    dev.sync()\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/runtime/device.py\", line 320, in sync\n    _ffi_api.Device_StreamSync(self, stream or 0)\n  File \"python/tvm_ffi/cython/function.pxi\", line 968, in tvm_ffi.core.Function.__call__\n  File \"/workspace/tvm/src/runtime/cuda/cuda_device_api.cc\", line 250, in virtual void tvm::runtime::CUDADeviceAPI::StreamSync(tvm::Device, TVMStreamHandle)\ntvm.error.InternalError: Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered\n",
+  "warmup_iters": 1,
+  "width": [
+    64,
+    64,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_s1_64"
+}

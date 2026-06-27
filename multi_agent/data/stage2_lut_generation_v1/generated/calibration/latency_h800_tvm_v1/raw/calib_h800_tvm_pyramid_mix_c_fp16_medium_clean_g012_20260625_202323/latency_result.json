@@ -1,0 +1,53 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.971,
+  "build_tuned_s": 7.68,
+  "default_max_us": 30730.775,
+  "default_mean_us": 30730.298,
+  "default_min_us": 30730.082,
+  "default_repeats_us": [
+    30730.775,
+    30730.094,
+    30730.082,
+    30730.338,
+    30730.201
+  ],
+  "default_us": 30730.201,
+  "gpu": "1",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "mix_c",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_c_backbone.onnx",
+  "preflight_status": "clean",
+  "ratio": 6.021676,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_mix_c_fp16_medium_clean_g012_20260625_202323",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 5103.312,
+  "tuned_mean_us": 5103.177,
+  "tuned_min_us": 5103.004,
+  "tuned_repeats_us": [
+    5103.264,
+    5103.025,
+    5103.278,
+    5103.312,
+    5103.004
+  ],
+  "tuned_us": 5103.264,
+  "warmup_iters": 1,
+  "width": [
+    16,
+    128,
+    128
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_c"
+}

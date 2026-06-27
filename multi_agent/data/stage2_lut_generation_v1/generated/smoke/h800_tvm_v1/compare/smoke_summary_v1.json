@@ -1,0 +1,68 @@
+{
+  "schema": "stage2_h800_tvm_smoke_summary_v1",
+  "created_at": "2026-06-25T19:03:39+0800",
+  "scope": "H800 TVM productized smoke, backbone_only/dense-core internal",
+  "validation_dependency": {
+    "summary": "multi_agent/data/stage2_lut_generation_v1/validation/h800_tvm_replay_v1/compare/h800_tvm_replay_summary_v1.json",
+    "decision": "GO_LATENCY_SMOKE",
+    "passed_anchors": 6,
+    "failed_anchors": 0
+  },
+  "row_counts": {
+    "latency": 4,
+    "ap": 2,
+    "energy": 2
+  },
+  "latency_gate": {
+    "passed": 4,
+    "total": 4,
+    "decision": "pass"
+  },
+  "ap_gate": {
+    "passed": 2,
+    "total": 2,
+    "decision": "pass",
+    "note": "AP rows are true historical DAIR AP anchors imported through generate_ap_lut; no placeholder"
+  },
+  "energy_gate": {
+    "passed": 2,
+    "total": 2,
+    "decision": "pass",
+    "note": "H800 target GPU idle telemetry smoke; node GPUs 0-2 were busy, so not paper-grade energy"
+  },
+  "deferred": [
+    {
+      "job_id": "latency:smoke_h800_tvm_pyramid_int8_stage0_probe_deferred",
+      "reason": "not part of latency/AP/energy smoke gate; run later for mechanism/probe coverage"
+    }
+  ],
+  "diagnostics": [
+    {
+      "run_id": "smoke_h800_tvm_codriving_base_fp16_tuned_20260625_192000",
+      "status": "failed",
+      "reason": "generic ONNX shape reader kept symbolic batch as 0; corrected rerun used CoDriving batch substitution + dlight fallback",
+      "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_codriving_base_fp16_tuned_20260625_192000"
+    }
+  ],
+  "quick_review_csv": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/compare/smoke_quick_review_v1.csv",
+  "canonical_rows": {
+    "latency": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/latency/latency_lut_rows_v1.jsonl",
+    "ap": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/ap/ap_anchor_rows_v1.jsonl",
+    "energy": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/energy/energy_lut_rows_v1.jsonl"
+  },
+  "raw_dir": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw",
+  "decisions": {
+    "GO_LATENCY_CALIBRATION_SMALL": true,
+    "GO_FULL_LUT": false,
+    "NO_GO_FULL_LUT_REASON": "AP smoke used imported true anchors rather than fresh AP eval, energy has only 2 smoke telemetry rows and was run while other GPUs on the node were busy; run registry update and broader AP/energy smoke before full three-axis large LUT."
+  },
+  "registry_update": {
+    "status": "pass",
+    "path": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/compare/evidence_registry.smoke_updated.json",
+    "coverage": {
+      "latency": "4/4 measured",
+      "ap": "2/2 measured",
+      "energy": "2/2 measured"
+    }
+  }
+}

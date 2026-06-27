@@ -1,0 +1,2 @@
+gpu_bus_id, pid, process_name, used_gpu_memory [MiB]
+00000000:0A:00.0, 3610878, python, 40622 MiB

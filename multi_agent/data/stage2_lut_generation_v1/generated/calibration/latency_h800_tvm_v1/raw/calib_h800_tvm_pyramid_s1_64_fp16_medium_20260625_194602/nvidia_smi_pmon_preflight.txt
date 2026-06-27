@@ -1,0 +1,13 @@
+# gpu         pid  type    sm    mem    enc    dec    command
+# Idx           #   C/G     %      %      %      %    name
+    0     576406     C    84    51     -     -   python         
+    0    3260506     C     -     -     -     -   python         
+    1    3260506     C     -     -     -     -   python         
+    1     576408     C    80    53     -     -   python         
+    2    3260506     C     -     -     -     -   python         
+    2     576409     C    87    55     -     -   python         
+    3    3260506     C     0     0     -     -   python         
+    4    3260506     C     0     0     -     -   python         
+    5    3260506     C     0     0     -     -   python         
+    6    3260506     C     0     0     -     -   python         
+    7    3260506     C     0     0     -     -   python         

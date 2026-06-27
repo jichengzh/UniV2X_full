@@ -1,0 +1,7 @@
+label,width,ap70,ap50,num_samples,run_id,source
+base,64x128x256,0.6308636231895992,0.7910410096521415,1789,smoke_ap_pyramid_base_fp16_import_stage_a_20260625_194000,/home/jichengzhi/V2X/multi_agent/data/sources/stage_a_ap_real.csv
+p50,32x64x128,0.5641315043713827,0.7644278293218837,1789,smoke_ap_pyramid_p50_fp16_import_stage_a_20260625_194000,/home/jichengzhi/V2X/multi_agent/data/sources/stage_a_ap_real.csv
+trap25,48x96x192,0.5904723815291678,0.7769392127544705,1789,smoke_ap_pyramid_trap25_fp16_import_stage_a_20260625_204500,data/stage_a_ap_real.csv;results/stage_a/sA_pruned25_fp16.json
+p75,16x32x64,0.5299883430444458,0.7566691198482532,1789,smoke_ap_pyramid_p75_fp16_import_stage_a_20260625_204500,data/stage_a_ap_real.csv;results/stage_a/sA_pruned75_fp16.json
+mix_b,48x64x256,0.6361597419498289,0.7804962518701479,1789,smoke_ap_pyramid_mix_b_fp16_import_b4expand_20260625_204500,results/ap70_depgraph_expansion.json
+mix_d,48x128x128,0.6369383152509643,0.7858346455876241,1789,smoke_ap_pyramid_mix_d_fp16_import_b4expand_20260625_204500,results/ap70_depgraph_expansion.json

@@ -1,0 +1,9 @@
+{
+  "schema": "stage2_h800_p1_energy_command_v1",
+  "phase": "p1_energy",
+  "label": "mix_d",
+  "gpu": "2",
+  "run_id": "calib_h800_tvm_energy_pyramid_mix_d_p1_energy_20260625_233528",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_d_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_d"
+}

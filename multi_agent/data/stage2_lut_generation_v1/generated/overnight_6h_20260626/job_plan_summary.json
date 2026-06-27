@@ -1,0 +1,50 @@
+{
+  "schema": "stage2_overnight_6h_job_plan_summary_v1",
+  "created_at": "2026-06-25T18:09:12Z",
+  "base": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/overnight_6h_20260626",
+  "latency_jobs": 19,
+  "latency_split": {
+    "0": 7,
+    "1": 6,
+    "2": 6
+  },
+  "ap_jobs": 19,
+  "ap_split": {
+    "4": 10,
+    "5": 9
+  },
+  "ap_true_sources": [
+    "base",
+    "iso_s0",
+    "iso_s1",
+    "iso_s2",
+    "mix_a",
+    "mix_b",
+    "mix_d",
+    "p50",
+    "p50b2_136",
+    "p75",
+    "trap25"
+  ],
+  "ap_missing_sources": [
+    "pad64",
+    "s0_16",
+    "s0_32",
+    "s1_32",
+    "s2_64",
+    "s2_128",
+    "mix_c",
+    "mix_e"
+  ],
+  "energy_jobs": 17,
+  "energy_split": {
+    "3": 17
+  },
+  "excluded": {
+    "s1_64": "known CUDA illegal memory/bad-DB risk; excluded from overnight main queue"
+  },
+  "energy_skipped": {
+    "pad64": "skip first energy pass; previous pad64 tuned DB had failure risk",
+    "p50b2_136": "remote ONNX/work_dir currently missing; AP anchor only until artifact unblocked"
+  }
+}

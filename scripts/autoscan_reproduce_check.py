@@ -34,6 +34,7 @@ from framework.stage1 import graph_scan
 
 _A0_MODELS = ["codriving", "pyramid_lidar", "v2xvit"]  # pyramid_camera 可选 (仅 OPV2V ckpt)
 _A1_MODELS = ["fcooper", "attfuse"]
+_A2_MODELS = ["where2comm", "v2vnet", "disconet"]
 _PARTITION_DIR = _REPO / "framework/partitions"
 _RESULTS_DIR = _REPO / "results"
 _HW_YAML = _REPO / "configs/hardware/rtx4090.yaml"
@@ -115,7 +116,7 @@ def run_scan_one(model: str, hw: HwCapability, device: str) -> dict:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="a0",
-                    help="a0 | a1 | all | comma-sep model names")
+                    help="a0 | a1 | a2 | all | comma-sep model names")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--hw", default=str(_HW_YAML))
     ap.add_argument("--save-yaml", action="store_true",
@@ -126,8 +127,10 @@ def main():
         models = _A0_MODELS
     elif args.models == "a1":
         models = _A1_MODELS
+    elif args.models == "a2":
+        models = _A2_MODELS
     elif args.models == "all":
-        models = _A0_MODELS + _A1_MODELS
+        models = _A0_MODELS + _A1_MODELS + _A2_MODELS
     else:
         models = [m.strip() for m in args.models.split(",")]
 

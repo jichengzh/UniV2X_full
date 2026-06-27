@@ -1,0 +1,55 @@
+{
+  "created_at": "2026-06-25T19:53:19+0800",
+  "jobs": 9,
+  "plan": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/job_plan_medium.jsonl",
+  "process_results": [
+    {
+      "exitcode": 0,
+      "gpu": "3",
+      "label": "s0_16"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "4",
+      "label": "s0_32"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "5",
+      "label": "s1_32"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "6",
+      "label": "s1_64"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "7",
+      "label": "s2_64"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "3",
+      "label": "mix_a"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "4",
+      "label": "mix_b"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "5",
+      "label": "mix_c"
+    },
+    {
+      "exitcode": 0,
+      "gpu": "6",
+      "label": "mix_d"
+    }
+  ],
+  "run_group": "calib_latency_medium_reuse_clean_20260625_194602",
+  "schema": "calibration_latency_medium_runner_summary_v1",
+  "state": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/job_state_medium.jsonl"
+}

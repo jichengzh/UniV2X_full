@@ -1,0 +1,17 @@
+{
+  "ap30": 0.8239780210949827,
+  "ap50": 0.7843230776293404,
+  "ap70": 0.6299191671696608,
+  "elapsed_secs": 215.65812420845032,
+  "engine": null,
+  "engine_collab": "/home/jichengzhi/V2X/models/b2_eval_cache/b2_iso_s0_fp16.engine",
+  "mean_per_sample_lat_ms": 32.69201353850346,
+  "n_pytorch_fallback": 171,
+  "n_samples": 1789,
+  "n_trt_collab_path": 1618,
+  "n_trt_path": 1618,
+  "n_trt_single_path": 0,
+  "p50_per_sample_lat_ms": 16.910552978515625,
+  "p99_per_sample_lat_ms": 277.00468063354447,
+  "tag": "b2_iso_s0_fp16"
+}

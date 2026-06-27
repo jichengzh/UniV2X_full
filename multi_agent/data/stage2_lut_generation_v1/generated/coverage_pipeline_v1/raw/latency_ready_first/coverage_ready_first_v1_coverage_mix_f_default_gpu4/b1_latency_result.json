@@ -1,0 +1,11 @@
+{
+  "label": "mix_f",
+  "onnx": "mix_f_backbone.onnx",
+  "trials": 2,
+  "reps": 50,
+  "default_us": 22347.26,
+  "tuned_us": 19439.09,
+  "e2e_ratio": 1.15,
+  "tune_s": 17.0,
+  "status": "DONE"
+}

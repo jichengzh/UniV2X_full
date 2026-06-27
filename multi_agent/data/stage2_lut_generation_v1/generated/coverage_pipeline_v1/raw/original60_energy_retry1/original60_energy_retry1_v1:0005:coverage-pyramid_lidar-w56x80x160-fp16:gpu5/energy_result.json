@@ -1,0 +1,10 @@
+{
+  "error": "InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')",
+  "gpu": "5",
+  "label": "frontier_26",
+  "phase": "original60_measured_energy_retry1_v1",
+  "run_id": "original60_energy_retry1_v1:0005:coverage-pyramid_lidar-w56x80x160-fp16:gpu5",
+  "schema": "stage2_h800_overnight_energy_result_v1",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/scripts/stage2_h800_run_measurement_job.py\", line 489, in run_energy\n    dev.sync()\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/runtime/device.py\", line 320, in sync\n    _ffi_api.Device_StreamSync(self, stream or 0)\n  File \"python/tvm_ffi/cython/function.pxi\", line 968, in tvm_ffi.core.Function.__call__\n  File \"/workspace/tvm/src/runtime/cuda/cuda_device_api.cc\", line 250, in virtual void tvm::runtime::CUDADeviceAPI::StreamSync(tvm::Device, TVMStreamHandle)\ntvm.error.InternalError: Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered\n"
+}

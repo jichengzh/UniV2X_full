@@ -1,0 +1,61 @@
+532a533,541
+> 		###### ★ AP 退化旋钮 (剪枝/量化精度损失模拟): 丢低分检测框 (+可选 feature 一致退化)
+> 		###### 默认 0.0 = no-op, 不影响延迟实验; env AP_DROP 覆盖 config.ap_drop
+> 		############
+> 		self._ap_drop = float(os.environ.get('AP_DROP', sim_cfg.get('ap_drop', 0.0)))      # 丢框比例 (按 conf 从低到高)
+> 		self._ap_featmask = int(os.environ.get('AP_FEATMASK', sim_cfg.get('ap_featmask', 1)))  # 1=同时把被丢框处的 fused_feature 置零 (end2end planner 旁路修正)
+> 		if self._ap_drop > 0:
+> 			print("[pnp_infer] ★ AP_DROP=%.2f (丢最低 conf %d%% 框) featmask=%d → 模拟感知精度损失" % (self._ap_drop, int(self._ap_drop*100), self._ap_featmask))
+> 
+> 		############
+889a899,900
+> 			score_list = []  # ★ AP旋钮: 与 object_list 对齐的每框 conf
+> 			_scores_t = infer_result.get('pred_score', None)
+904a916,919
+> 				if _scores_t is not None and i < len(_scores_t):
+> 					score_list.append(float(_scores_t[i]))
+> 				else:
+> 					score_list.append(1.0)
+910a926,945
+> 			score_list = []
+> 
+> 		### ★ AP 退化注入: 按 conf 从低到高丢 ap_drop 比例的框 (模拟剪枝/量化精度损失)
+> 		ap_dropped_boxes = None  # 给 feature 旁路修正用 (被丢框的空间位置)
+> 		if self._ap_drop > 0 and len(processed_pred_box) > 0:
+> 			_n = len(processed_pred_box)
+> 			_k_drop = int(math.floor(_n * self._ap_drop))
+> 			if _k_drop > 0:
+> 				_order = sorted(range(_n), key=lambda j: score_list[j])  # conf 升序
+> 				_drop_set = set(_order[:_k_drop])
+> 				_keep_idx = [j for j in range(_n) if j not in _drop_set]
+> 				_drop_idx = [j for j in range(_n) if j in _drop_set]
+> 				if len(_drop_idx) > 0:
+> 					ap_dropped_boxes = processed_pred_box[_drop_idx]
+> 				if len(_keep_idx) > 0:
+> 					processed_pred_box = processed_pred_box[_keep_idx]
+> 				else:
+> 					processed_pred_box = processed_pred_box[:0]
+> 				if step % 40 == 0:
+> 					print("[pnp_infer] ★ AP_DROP=%.2f step=%d 检测框 %d→%d (丢%d最低conf)" % (self._ap_drop, step, _n, len(processed_pred_box), _k_drop))
+931c966
+< 		fused_feature_2 = perception_results['fused_feature'].permute(0,1,3,2) 
+---
+> 		fused_feature_2 = perception_results['fused_feature'].permute(0,1,3,2)
+933c968,982
+< 		feature = fused_feature_3[:,:,:192,:]	
+---
+> 		feature = fused_feature_3[:,:,:192,:]
+> 
+> 		### ★ AP 退化 — feature 旁路修正: end2end planner 同时吃 fused_feature,
+> 		### 仅丢框 occupancy 会被特征通道"看穿" → 在被丢框的空间位置把 feature 也置零,
+> 		### 保持"框丢哪/特征也弱哪"的一致性 (真剪枝模型框与特征同时退化)。
+> 		if self._ap_drop > 0 and self._ap_featmask:
+> 			if self._ap_drop >= 0.999:
+> 				feature = torch.zeros_like(feature)  # 全丢=盲驾 sanity arm
+> 			elif ap_dropped_boxes is not None and len(ap_dropped_boxes) > 0:
+> 				_dmask = turn_traffic_into_map(ap_dropped_boxes[:,:4,:2].cpu(), self.det_range)  # 1,H,W (0/255)
+> 				_dmask = torch.from_numpy(_dmask).cuda().float()  # 1,H,W
+> 				_dmask = _dmask[:, :feature.shape[2], :feature.shape[3]]
+> 				_mb = (_dmask > 127).unsqueeze(1)  # 1,1,H,W
+> 				if _mb.shape[0] == feature.shape[0] or _mb.shape[0] == 1:
+> 					feature = feature * (~_mb).float()

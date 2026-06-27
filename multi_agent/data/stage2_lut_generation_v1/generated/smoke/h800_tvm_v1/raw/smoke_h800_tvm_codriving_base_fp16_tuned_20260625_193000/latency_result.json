@@ -1,0 +1,51 @@
+{
+  "batch_size": 2,
+  "build_default_s": 6.875,
+  "build_tuned_s": 21.689,
+  "default_max_us": 16673.5,
+  "default_min_us": 16668.811,
+  "default_path": "relax.build",
+  "default_repeats_us": [
+    16670.441,
+    16670.305,
+    16668.811,
+    16670.541,
+    16673.5
+  ],
+  "default_us": 16670.72,
+  "gpu": "7",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      256,
+      512
+    ]
+  },
+  "label": "base",
+  "measure_iters": 500,
+  "model": "codriving",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/codriving_cache/base_backbone.onnx",
+  "ratio": 2.073692,
+  "repeat": 5,
+  "run_id": "smoke_h800_tvm_codriving_base_fp16_tuned_20260625_193000",
+  "schema": "stage2_h800_smoke_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 8040.326,
+  "tuned_min_us": 8037.569,
+  "tuned_repeats_us": [
+    8040.326,
+    8037.569,
+    8039.473,
+    8039.319,
+    8039.059
+  ],
+  "tuned_us": 8039.149,
+  "warmup_iters": 1,
+  "width": [
+    64,
+    128,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_cod_base"
+}

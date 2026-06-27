@@ -1,0 +1,35 @@
+{
+  "ap_gate": {
+    "decision": "pass_cached_real_eval_import",
+    "note": "AP rows are true DAIR-1789 eval anchors imported through generate_ap_lut; added trap25/p75/mix_b/mix_d supplement",
+    "passed": 6
+  },
+  "ap_quick_review_csv": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/compare/ap_smoke_supplement_quick_review_v1.csv",
+  "energy_gate": {
+    "blocked_supplement": {
+      "created_at": "2026-06-25T21:19:58+0800",
+      "decision": "BASE_P50_PASS_PAD64_TUNED_KERNEL_FAILED",
+      "existing_energy_rows_retained": [
+        "smoke_h800_tvm_energy_pyramid_base_fp16_tuned_20260625_194000",
+        "smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000"
+      ],
+      "failed_raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_energy_pyramid_pad64_fp16_tuned_20260625_211139",
+      "failed_run_id": "smoke_h800_tvm_energy_pyramid_pad64_fp16_tuned_20260625_211139",
+      "measured_energy_rows": 2,
+      "next_action": "Diagnose pad64 MetaSchedule DB/kernel or rerun with known-good latency measurement path before claiming pad64 energy.",
+      "reason": "Target GPU1 passed idle preflight, but tuned TVM VM failed with CUDA illegal address in fused_conv2d15_add8_relu6_kernel; no energy measured row was written for pad64.",
+      "schema": "energy_smoke_supplement_gate_v2",
+      "target": "pyramid_lidar pad64 fp16 tuned energy supplement"
+    },
+    "decision": "base_p50_pass_pad64_tuned_kernel_failed",
+    "passed": 2
+  },
+  "go_full_lut": false,
+  "no_go_full_lut_reason": "latency s1_64 tuned and energy pad64 tuned both expose TVM MetaSchedule kernel/DB failures under clean preflight; full unattended tri-axis worker should wait for DB/kernel fix or exclusion policy.",
+  "row_counts": {
+    "ap": 6,
+    "energy": 2,
+    "latency": 4
+  },
+  "schema": "stage2_h800_tvm_smoke_summary_v2"
+}

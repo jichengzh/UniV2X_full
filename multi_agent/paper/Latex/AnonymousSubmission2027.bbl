@@ -1,0 +1,105 @@
+\begin{thebibliography}{16}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Chen et~al.(2018)Chen, Zheng, Yan, Jiang, Moreau, Ceze, Guestrin, and
+  Krishnamurthy}]{chen2018learning}
+Chen, T.; Zheng, L.; Yan, E.; Jiang, Z.; Moreau, T.; Ceze, L.; Guestrin, C.;
+  and Krishnamurthy, A. 2018.
+\newblock Learning to Optimize Tensor Programs.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~31.
+
+\bibitem[{Clancey(1979)}]{c:79}
+Clancey, W.~J. 1979.
+\newblock \emph{{Transfer of Rule-Based Expertise through a Tutorial
+  Dialogue}}.
+\newblock {Ph.D.} diss., Dept.\ of Computer Science, Stanford Univ., Stanford,
+  Calif.
+
+\bibitem[{Clancey(1983)}]{c:83}
+Clancey, W.~J. 1983.
+\newblock {Communication, Simulation, and Intelligent Agents: Implications of
+  Personal Intelligent Machines for Medical Education}.
+\newblock In \emph{Proceedings of the Eighth International Joint Conference on
+  Artificial Intelligence {(IJCAI-83)}}, 556--560. Menlo Park, Calif: {IJCAI
+  Organization}.
+
+\bibitem[{Clancey(1984)}]{c:84}
+Clancey, W.~J. 1984.
+\newblock {Classification Problem Solving}.
+\newblock In \emph{Proceedings of the Fourth National Conference on Artificial
+  Intelligence}, 45--54. Menlo Park, Calif.: AAAI Press.
+
+\bibitem[{Clancey(2021)}]{c:21}
+Clancey, W.~J. 2021.
+\newblock {The Engineering of Qualitative Models}.
+\newblock Forthcoming.
+
+\bibitem[{Deb et~al.(2002)Deb, Pratap, Agarwal, and Meyarivan}]{deb2002nsga}
+Deb, K.; Pratap, A.; Agarwal, S.; and Meyarivan, T. 2002.
+\newblock A Fast and Elitist Multiobjective Genetic Algorithm: {NSGA-II}.
+\newblock \emph{IEEE Transactions on Evolutionary Computation}, 6(2): 182--197.
+
+\bibitem[{Engelmore and Morgan(1986)}]{em:86}
+Engelmore, R.; and Morgan, A., eds. 1986.
+\newblock \emph{Blackboard Systems}.
+\newblock Reading, Mass.: Addison-Wesley.
+
+\bibitem[{Fang et~al.(2023)Fang, Ma, Song, Mi, and Wang}]{fang2023depgraph}
+Fang, G.; Ma, X.; Song, M.; Mi, M.~B.; and Wang, X. 2023.
+\newblock DepGraph: Towards Any Structural Pruning.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 16091--16101.
+
+\bibitem[{Hasling, Clancey, and Rennels(1984)}]{hcr:83}
+Hasling, D.~W.; Clancey, W.~J.; and Rennels, G. 1984.
+\newblock Strategic explanations for a diagnostic consultation system.
+\newblock \emph{International Journal of Man-Machine Studies}, 20(1): 3--19.
+
+\bibitem[{{NASA}(2015)}]{c:23}
+{NASA}. 2015.
+\newblock Pluto: The 'Other' Red Planet.
+\newblock \url{https://www.nasa.gov/nh/pluto-the-other-red-planet}.
+\newblock Accessed: 2018-12-06.
+
+\bibitem[{Rice(1986)}]{r:86}
+Rice, J. 1986.
+\newblock {Poligon: A System for Parallel Problem Solving}.
+\newblock Technical Report KSL-86-19, Dept.\ of Computer Science, Stanford
+  Univ.
+
+\bibitem[{Robinson(1980)}]{r:80}
+Robinson, A.~L. 1980.
+\newblock New Ways to Make Microcircuits Smaller.
+\newblock \emph{Science}, 208(4447): 1019--1022.
+
+\bibitem[{Shu et~al.(2021)}]{shu2021chanas}
+Shu, H.; et~al. 2021.
+\newblock Channel-wise Hardware-aware Neural Architecture Search via Block-wise
+  Schedule Tuning.
+\newblock In \emph{Proceedings of the 22nd ACM SIGPLAN/SIGBED International
+  Conference on Languages, Compilers, and Tools for Embedded Systems (LCTES)}.
+
+\bibitem[{Vaswani et~al.(2023)Vaswani, Shazeer, Parmar, Uszkoreit, Jones,
+  Gomez, Kaiser, and Polosukhin}]{c:22}
+Vaswani, A.; Shazeer, N.; Parmar, N.; Uszkoreit, J.; Jones, L.; Gomez, A.~N.;
+  Kaiser, L.; and Polosukhin, I. 2023.
+\newblock Attention Is All You Need.
+\newblock arXiv:1706.03762.
+
+\bibitem[{Xu et~al.(2023)}]{xu2023alt}
+Xu, Z.; et~al. 2023.
+\newblock {ALT}: Boosting Deep Learning Performance by Breaking the Wall
+  between Graph and Operator Level Optimizations.
+\newblock \emph{arXiv preprint arXiv:2210.12415}.
+
+\bibitem[{Yang et~al.(2018)Yang, Howard, Chen, Zhang, Go, Sandler, Sze, and
+  Adam}]{yang2018netadapt}
+Yang, T.-J.; Howard, A.; Chen, B.; Zhang, X.; Go, A.; Sandler, M.; Sze, V.; and
+  Adam, H. 2018.
+\newblock {NetAdapt}: Platform-Aware Neural Network Adaptation for Mobile
+  Applications.
+\newblock In \emph{Proceedings of the European Conference on Computer Vision
+  (ECCV)}, 285--300.
+
+\end{thebibliography}

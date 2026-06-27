@@ -1,0 +1,65 @@
+{
+  "active_duration_s": 9.325877,
+  "active_samples": 62,
+  "batch_size": 1,
+  "build_time_s": 13.073,
+  "error": "FileNotFoundError(2, 'No such file or directory')",
+  "gpu": "2",
+  "idle_history_tail": [
+    {
+      "gpu": "2",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T23:06:29+0800",
+      "util": 0
+    },
+    {
+      "gpu": "2",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T23:06:35+0800",
+      "util": 0
+    },
+    {
+      "gpu": "2",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T23:06:40+0800",
+      "util": 0
+    }
+  ],
+  "idle_samples": 17,
+  "idle_watt_avg": 68.4771,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "joule_per_inference": 1.92134548,
+  "label": "base",
+  "latency_run_id": "calib_h800_tvm_pyramid_base_fp16_tuned_clean_20260625_203000",
+  "measure_iters": 1500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+  "phase": "p1_energy",
+  "repeat": 1,
+  "run_id": "calib_h800_tvm_energy_pyramid_base_p1_energy_20260625_230629",
+  "sample_window_ms": 9326,
+  "schema": "stage2_h800_energy_result_v1",
+  "status": "failed",
+  "time_evaluator_s": 0.0062,
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 790, in measure_energy\n    append_energy_row(job, raw, result)\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 623, in append_energy_row\n    call_generator(\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 376, in call_generator\n    proc = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, check=False)\n  File \"/usr/lib/python3.10/subprocess.py\", line 503, in run\n    with Popen(*popenargs, **kwargs) as process:\n  File \"/usr/lib/python3.10/subprocess.py\", line 971, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n  File \"/usr/lib/python3.10/subprocess.py\", line 1863, in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nFileNotFoundError: [Errno 2] No such file or directory: '/home/jichengzhi/miniconda3/bin/python3'\n",
+  "warmup_iters": 50,
+  "watt_avg": 377.5116,
+  "watt_p50": 385.64,
+  "watt_p90": 388.04,
+  "width": [
+    64,
+    128,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_base"
+}

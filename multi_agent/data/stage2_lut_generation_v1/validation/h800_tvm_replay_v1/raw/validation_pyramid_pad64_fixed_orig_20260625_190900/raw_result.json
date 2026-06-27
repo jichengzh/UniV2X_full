@@ -1,0 +1,41 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.228,
+  "build_tuned_s": 5.674,
+  "default_min_us": 49690.863,
+  "default_repeats_us": [
+    49690.863,
+    56698.102,
+    59823.707,
+    61202.277,
+    61915.039
+  ],
+  "default_us": 57865.998,
+  "gpu": "6",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "measure_iters": 500,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/pad64_backbone_fixed.onnx",
+  "ratio": 0.931855,
+  "repeat": 5,
+  "run_id": "validation_pyramid_pad64_fixed_orig_20260625_190900",
+  "schema": "stage2_h800_pad64_combo_result_v1",
+  "status": "success",
+  "tuned_min_us": 60857.352,
+  "tuned_repeats_us": [
+    60857.352,
+    62352.719,
+    62412.723,
+    62426.852,
+    62438.598
+  ],
+  "tuned_us": 62097.648,
+  "warmup_iters": 1,
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_pad64"
+}

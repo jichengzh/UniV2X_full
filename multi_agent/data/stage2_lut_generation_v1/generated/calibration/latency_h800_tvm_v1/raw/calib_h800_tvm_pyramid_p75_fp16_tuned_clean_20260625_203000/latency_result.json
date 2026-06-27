@@ -1,0 +1,49 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.458,
+  "build_tuned_s": 6.469,
+  "default_max_us": 12675.296,
+  "default_min_us": 12674.201,
+  "default_repeats_us": [
+    12674.201,
+    12675.296,
+    12675.04,
+    12674.616,
+    12674.534
+  ],
+  "default_us": 12674.737,
+  "gpu": "7",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "p75",
+  "measure_iters": 500,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/p75_backbone.onnx",
+  "ratio": 26.239954,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 483.204,
+  "tuned_min_us": 482.739,
+  "tuned_repeats_us": [
+    482.739,
+    482.967,
+    483.069,
+    483.181,
+    483.204
+  ],
+  "tuned_us": 483.032,
+  "warmup_iters": 1,
+  "width": [
+    16,
+    32,
+    64
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p75_retest"
+}

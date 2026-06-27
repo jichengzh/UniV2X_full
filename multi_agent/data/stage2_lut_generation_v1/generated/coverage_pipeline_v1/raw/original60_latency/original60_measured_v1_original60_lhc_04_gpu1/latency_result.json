@@ -1,0 +1,48 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.967,
+  "build_tuned_s": 4.856,
+  "default_max_us": 37457.864,
+  "default_mean_us": 37450.332,
+  "default_min_us": 37437.402,
+  "default_repeats_us": [
+    37457.864,
+    37455.73,
+    37437.402
+  ],
+  "default_us": 37455.73,
+  "gpu": "1",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "lhc_04",
+  "measure_iters": 100,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/lhc_04_backbone.onnx",
+  "phase": "original60_measured_v1",
+  "ratio": 0.998259,
+  "repeat": 3,
+  "run_id": "original60_measured_v1_original60_lhc_04_gpu1",
+  "schema": "stage2_h800_overnight_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 37540.537,
+  "tuned_mean_us": 37526.941,
+  "tuned_min_us": 37519.226,
+  "tuned_repeats_us": [
+    37540.537,
+    37521.06,
+    37519.226
+  ],
+  "tuned_us": 37521.06,
+  "warmup_iters": 30,
+  "width": [
+    48,
+    48,
+    224
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/lhc_04"
+}

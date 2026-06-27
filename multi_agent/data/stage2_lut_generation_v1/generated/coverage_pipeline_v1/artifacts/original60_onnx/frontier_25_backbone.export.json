@@ -1,0 +1,43 @@
+{
+  "candidate_id": "coverage:pyramid_lidar:w64x96x224:fp16",
+  "export_log_path": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/artifacts/original60_onnx/frontier_25_backbone.export.json",
+  "input_shape": [
+    2,
+    64,
+    128,
+    256
+  ],
+  "label": "frontier_25",
+  "onnx_path": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/artifacts/original60_onnx/frontier_25_backbone.onnx",
+  "opset": 17,
+  "output_shapes": [
+    [
+      2,
+      64,
+      128,
+      256
+    ],
+    [
+      2,
+      96,
+      64,
+      128
+    ],
+    [
+      2,
+      224,
+      32,
+      64
+    ]
+  ],
+  "parameter_count": 2345792,
+  "schema": "stage2_original60_onnx_export_row_v1",
+  "sha256": "ba39202306d10336b08c0e92bde20d4ada89234fbbfb337de94a4a0c68559ae9",
+  "size_bytes": 9313540,
+  "status": "succeeded",
+  "width": [
+    64,
+    96,
+    224
+  ]
+}

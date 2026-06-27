@@ -1,0 +1,17 @@
+{
+  "tag": "stage2_ap_s0_040_fp16",
+  "engine": null,
+  "engine_collab": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s0_040/s0_040_fp16.engine",
+  "n_samples": 1789,
+  "n_trt_single_path": 0,
+  "n_trt_collab_path": 1618,
+  "n_trt_path": 1618,
+  "n_pytorch_fallback": 171,
+  "ap30": 0.8227288286926274,
+  "ap50": 0.7812451204720512,
+  "ap70": 0.6266594834369248,
+  "elapsed_secs": 193.129163980484,
+  "mean_per_sample_lat_ms": 11.92177614731253,
+  "p50_per_sample_lat_ms": 9.562492370605469,
+  "p99_per_sample_lat_ms": 35.007581710815224
+}

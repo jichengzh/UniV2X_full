@@ -1,0 +1,5 @@
+model,backend,scope,precision,label,onnx,batch,default_ms,tuned_ms,speedup_default_over_tuned,trials,tune_s,evidence_status,source_file,notes
+codriving,h800_tvm_relax_metaschedule,backbone_only,fp16_or_fp32_recorded_as_source,p50,p50_backbone.onnx,2,3.64315,1.6091,2.264,1000,1474,trusted_measured,results/codriving_tvm_p25_p75.csv,
+codriving,h800_tvm_relax_metaschedule,backbone_only,fp16_or_fp32_recorded_as_source,base,base_backbone.onnx,2,16.68047,8.05779,2.070,1000,1581,trusted_measured,results/codriving_tvm_p25_p75.csv,
+codriving,h800_tvm_relax_metaschedule,backbone_only,fp16_or_fp32_recorded_as_source,p75,p75_backbone.onnx,1,2.8317,2.4508,1.155,500,760,trusted_measured,results/codriving_tvm_p25_p75.csv,p75 has batch=1 caveat; absolute latency not cross-comparable to batch=2 rows
+codriving,h800_tvm_relax_metaschedule,backbone_only,fp16_or_fp32_recorded_as_source,p25,p25_backbone.onnx,2,11.885,10.4673,1.135,500,708,trusted_measured,results/codriving_tvm_p25_p75.csv,

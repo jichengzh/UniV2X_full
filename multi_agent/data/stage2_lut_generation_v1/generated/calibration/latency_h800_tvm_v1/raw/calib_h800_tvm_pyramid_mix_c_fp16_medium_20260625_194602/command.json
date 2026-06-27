@@ -1,0 +1,14 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "mode": "medium_reuse_existing_ms_db",
+  "label": "mix_c",
+  "width": [
+    16,
+    128,
+    128
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/mix_c_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_c",
+  "gpu": "5",
+  "run_id": "calib_h800_tvm_pyramid_mix_c_fp16_medium_20260625_194602"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "stage2_h800_smoke_latency_command_v1",
+  "mode": "reuse_existing_ms_db",
+  "gpu": "4",
+  "model": "pyramid_lidar",
+  "label": "p50",
+  "width": [
+    32,
+    64,
+    128
+  ],
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50",
+  "run_id": "smoke_h800_tvm_pyramid_p50_fp16_tuned_20260625_192000"
+}

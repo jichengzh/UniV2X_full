@@ -1,0 +1,13 @@
+{
+  "ap30": 0.8235624077491074,
+  "ap50": 0.7838379140440689,
+  "ap70": 0.6287552124269079,
+  "ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b2_mixed_2026_06_20/net_epoch_bestval_at31.pth",
+  "n_samples": 1789,
+  "role": "validation",
+  "s0": 32,
+  "s1": 96,
+  "s2": 192,
+  "source": "b2_finetune_TRT_FP16_DAIR_1789",
+  "tag": "mixed"
+}

@@ -1,31 +1,75 @@
-# CoDriving DS 预测地图 — DS = f(AP, latency)
+# CoDriving DS prediction map: DS = f(AP, latency)
 
-**用途**: 拿到某感知算法的 (vehicle AP50, 感知延迟 τ_perc ms),快速预测它在 CoDriving 闭环里的驾驶分 DS。
+Purpose: given a perception algorithm's `(vehicle AP50, tau_perc latency_ms)`, estimate its CoDriving closed-loop driving score (DS), and inspect the related safety cliff with a separate collision map.
 
-## 文件
-- `ds_ap_latency_map.png` — 地图(填色等高线,真实坐标轴 latency×AP50,DS 颜色,实测点标注)。
-- `ds_ap_latency_merged.csv` — 31 个实测点(主网格 25 + 交互细延迟 6)。
-- `ds_map_build.py` — 建图脚本 + **查询函数 `predict_ds(ap50, latency_ms)`**。
+## Current Artifacts
 
-## 查询
+- `ds_ap_latency_all_measured.csv` - consolidated 65-cell measured table:
+  `13 latency points x 5 AP points`, with DS, RC, vehicle-collision rate, timeout rate, and source.
+- `ap_latency_metrics_by_source.csv` - by-source aggregation, preserving duplicate endpoint measurements.
+- `ds_ap_latency_map_v2.png` - measured DS map, real axes `latency_ms x AP50`.
+- `ap_tau_collision_map_v2.png` - measured vehicle collision episode-rate map.
+- `ds_map_build_v2.py` - v2 plotting script and `predict_ds(ap50, latency_ms)` query function.
+
+Legacy files are kept for traceability:
+
+- `ds_ap_latency_map.png`, `ds_ap_latency_merged.csv`, `ds_map_build.py` - old 31-point map before plateau and Phase-A cliff-band completion.
+
+## Query
+
 ```python
-from ds_map_build import predict_ds
-predict_ds(0.84, 400)   # -> ~67  (高AP, 中延迟, 安全高原)
-predict_ds(0.36, 700)   # -> ~31  (崖口右侧, 灾难台地)
+from ds_map_build_v2 import predict_ds
+
+predict_ds(0.841, 600)  # -> 77.9
+predict_ds(0.559, 700)  # -> 17.7
+predict_ds(0.281, 750)  # -> 29.2
 ```
-凸包外(AP<0.28 或 >0.84,latency>800)回退最近实测点。
 
-## 地图怎么读(核心结构)
-1. **延迟是主导轴,崖口 ≈625ms**: 延迟 ≤600ms = 健康高原(DS 55-85);延迟 ≥650ms = 灾难台地(DS ~26-37),catastrophe(DS<10)率 39-56%。崖口陡(600→650 之间 DS 从 ~78 掉到 ~28),不是缓降。
-2. **AP 是高原上的二级调制**: 延迟安全时,AP50 0.84→0.28 使 DS 在 ~85→55 间变化(噪声大、非单调,过度保守地板)。**过了崖口 AP 无关**(延迟灾难压倒一切,DS ~28 无论 AP)。
-3. **预测要点**: 先看延迟落在崖口哪侧 —— <625ms 则 DS≈高原值(查 AP);≥625ms 则 DS≈28(灾难,AP 无关)。
+Interpolation is linear over the measured rectangle. Values outside the measured range are clipped to:
 
-## 口径与 caveat(必读)
-- **DS = honest composed DS**: `score_composed`,**超时(ego 卡死跑不完)记 DS=0**,clean6 路(3/17/18/104/136/317)× N=18(主网格)/36(交互)。
-- **延迟轴 = τ_perc(车端自身感知延迟)**;AP 轴 = **融合后** AP50(ego+RSU 融合输出退化,非 ego-only)。drop→AP50 标定: drop 0/.25/.5/.7/.85 = AP50 0.841/0.783/0.559/0.360/0.281。
-- **AP 轴在 composed DS 上信号弱**(N 内方差大 + 过度保守地板掩盖)。AP 的**干净**安全信号在**碰撞率**上(见 `ap_tau_interaction_collision.png`: 低AP 让碰撞崖口 750→650ms 提前),composed DS 把它和"堵车不撞"的地板混在一起了。
-- 仅 Town05、town05_short_collab、满交通 `_1`;RSU 延迟臂(latency_inject_ms)与 τ_ego 未并入(=0)。
-- 未测区间为线性插值,非物理模型;崖口精确位置在 600-650 间(只采到这两端 + 650),真实拐点可能在 610-640。
+- AP50: `[0.281, 0.841]`
+- latency: `[0, 800] ms`
 
-## 复跑
-`ds_map_build.py` 数据内联,直接 `python ds_map_build.py` 重生成图 + 查询样例。源数据: 主网格 `ap_tau_grid_ds.csv`,交互 H800 `/tmp/ix_ds.py`(honest_DS 重算)。
+## Measured DS Table
+
+Honest DS: `score_composed`; `TIMEOUT_SKIP` or missing score is counted as `0`.
+
+| AP50 \ latency ms | 0 | 100 | 200 | 300 | 400 | 450 | 500 | 550 | 600 | 650 | 700 | 750 | 800 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.841 | 85.3 | 91.7 | 84.7 | 68.1 | 67.2 | 64.2 | 73.3 | 81.6 | 77.9 | 28.0 | 28.2 | 30.2 | 26.6 |
+| 0.783 | 68.5 | 77.8 | 83.3 | 67.8 | 66.9 | 63.1 | 65.1 | 61.9 | 65.9 | 29.4 | 28.6 | 25.7 | 37.2 |
+| 0.559 | 56.4 | 72.2 | 75.0 | 68.6 | 68.5 | 63.4 | 56.0 | 54.9 | 76.8 | 27.5 | 17.7 | 22.6 | 23.1 |
+| 0.360 | 63.8 | 75.0 | 69.4 | 58.3 | 54.6 | 48.1 | 64.3 | 58.6 | 58.5 | 26.9 | 31.3 | 29.9 | 27.5 |
+| 0.281 | 66.7 | 75.0 | 60.0 | 62.5 | 62.5 | 72.9 | 82.6 | 85.5 | 81.3 | 28.7 | 27.9 | 29.2 | 25.6 |
+
+## Key Reading
+
+1. DS cliff is now measured across the full 5-AP grid: the missing `650/700/750ms x AP={0.783,0.559,0.281}` cells are no longer interpolated.
+2. DS still shows latency as the dominant factor: 600ms is mostly high, 650ms and later are mostly low.
+3. AP-dependent cliff movement should not be claimed from composed DS alone. The safety/collision claim belongs to `ap_tau_collision_map_v2.png`.
+4. Collision/RC columns use the interaction-analysis convention: non-timeout episodes only, with `timeout_pct` reported separately. DS uses the honest convention and includes timeouts as zero.
+
+## Sources
+
+- Main grid: `latency={0,200,400,600,800} x drop={0,0.25,0.50,0.70,0.85}`, clean6 x N=3.
+- Plateau completion: `latency={100,300,450,500,550} x all 5 AP`, clean6 x N=3.
+- Interaction endpoints: `latency={600,650,700,750,800} x drop={0,0.70}`, clean6 x N=6.
+- Phase A cliff-band fill: `latency={650,700,750} x drop={0.25,0.50,0.85}`, clean6 x N=6.
+
+Raw H800 result pattern:
+
+```text
+/exdata/jichengzhi/V2Xverse_apknob/results/
+  results_driving_grid_g{code}_r{route}_n{rep}/
+  v2x_final/town05_short_collab/*/ego_vehicle_0/results.json
+```
+
+Drop to AP50 calibration:
+
+| drop | AP50 |
+|---:|---:|
+| 0.00 | 0.841 |
+| 0.25 | 0.783 |
+| 0.50 | 0.559 |
+| 0.70 | 0.360 |
+| 0.85 | 0.281 |

@@ -1,0 +1,18 @@
+metric,value,detail
+raw_row_count,172,all LUT rows read
+unique_config_count,172,axis-independent configs
+unique_latency_cells,116,measured latency cells
+unique_energy_cells,56,measured energy cells
+unique_ap_cells,0,measured AP cells
+repeat_rows,0,extra measured rows beyond unique cells
+repeat_ratio,0.000000,coverage-first
+blocked_job_count,5,latest state only
+blocked_config_count,4,quarantine or missing artifact
+missing_artifact_config_count,0,artifact gap
+quarantined_config_count,4,active quarantine
+quarantine_growth,0,current minus previous active configs
+latency_ready_jobs,0,low-water gate
+energy_ready_jobs,0,queue ready
+ap_ready_jobs,0,queue ready
+recommendation_count,2,supervisor actions
+top_missing_axes_count,4,axis gap groups

@@ -1,0 +1,32 @@
+{
+  "latency_p50_us": 6212.53,
+  "latency_mean_us": 6212.53,
+  "latency_min_us": 6211.45,
+  "latency_max_us": 6213.67,
+  "warmup_iters": 1,
+  "measure_iters": 500,
+  "repeat": 5,
+  "batch_size": 1,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "tvm_target": "cuda",
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "build_status": "success",
+  "build_time_s": 13.217,
+  "provenance": "H800 TVM validation replay using existing MetaSchedule DB",
+  "run_id": "validation_pyramid_base_reuse_msdb_20260625_182430",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/gap1_run_v2.py",
+    "/exdata/jichengzhi/s2_tvm/s2_2e_e2e.py",
+    "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_base"
+  ],
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/validation/h800_tvm_replay_v1/raw/validation_pyramid_base_reuse_msdb_20260625_182430/base_reuse_existing_ms_db_result.json",
+  "notes": "validation replay; comparison_mode=reuse_existing_ms_db; Pyramid base backbone-only"
+}

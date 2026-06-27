@@ -1,0 +1,24 @@
+{
+  "metric": "AP70",
+  "metric_value": 0.6369383152509643,
+  "secondary_metrics": {
+    "AP30": 0.8257724708092585,
+    "AP50": 0.7858346455876241,
+    "n_trt_path": 1618
+  },
+  "dataset": "DAIR-V2X",
+  "eval_split": "val_1789",
+  "num_samples": 1789,
+  "ckpt_path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_b4expand_mix_d_2026_06_20",
+  "ckpt_digest": "unknown",
+  "finetune_protocol": "b4expand_finetuned_epoch31",
+  "training_budget": "historical_b4expand_epoch31",
+  "eval_command": "import ap70_depgraph_expansion.json tag=mix_d",
+  "provenance": "DAIR validation AP anchor imported from real b4 expansion TRT FP16 eval through generate_ap_lut",
+  "run_id": "smoke_ap_pyramid_mix_d_fp16_import_b4expand_20260625_204500",
+  "source_files": [
+    "results/ap70_depgraph_expansion.json"
+  ],
+  "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_ap_pyramid_mix_d_fp16_import_b4expand_20260625_204500",
+  "notes": "true measured AP anchor; protocol matches stage_a; imported for AP smoke supplement, not placeholder"
+}

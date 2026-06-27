@@ -1,0 +1,12 @@
+gpu_uuid, pid, process_name, used_gpu_memory [MiB]
+GPU-2133c0e5-4e29-a3aa-d7c6-c45046e073f7, 576406, /opt/conda/bin/python, 60258 MiB
+GPU-2133c0e5-4e29-a3aa-d7c6-c45046e073f7, 3260506, python, 2834 MiB
+GPU-fecad09b-d28a-8f1a-6da8-a29fd4ddd659, 576408, /opt/conda/bin/python, 61542 MiB
+GPU-fecad09b-d28a-8f1a-6da8-a29fd4ddd659, 3260506, python, 2870 MiB
+GPU-cc8e76f2-33c7-4dcf-0f77-dbf3354fcd54, 576409, /opt/conda/bin/python, 61998 MiB
+GPU-cc8e76f2-33c7-4dcf-0f77-dbf3354fcd54, 3260506, python, 2870 MiB
+GPU-a26daadd-c384-4d31-bd0b-c8d0f26706ba, 3260506, python, 2870 MiB
+GPU-b665ce15-f4c3-a570-0783-ed705d5f8358, 3260506, python, 2870 MiB
+GPU-4d414d37-9a66-becc-0ffe-f5544e75fb38, 3260506, python, 2870 MiB
+GPU-cd2c090b-dc30-681c-1380-886b8bcabee5, 3260506, python, 2734 MiB
+GPU-fc1ca600-f06e-f791-125e-102e4916449b, 3260506, python, 520 MiB

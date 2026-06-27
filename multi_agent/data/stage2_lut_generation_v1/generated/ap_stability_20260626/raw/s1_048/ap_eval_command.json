@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python",
+    "/home/jichengzhi/V2X/scripts/phase1/m4_8_hybrid_infer_ap.py",
+    "--engine-collab",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s1_048/s1_048_fp16.engine",
+    "--tag",
+    "stage2_ap_s1_048_fp16",
+    "--model-dir",
+    "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s1_048_2026_06_26",
+    "--n-samples",
+    "1789",
+    "--dataset",
+    "dair",
+    "--range",
+    "102.4,51.2",
+    "--collab-spatial-shape",
+    "2,64,128,256",
+    "--collab-tego-shape",
+    "2,2,3",
+    "--report",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s1_048/ap_eval_report.json"
+  ],
+  "cwd": "/home/jichengzhi/heal_research/HEAL",
+  "env": {
+    "CUDA_VISIBLE_DEVICES": "3",
+    "PYTHONPATH": "/home/jichengzhi/heal_research/HEAL:"
+  },
+  "timeout_s": 3600
+}

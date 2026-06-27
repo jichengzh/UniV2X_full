@@ -1,0 +1,14 @@
+{
+  "anchor": "base",
+  "precision": "fp16",
+  "stage0_planes": "64",
+  "stage1_planes": "128",
+  "stage2_planes": "256",
+  "ckpt": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29",
+  "ap30": "0.8331590992961461",
+  "ap50": "0.7910410096521415",
+  "ap70": "0.6308636231895992",
+  "n_samples": "1789",
+  "n_trt_path": "1618",
+  "elapsed_secs": "220.6767327785492"
+}

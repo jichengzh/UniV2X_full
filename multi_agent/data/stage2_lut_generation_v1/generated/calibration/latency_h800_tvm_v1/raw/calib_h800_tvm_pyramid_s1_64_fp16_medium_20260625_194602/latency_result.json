@@ -1,0 +1,52 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.58,
+  "build_tuned_s": 8.377,
+  "default_max_us": 65147.316,
+  "default_mean_us": 60823.832,
+  "default_min_us": 52940.066,
+  "default_repeats_us": [
+    52940.066,
+    60096.371,
+    62361.426,
+    63573.98,
+    65147.316
+  ],
+  "default_us": 62361.426,
+  "gpu": "6",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "s1_64",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_64_backbone.onnx",
+  "ratio": 7.205376,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_s1_64_fp16_medium_20260625_194602",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 9013.573,
+  "tuned_mean_us": 8464.448,
+  "tuned_min_us": 7340.909,
+  "tuned_repeats_us": [
+    7340.909,
+    9013.573,
+    8647.815,
+    8654.847,
+    8665.094
+  ],
+  "tuned_us": 8654.847,
+  "warmup_iters": 1,
+  "width": [
+    64,
+    64,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_s1_64"
+}

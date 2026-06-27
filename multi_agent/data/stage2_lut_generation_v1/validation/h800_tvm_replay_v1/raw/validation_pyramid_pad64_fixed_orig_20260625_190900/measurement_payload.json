@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 5.674,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 62438.598,
+  "latency_mean_us": 62097.648,
+  "latency_min_us": 60857.352,
+  "latency_p50_us": 62097.648,
+  "measure_iters": 500,
+  "notes": "Pyramid pad64 validation combo; dense-core/backbone-only; no fresh tune",
+  "provenance": "H800 TVM validation replay pad64 combo; reuse existing MetaSchedule DB",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/validation/h800_tvm_replay_v1/raw/validation_pyramid_pad64_fixed_orig_20260625_190900",
+  "repeat": 5,
+  "run_id": "validation_pyramid_pad64_fixed_orig_20260625_190900",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/pad64_backbone_fixed.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_pad64",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/validation/h800_tvm_replay_v1/raw/validation_pyramid_pad64_fixed_orig_20260625_190900/raw_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

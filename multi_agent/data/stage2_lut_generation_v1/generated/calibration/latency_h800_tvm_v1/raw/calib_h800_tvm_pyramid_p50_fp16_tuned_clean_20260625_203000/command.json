@@ -1,0 +1,13 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "label": "p50",
+  "width": [
+    32,
+    64,
+    128
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50",
+  "gpu": "4",
+  "run_id": "calib_h800_tvm_pyramid_p50_fp16_tuned_clean_20260625_203000"
+}

@@ -22,6 +22,8 @@ Phase A0 验证: 对 4 个手写 adapter 模型用 AutoTraceAdapter 跑出 manif
 """
 from __future__ import annotations
 
+import importlib
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -33,10 +35,21 @@ import torch.nn as nn
 _REPO = Path("/home/jichengzhi/V2X")
 _HEAL = Path("/home/jichengzhi/heal_research/HEAL")
 _V2XVERSE = Path("/home/jichengzhi/V2Xverse")
+_DISCO_FUSE_COMPAT_MODULE = "opencood.models.fuse_modules.disco_fuse"
+_DISCO_FUSE_FALLBACKS = [
+    Path("/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29/scripts/models/fuse_modules/disco_fuse.py"),
+    Path("/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_m1_base_2023_08_14_04_28_12/scripts/models/fuse_modules/disco_fuse.py"),
+    Path("/home/jichengzhi/heal_research/checkpoints/baselines_hf/HeterBaseline_opv2v_lidar_attfuse_2023_08_06_19_58_00/scripts/models/fuse_modules/disco_fuse.py"),
+]
 
 # 复用 adapters.py 的工具函数
 from framework.stage1.adapters import (
     TraceAdapter, _add_path, _generic_bucket, _first_conv_in_channels
+)
+from framework.stage1.trace_plan import (
+    TraceBoundaryDetector,
+    WrapperSynthesizer,
+    legacy_trace_plan_from_manifest,
 )
 
 
@@ -61,6 +74,30 @@ def _use_v2xverse_opencood():
     if v2xv_str in sys.path:
         sys.path.remove(v2xv_str)
     sys.path.insert(0, v2xv_str)
+
+
+def _ensure_disco_fuse_compat():
+    """Load DiscoNet's missing HEAL module from checkpoint scripts when needed."""
+    try:
+        return importlib.import_module(_DISCO_FUSE_COMPAT_MODULE)
+    except ModuleNotFoundError as exc:
+        if exc.name != _DISCO_FUSE_COMPAT_MODULE:
+            raise
+
+    importlib.import_module("opencood.models.fuse_modules")
+    for path in _DISCO_FUSE_FALLBACKS:
+        if not path.is_file():
+            continue
+        spec = importlib.util.spec_from_file_location(_DISCO_FUSE_COMPAT_MODULE, path)
+        if spec is None or spec.loader is None:
+            continue
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[_DISCO_FUSE_COMPAT_MODULE] = module
+        spec.loader.exec_module(module)
+        return module
+    raise ModuleNotFoundError(
+        f"No module named '{_DISCO_FUSE_COMPAT_MODULE}', and no checkpoint fallback was found"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -100,6 +137,7 @@ class AutoTraceAdapter(TraceAdapter):
         skipped_desc: Optional[list] = None,
         trace_note: str = "",
         ignored_attr_names: Optional[list] = None,
+        trace_plan: Optional[dict] = None,
     ):
         self.name = name
         self.model_class = model_class
@@ -109,8 +147,10 @@ class AutoTraceAdapter(TraceAdapter):
         self._bev_shape = bev_shape
         self.ckpt_status = ckpt_status
         self.skipped_modules = skipped_desc or []
+        self.skipped_subgraphs = self.typed_skipped_subgraphs()
         self.trace_note = trace_note
         self._ignored_attr_names = ignored_attr_names
+        self.trace_plan = trace_plan
 
     # -----------------------------------------------------------------------
     # TraceAdapter 接口实现
@@ -118,8 +158,36 @@ class AutoTraceAdapter(TraceAdapter):
 
     def build_trace_net(self, device: str):
         net = self._build_fn(self.config_path, self.ckpt_path, device)
+        if hasattr(net, "_stage1_trace_plan"):
+            self.trace_plan = getattr(net, "_stage1_trace_plan")
         x = torch.zeros(self._bev_shape, device=device)
         return net, x
+
+    def build_trace_plan(self, device: str = "cpu") -> dict:
+        """Return an auditable trace-boundary plan.
+
+        New autonomous builders attach a full-model-derived TracePlan to the
+        wrapper.  Legacy registry entries are normalized to the same schema so
+        downstream classifier code has one contract.
+        """
+
+        if isinstance(self.trace_plan, dict):
+            return self.trace_plan
+        return legacy_trace_plan_from_manifest(
+            {
+                "model": self.name,
+                "model_class": self.model_class,
+                "config": self.config_path,
+                "ckpt": self.ckpt_path,
+                "ckpt_status": self.ckpt_status,
+                "trace": {
+                    "entry_shape": list(self._bev_shape),
+                    "skipped_modules": list(self.skipped_modules),
+                    "skipped_subgraphs": list(self.skipped_subgraphs),
+                    "note": self.trace_note,
+                },
+            }
+        )
 
     def ignored_layers(self, net: nn.Module) -> list:
         """自动探测 ignored 层 (输出头), 或按 ignored_attr_names 显式取。"""
@@ -352,20 +420,63 @@ def _build_v2xvit(config_path: str, ckpt_path: str, device: str) -> nn.Module:
     return V2XViTBackboneTraceNet(full).to(device).eval()
 
 
-def _build_heter_baseline(config_path: str, ckpt_path: str, device: str) -> nn.Module:
-    """通用 HEAL HeterModelBaseline builder (F-Cooper / AttFuse 共用)."""
+def _infer_heter_model_key(config_path: str, model_args: Optional[dict] = None) -> str:
+    text = f"{config_path} {model_args or {}}".lower()
+    for key in ("where2comm", "v2vnet", "disconet", "attfuse", "fcooper"):
+        if key in text:
+            return key
+    if "att" in text and "fusion" in text:
+        return "attfuse"
+    return Path(config_path).stem or "heter_baseline"
+
+
+def _load_heter_baseline_full_model(config_path: str, ckpt_path: str, device: str) -> tuple[nn.Module, dict, str]:
+    """Load a HEAL HeterModelBaseline full model without making trace decisions."""
+
     _use_heal_opencood()
     os.chdir(str(_HEAL))
     from opencood.hypes_yaml.yaml_utils import load_yaml
-    from opencood.models.heter_model_baseline import HeterModelBaseline
     hypes = load_yaml(config_path)
-    full = HeterModelBaseline(hypes["model"]["args"])
-    raw = torch.load(ckpt_path, map_location="cpu")
-    sd = raw.get("model_state_dict", raw) if isinstance(raw, dict) else raw
-    miss, unexp = full.load_state_dict(sd, strict=False)
-    print(f"  [ckpt {Path(config_path).parent.name}] missing={len(miss)} unexpected={len(unexp)}")
-    full = full.to(device).eval()
-    return _HeterBaselineTraceNet(full).to(device).eval()
+    model_args = hypes["model"]["args"]
+    model_key = _infer_heter_model_key(config_path, model_args)
+    if "disconet" in model_args or model_key == "disconet":
+        _ensure_disco_fuse_compat()
+    from opencood.models.heter_model_baseline import HeterModelBaseline
+    full = HeterModelBaseline(model_args)
+    if ckpt_path and Path(ckpt_path).is_file():
+        raw = torch.load(ckpt_path, map_location="cpu")
+        sd = raw.get("model_state_dict", raw) if isinstance(raw, dict) else raw
+        miss, unexp = full.load_state_dict(sd, strict=False)
+        print(f"  [ckpt {Path(config_path).parent.name}] missing={len(miss)} unexpected={len(unexp)}")
+    else:
+        print(f"  [ckpt {Path(config_path).parent.name}] missing ckpt -> random-init architecture scan")
+    return full.to(device).eval(), hypes, model_key
+
+
+def _build_heter_baseline(config_path: str, ckpt_path: str, device: str) -> nn.Module:
+    """通用 HEAL HeterModelBaseline builder.
+
+    F-Cooper / AttFuse 有本地 ckpt; Where2comm / V2VNet / DiscoNet 当前只有
+    config 时仍允许 architecture-only scan。Stage1 只需要构图、参数桶和
+    dry-run pruning, 缺 ckpt 时使用 random init 并由 adapter.ckpt_status 标注。
+    """
+    full, _hypes, model_key = _load_heter_baseline_full_model(config_path, ckpt_path, device)
+    ckpt_status = "ok" if ckpt_path and Path(ckpt_path).is_file() else "missing_architecture_scan_only"
+    try:
+        input_shape = _infer_heter_bev_shape(config_path)
+    except Exception:
+        input_shape = None
+    trace_plan = TraceBoundaryDetector().detect(
+        full,
+        model_name=model_key,
+        config_path=config_path,
+        ckpt_path=ckpt_path,
+        ckpt_status=ckpt_status,
+        input_shape=input_shape,
+    )
+    net = WrapperSynthesizer().synthesize(full, trace_plan["selected_candidate"]).to(device).eval()
+    net._stage1_trace_plan = trace_plan
+    return net
 
 
 def _infer_heter_bev_shape(config_path: str) -> tuple:
@@ -402,6 +513,9 @@ _CKPT_FCOOPER = ("/home/jichengzhi/heal_research/checkpoints/baselines_hf/"
                  "HeterBaseline_opv2v_lidar_fcooper_2023_08_06_19_53_10")
 _CKPT_ATTFUSE = ("/home/jichengzhi/heal_research/checkpoints/baselines_hf/"
                  "HeterBaseline_opv2v_lidar_attfuse_2023_08_06_19_58_00")
+_CFG_WHERE2COMM = str(_HEAL / "opencood/hypes_yaml/opv2v/LiDAROnly/lidar_where2comm.yaml")
+_CFG_V2VNET = str(_HEAL / "opencood/hypes_yaml/opv2v/LiDAROnly/lidar_v2vnet.yaml")
+_CFG_DISCONET = str(_HEAL / "opencood/hypes_yaml/dairv2x/LiDAROnly/lidar_disco.yaml")
 _CKPT_PYRAMID_LIDAR = ("/home/jichengzhi/heal_research/checkpoints/stage1/"
                         "Pyramid_DAIR_m1_base_2023_08_14_11_42_29")
 _CKPT_PYRAMID_CAM = "/home/jichengzhi/heal_research/checkpoints/stage2/m2_alignto_m1"
@@ -539,6 +653,64 @@ AUTO_REGISTRY: dict[str, AutoTraceAdapter] = {
         trace_note=(
             "auto_trace: _HeterBaselineTraceNet (backbone_m1 + optional shrink + heads); "
             "push-button: 零源码 surgery, 零 _Net 子类"
+        ),
+    ),
+
+    # ── Phase A2: no-new-attention-integration architecture scans ────────
+    "where2comm": AutoTraceAdapter(
+        name="where2comm",
+        model_class="HeterModelBaseline (Where2comm)",
+        config_path=_CFG_WHERE2COMM,
+        ckpt_path="",
+        build_fn=_build_heter_baseline,
+        bev_shape=_infer_heter_bev_shape(_CFG_WHERE2COMM),
+        ckpt_status="missing_architecture_scan_only",
+        skipped_desc=[
+            "pillar_vfe (sparse VFE, auto-skip)",
+            "scatter (sparse scatter, auto-skip)",
+            "fusion_net (Where2comm: confidence-guided sparse attention/routing fusion, auto-skip)",
+        ],
+        trace_note=(
+            "auto_trace: _HeterBaselineTraceNet dense core only; no attention/fusion integration; "
+            "ckpt missing -> random-init architecture scan"
+        ),
+    ),
+
+    "v2vnet": AutoTraceAdapter(
+        name="v2vnet",
+        model_class="HeterModelBaseline (V2VNet)",
+        config_path=_CFG_V2VNET,
+        ckpt_path="",
+        build_fn=_build_heter_baseline,
+        bev_shape=_infer_heter_bev_shape(_CFG_V2VNET),
+        ckpt_status="missing_architecture_scan_only",
+        skipped_desc=[
+            "pillar_vfe (sparse VFE, auto-skip)",
+            "scatter (sparse scatter, auto-skip)",
+            "fusion_net (V2VNet: GNN message passing fusion, auto-skip)",
+        ],
+        trace_note=(
+            "auto_trace: _HeterBaselineTraceNet dense core only; V2VNet GNN fusion not traced; "
+            "ckpt missing -> random-init architecture scan"
+        ),
+    ),
+
+    "disconet": AutoTraceAdapter(
+        name="disconet",
+        model_class="HeterModelBaseline (DiscoNet)",
+        config_path=_CFG_DISCONET,
+        ckpt_path="",
+        build_fn=_build_heter_baseline,
+        bev_shape=_infer_heter_bev_shape(_CFG_DISCONET),
+        ckpt_status="missing_architecture_scan_only",
+        skipped_desc=[
+            "pillar_vfe (sparse VFE, auto-skip)",
+            "scatter (sparse scatter, auto-skip)",
+            "fusion_net (DiscoNet: GNN distillation/fusion, auto-skip)",
+        ],
+        trace_note=(
+            "auto_trace: _HeterBaselineTraceNet dense core only; DiscoNet fusion not traced; "
+            "ckpt missing -> random-init architecture scan"
         ),
     ),
 }

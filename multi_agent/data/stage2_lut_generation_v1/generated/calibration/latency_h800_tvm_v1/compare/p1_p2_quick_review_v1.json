@@ -1,0 +1,113 @@
+{
+  "ap_rows": 11,
+  "calibration_energy_rows": 5,
+  "latency_rows": 44,
+  "rows": [
+    {
+      "ap70": 0.6308636231895992,
+      "ap_run_id": "smoke_ap_pyramid_base_fp16_import_stage_a_20260625_194000",
+      "energy_j_per_inf": 1.92440024,
+      "energy_run_id": "calib_h800_tvm_energy_pyramid_base_p1_energy_20260625_233146",
+      "label": "base",
+      "latency_default_ms": 56.323715,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_base_p2_latency_repeat_20260625_233645_default",
+      "latency_metaschedule_tuned_ms": 6.212762,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_base_p2_latency_repeat_20260625_233645_metaschedule_tuned"
+    },
+    {
+      "ap70": 0.5641315043713827,
+      "ap_run_id": "smoke_ap_pyramid_p50_fp16_import_stage_a_20260625_194000",
+      "energy_j_per_inf": 0.69541708,
+      "energy_run_id": "calib_h800_tvm_energy_pyramid_p50_p1_energy_20260625_233245",
+      "label": "p50",
+      "latency_default_ms": 26.239023,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_p50_p2_latency_repeat_20260625_234009_default",
+      "latency_metaschedule_tuned_ms": 3.010426,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_p50_p2_latency_repeat_20260625_234009_metaschedule_tuned"
+    },
+    {
+      "ap70": 0.5904723815291678,
+      "ap_run_id": "smoke_ap_pyramid_trap25_fp16_import_stage_a_20260625_204500",
+      "label": "trap25",
+      "latency_default_ms": 42.358457,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_trap25_p2_latency_repeat_20260625_234205_default",
+      "latency_metaschedule_tuned_ms": 30.169297,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_trap25_p2_latency_repeat_20260625_234205_metaschedule_tuned"
+    },
+    {
+      "ap70": 0.5299883430444458,
+      "ap_run_id": "smoke_ap_pyramid_p75_fp16_import_stage_a_20260625_204500",
+      "energy_j_per_inf": 0.05715494,
+      "energy_run_id": "calib_h800_tvm_energy_pyramid_p75_p1_energy_20260625_233332",
+      "label": "p75",
+      "latency_default_ms": 12.674737,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000_default_schedule",
+      "latency_metaschedule_tuned_ms": 0.483032,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_p75_fp16_tuned_clean_20260625_203000"
+    },
+    {
+      "ap70": 0.6361597419498289,
+      "ap_run_id": "smoke_ap_pyramid_mix_b_fp16_import_b4expand_20260625_204500",
+      "energy_j_per_inf": 4.68204594,
+      "energy_run_id": "calib_h800_tvm_energy_pyramid_mix_b_p1_energy_20260625_233414",
+      "label": "mix_b",
+      "latency_default_ms": 41.429098,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_mix_b_p2_latency_repeat_20260625_234558_default",
+      "latency_metaschedule_tuned_ms": 19.401178,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_mix_b_p2_latency_repeat_20260625_234558_metaschedule_tuned"
+    },
+    {
+      "ap70": 0.6369383152509643,
+      "ap_run_id": "smoke_ap_pyramid_mix_d_fp16_import_b4expand_20260625_204500",
+      "energy_j_per_inf": 5.31429918,
+      "energy_run_id": "calib_h800_tvm_energy_pyramid_mix_d_p1_energy_20260625_233528",
+      "label": "mix_d",
+      "latency_default_ms": 42.436141,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_mix_d_p2_latency_repeat_20260625_234914_default",
+      "latency_metaschedule_tuned_ms": 21.050262,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_mix_d_p2_latency_repeat_20260625_234914_metaschedule_tuned"
+    },
+    {
+      "ap70": 0.6299191671696608,
+      "ap_run_id": "ap_p1_iso_s0_20260625",
+      "label": "iso_s0",
+      "latency_default_ms": 51.191752,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_iso_s0_fp16_tuned_clean_20260625_203000_default_schedule",
+      "latency_metaschedule_tuned_ms": 21.72284,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_iso_s0_fp16_tuned_clean_20260625_203000"
+    },
+    {
+      "ap70": 0.6335990600322648,
+      "ap_run_id": "ap_p1_iso_s1_20260625",
+      "label": "iso_s1",
+      "latency_default_ms": 51.623513,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_iso_s1_fp16_tuned_clean_20260625_203000_default_schedule",
+      "latency_metaschedule_tuned_ms": 6.917596,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_iso_s1_fp16_tuned_clean_20260625_203000"
+    },
+    {
+      "ap70": 0.6338902378413247,
+      "ap_run_id": "ap_p1_iso_s2_20260625",
+      "label": "iso_s2",
+      "latency_default_ms": 51.956699,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_iso_s2_fp16_tuned_clean_20260625_203000_default_schedule",
+      "latency_metaschedule_tuned_ms": 7.25165,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_iso_s2_fp16_tuned_clean_20260625_203000"
+    },
+    {
+      "ap70": 0.6287552124269079,
+      "ap_run_id": "ap_p1_mix_a_20260625",
+      "label": "mix_a",
+      "latency_default_ms": 35.793215,
+      "latency_default_run_id": "calib_h800_tvm_pyramid_mix_a_fp16_medium_clean_g012_20260625_202323_default_schedule",
+      "latency_metaschedule_tuned_ms": 5.658444,
+      "latency_metaschedule_tuned_run_id": "calib_h800_tvm_pyramid_mix_a_fp16_medium_clean_g012_20260625_202323"
+    },
+    {
+      "ap70": 0.6425296366136182,
+      "ap_run_id": "ap_p1_p50b2_136_20260625",
+      "label": "p50b2_136"
+    }
+  ],
+  "schema": "stage2_p1_p2_quick_review_v1"
+}

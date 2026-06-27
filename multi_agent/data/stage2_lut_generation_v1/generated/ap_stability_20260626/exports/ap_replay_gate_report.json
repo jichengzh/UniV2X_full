@@ -1,0 +1,70 @@
+{
+  "checks": [
+    {
+      "abs_diff": 0.0,
+      "expected_ap70": 0.6308636231895992,
+      "gate": "pass",
+      "label": "base",
+      "mode": "true_source_import_replay_gate_no_fresh_eval",
+      "observed_ap70": 0.6308636231895992,
+      "row_id": "ap_anchor:pyramid_lidar:pyramid_lidar__ap_stability-base__pyramid_lidar-full_model_ap-w64x128x256-fp16__q_fp16__s_not_applicable:model_eval:ap_stability_20260626_import_base",
+      "threshold": 0.003,
+      "width": [
+        64,
+        128,
+        256
+      ]
+    },
+    {
+      "abs_diff": 0.0,
+      "expected_ap70": 0.5641315043713827,
+      "gate": "pass",
+      "label": "p50",
+      "mode": "true_source_import_replay_gate_no_fresh_eval",
+      "observed_ap70": 0.5641315043713827,
+      "row_id": "ap_anchor:pyramid_lidar:pyramid_lidar__ap_stability-p50__pyramid_lidar-full_model_ap-w32x64x128-fp16__q_fp16__s_not_applicable:model_eval:ap_stability_20260626_import_p50",
+      "threshold": 0.003,
+      "width": [
+        32,
+        64,
+        128
+      ]
+    },
+    {
+      "abs_diff": 0.0,
+      "expected_ap70": 0.5904723815291678,
+      "gate": "pass",
+      "label": "trap25",
+      "mode": "true_source_import_replay_gate_no_fresh_eval",
+      "observed_ap70": 0.5904723815291678,
+      "row_id": "ap_anchor:pyramid_lidar:pyramid_lidar__ap_stability-trap25__pyramid_lidar-full_model_ap-w48x96x192-fp16__q_fp16__s_not_applicable:model_eval:ap_stability_20260626_import_trap25",
+      "threshold": 0.003,
+      "width": [
+        48,
+        96,
+        192
+      ]
+    },
+    {
+      "abs_diff": 0.0,
+      "expected_ap70": 0.6369383152509643,
+      "gate": "pass",
+      "label": "mix_d",
+      "mode": "true_source_import_replay_gate_no_fresh_eval",
+      "observed_ap70": 0.6369383152509643,
+      "row_id": "ap_anchor:pyramid_lidar:pyramid_lidar__ap_stability-mix_d__pyramid_lidar-full_model_ap-w48x128x128-fp16__q_fp16__s_not_applicable:model_eval:ap_stability_20260626_import_mix_d",
+      "threshold": 0.003,
+      "width": [
+        48,
+        128,
+        128
+      ]
+    }
+  ],
+  "gate_status": "pass",
+  "mode": "true_source_import_replay_gate_no_fresh_eval",
+  "passed_count": 4,
+  "required_passed_count": 3,
+  "schema": "stage2_ap_replay_gate_report_v1",
+  "threshold_abs_ap70": 0.003
+}

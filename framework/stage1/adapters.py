@@ -63,6 +63,7 @@ class TraceAdapter:
     ckpt_path: str = ""
     ckpt_status: str = "ok"        # ok / opv2v_only_no_dair / missing
     skipped_modules: list[str] = []
+    skipped_subgraphs: list[dict] = []
     trace_note: str = ""
 
     def build_trace_net(self, device: str) -> tuple[nn.Module, torch.Tensor]:
@@ -73,6 +74,34 @@ class TraceAdapter:
 
     def semantic_bucket(self, layer_name: str) -> str:
         return _generic_bucket(layer_name)
+
+    def typed_skipped_subgraphs(self) -> list[dict]:
+        """Return typed skipped trace boundaries while keeping legacy text skips."""
+
+        if self.skipped_subgraphs:
+            return [dict(item) for item in self.skipped_subgraphs]
+        out = []
+        for idx, desc in enumerate(self.skipped_modules):
+            text = str(desc)
+            name = text.split("(", 1)[0].strip() or f"skipped_{idx}"
+            low = text.lower()
+            if any(k in low for k in ("vfe", "scatter", "sparse", "quicksum", "cumsum")):
+                typ = "sparse_or_geometry_preprocess"
+            elif any(k in low for k in ("attention", "transformer", "where2comm", "v2vnet", "disco")):
+                typ = "attention_or_routing_fusion"
+            elif "fusion" in low or "warp" in low:
+                typ = "fusion_or_alignment"
+            else:
+                typ = "custom_untraced_subgraph"
+            out.append({
+                "name": name,
+                "type": typ,
+                "description": text,
+                "full_model_verdict_blocker": True,
+                "blocker_gate": "trace_closure_required",
+                "source": "trace_adapter.skipped_modules",
+            })
+        return out
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,6 @@
+{
+  "action": "unwrap_model_state_dict",
+  "ckpt_path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_stage2_ap_s0_056_2026_06_26/net_epoch_bestval_at23.pth",
+  "exists": true,
+  "status": "unwrapped"
+}

@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 12.984,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 6213.751,
+  "latency_mean_us": 6208.929,
+  "latency_min_us": 6203.207,
+  "latency_p50_us": 6208.929,
+  "measure_iters": 500,
+  "notes": "pyramid_lidar base smoke latency; dense-core/backbone-only; no fresh tune",
+  "provenance": "H800 TVM productized latency smoke; reuse existing MetaSchedule DB",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_pyramid_base_fp16_tuned_20260625_192000",
+  "repeat": 5,
+  "run_id": "smoke_h800_tvm_pyramid_base_fp16_tuned_20260625_192000",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_base",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_pyramid_base_fp16_tuned_20260625_192000/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

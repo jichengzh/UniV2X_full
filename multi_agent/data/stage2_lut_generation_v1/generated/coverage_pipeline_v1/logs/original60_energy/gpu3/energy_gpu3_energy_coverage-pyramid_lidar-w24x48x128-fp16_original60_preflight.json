@@ -1,0 +1,24 @@
+{
+  "schema": "lut_gpu_preflight_v1",
+  "job_id": "energy_gpu3:energy:coverage-pyramid_lidar-w24x48x128-fp16:original60",
+  "target_gpu": "3",
+  "query_command": [
+    "nvidia-smi",
+    "--query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,pstate",
+    "--format=csv"
+  ],
+  "pmon_command": [
+    "nvidia-smi",
+    "pmon",
+    "-c",
+    "1"
+  ],
+  "query_returncode": 0,
+  "pmon_returncode": 0,
+  "query_stdout": "index, name, utilization.gpu [%], memory.used [MiB], memory.total [MiB], power.draw [W], pstate\n0, NVIDIA H800, 20 %, 735 MiB, 81559 MiB, 147.57 W, P0\n1, NVIDIA H800, 48 %, 741 MiB, 81559 MiB, 162.67 W, P0\n2, NVIDIA H800, 27 %, 743 MiB, 81559 MiB, 141.59 W, P0\n3, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 120.97 W, P0\n4, NVIDIA H800, 20 %, 673 MiB, 81559 MiB, 158.69 W, P0\n5, NVIDIA H800, 18 %, 689 MiB, 81559 MiB, 136.82 W, P0\n6, NVIDIA H800, 0 %, 8 MiB, 81559 MiB, 73.43 W, P0\n7, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 71.14 W, P0\n",
+  "query_stderr": "",
+  "pmon_stdout": "# gpu         pid  type    sm    mem    enc    dec    command\n# Idx           #   C/G     %      %      %      %    name\n    0    3590771     C    20     0     -     -   python3        \n    1    3592699     C    24     0     -     -   python3        \n    2    3595376     C    23     0     -     -   python3        \n    3          -     -     -     -     -     -   -              \n    4    3595373     C    17     0     -     -   python3        \n    5    3595678     C    17     0     -     -   python3        \n    6          -     -     -     -     -     -   -              \n    7          -     -     -     -     -     -   -              \n",
+  "pmon_stderr": "",
+  "ok": true,
+  "failure_reason": null
+}

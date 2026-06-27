@@ -1,0 +1,76 @@
+{
+  "decision": "CONDITIONAL_GO",
+  "gates": {
+    "artifact_registry": {
+      "blocked_jobs": [],
+      "not_ready_artifacts": 0,
+      "status": "pass",
+      "total_artifacts": 41
+    },
+    "energy": {
+      "claimable": true,
+      "energy_rows": 8,
+      "status": "pass"
+    },
+    "evidence_registry": {
+      "coverage_summary": {
+        "ap_anchors": {
+          "expected_cells": 11,
+          "failed_cells": 0,
+          "measured_cells": 11,
+          "proxy_cells": 0
+        },
+        "downstream_objective": {
+          "expected_cells": 0,
+          "failed_cells": 0,
+          "measured_cells": 0,
+          "proxy_cells": 0
+        },
+        "energy_lut": {
+          "expected_cells": 8,
+          "failed_cells": 0,
+          "measured_cells": 8,
+          "proxy_cells": 0
+        },
+        "latency_lut": {
+          "expected_cells": 44,
+          "failed_cells": 0,
+          "measured_cells": 44,
+          "proxy_cells": 0
+        },
+        "quant_evidence": {
+          "expected_cells": 10,
+          "failed_cells": 0,
+          "measured_cells": 0,
+          "proxy_cells": 10
+        },
+        "total_expected_cells": 73,
+        "total_failed_cells": 0,
+        "total_measured_cells": 63,
+        "total_proxy_cells": 10
+      },
+      "energy_claim_allowed": true,
+      "model": "pyramid_lidar",
+      "path": "multi_agent/data/stage2_lut_generation_v1/registry/evidence_registry_latest.json",
+      "status": "pass",
+      "unsupported_conclusions": [
+        "cross_model_ds_map_for_pyramid",
+        "historical_trt_as_h800_measured_quant_evidence"
+      ]
+    },
+    "outlier": {
+      "claimable_rows": 43,
+      "report": "multi_agent/data/stage2_lut_generation_v1/exports/outlier_report_latest.json",
+      "status": "conditional",
+      "unstable_rows": 1
+    },
+    "schema": {
+      "artifact_rows": 41,
+      "errors": [],
+      "job_rows": 0,
+      "lut_rows": 63,
+      "status": "pass"
+    }
+  },
+  "schema": "stage2_three_arm_readiness_gate_v1"
+}

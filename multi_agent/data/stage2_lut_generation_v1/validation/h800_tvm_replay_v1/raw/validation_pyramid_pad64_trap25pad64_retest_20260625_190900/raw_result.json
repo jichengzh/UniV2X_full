@@ -1,0 +1,41 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.233,
+  "build_tuned_s": 8.28,
+  "default_min_us": 47401.188,
+  "default_repeats_us": [
+    47402.797,
+    47402.457,
+    47402.215,
+    47401.188,
+    47402.188
+  ],
+  "default_us": 47402.169,
+  "gpu": "4",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "measure_iters": 500,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/trap25_pad64_backbone.onnx",
+  "ratio": 7.702879,
+  "repeat": 5,
+  "run_id": "validation_pyramid_pad64_trap25pad64_retest_20260625_190900",
+  "schema": "stage2_h800_pad64_combo_result_v1",
+  "status": "success",
+  "tuned_min_us": 6153.737,
+  "tuned_repeats_us": [
+    6153.778,
+    6153.737,
+    6153.865,
+    6153.981,
+    6153.763
+  ],
+  "tuned_us": 6153.825,
+  "warmup_iters": 1,
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest"
+}

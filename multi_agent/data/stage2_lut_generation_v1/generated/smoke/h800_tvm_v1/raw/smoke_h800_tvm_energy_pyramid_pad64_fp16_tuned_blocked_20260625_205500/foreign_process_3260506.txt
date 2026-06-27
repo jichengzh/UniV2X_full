@@ -1,0 +1,2 @@
+UID          PID    PPID  C STIME TTY          TIME CMD
+user01   3260506  174406 99 19:44 pts/7    00:12:38 python serve_qwen_ra_grpo.py --base /data/planner_study/models/qwen2.5-3b-instruct --adapter /data/planner_study/models/qwen3b_ra_grpo_joint_lora_v3_canon_r2_120 --model-name qwen3b-ra-grpo-joint-v3-r2 --host 127.0.0.1 --port 8011

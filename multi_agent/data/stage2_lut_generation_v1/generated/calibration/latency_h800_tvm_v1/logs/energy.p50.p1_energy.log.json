@@ -1,0 +1,71 @@
+{
+  "job_id": "energy:p1_energy:p50",
+  "raw": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_energy_pyramid_p50_p1_energy_20260625_233245",
+  "result": {
+    "active_duration_s": 4.518976,
+    "active_samples": 33,
+    "batch_size": 1,
+    "build_time_s": 8.866,
+    "error": "RuntimeError('Traceback (most recent call last):\\n  File \"/home/jichengzhi/V2X/scripts/stage2_generate_energy_lut.py\", line 16, in <module>\\n    from framework.stage2.lut_productization import (  # noqa: E402\\n  File \"/home/jichengzhi/V2X/framework/stage2/__init__.py\", line 3, in <module>\\n    from .contracts import (\\n  File \"/home/jichengzhi/V2X/framework/stage2/contracts.py\", line 16, in <module>\\n    import yaml\\nModuleNotFoundError: No module named \\'yaml\\'')",
+    "gpu": "2",
+    "idle_history_tail": [
+      {
+        "gpu": "2",
+        "has_pmon": false,
+        "mem_mib": 4,
+        "ts": "2026-06-25T23:32:45+0800",
+        "util": 0
+      },
+      {
+        "gpu": "2",
+        "has_pmon": false,
+        "mem_mib": 4,
+        "ts": "2026-06-25T23:32:51+0800",
+        "util": 0
+      },
+      {
+        "gpu": "2",
+        "has_pmon": false,
+        "mem_mib": 4,
+        "ts": "2026-06-25T23:32:56+0800",
+        "util": 0
+      }
+    ],
+    "idle_samples": 17,
+    "idle_watt_avg": 68.8359,
+    "input_shape": {
+      "spatial_features": [
+        2,
+        64,
+        128,
+        256
+      ]
+    },
+    "joule_per_inference": 0.69541708,
+    "label": "p50",
+    "latency_run_id": "calib_h800_tvm_pyramid_p50_fp16_tuned_clean_20260625_203000",
+    "measure_iters": 1500,
+    "model": "pyramid_lidar",
+    "onnx_path": "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+    "phase": "p1_energy",
+    "repeat": 1,
+    "run_id": "calib_h800_tvm_energy_pyramid_p50_p1_energy_20260625_233245",
+    "sample_window_ms": 4519,
+    "schema": "stage2_h800_energy_result_v1",
+    "status": "failed",
+    "time_evaluator_s": 0.003,
+    "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 790, in measure_energy\n    append_energy_row(job, raw, result)\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 623, in append_energy_row\n    call_generator(\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/p1_p2_h800_gpu012_runner.py\", line 378, in call_generator\n    raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or f\"generator failed: {cmd}\")\nRuntimeError: Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/scripts/stage2_generate_energy_lut.py\", line 16, in <module>\n    from framework.stage2.lut_productization import (  # noqa: E402\n  File \"/home/jichengzhi/V2X/framework/stage2/__init__.py\", line 3, in <module>\n    from .contracts import (\n  File \"/home/jichengzhi/V2X/framework/stage2/contracts.py\", line 16, in <module>\n    import yaml\nModuleNotFoundError: No module named 'yaml'\n",
+    "warmup_iters": 50,
+    "watt_avg": 299.6682,
+    "watt_p50": 317.78,
+    "watt_p90": 319.54,
+    "width": [
+      32,
+      64,
+      128
+    ],
+    "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50"
+  },
+  "returncode": 1,
+  "schema": "lut_job_log_v1"
+}

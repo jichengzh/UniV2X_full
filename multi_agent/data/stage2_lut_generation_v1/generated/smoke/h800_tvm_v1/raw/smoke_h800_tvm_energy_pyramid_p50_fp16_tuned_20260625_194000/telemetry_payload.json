@@ -1,0 +1,28 @@
+{
+  "clock_policy": "default",
+  "idle_baseline_policy": "subtract_idle_avg_5s_pre_window",
+  "idle_watt_avg": 72.91,
+  "joule_per_inference": 0.77631822,
+  "latency_config_id": "smoke_h800_tvm_pyramid_lidar_p50_fp16_metaschedule_tuned",
+  "latency_run_id": "smoke_h800_tvm_pyramid_p50_fp16_tuned_20260625_192000",
+  "measure_iters": 3000,
+  "notes": "energy smoke telemetry; target GPU idle at preflight; node GPUs 0-2 busy so not paper-grade energy",
+  "power_cap_watt": null,
+  "provenance": "H800 power telemetry smoke aligned with tuned TVM VM",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000",
+  "repeat": 1,
+  "run_id": "smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000",
+  "sample_window_ms": 9035,
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000/energy_result.json",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000/idle_power_samples.csv",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/smoke/h800_tvm_v1/raw/smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000/active_power_samples.csv"
+  ],
+  "telemetry_source": "nvidia-smi power.draw polling 50ms",
+  "warmup_iters": 50,
+  "watt_avg": 330.6883,
+  "watt_p50": 340.89,
+  "watt_p90": 342.67
+}

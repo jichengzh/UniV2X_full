@@ -1,0 +1,49 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.531,
+  "build_tuned_s": 6.919,
+  "default_max_us": 62989.496,
+  "default_min_us": 56602.105,
+  "default_repeats_us": [
+    56602.105,
+    62076.875,
+    62358.582,
+    62968.195,
+    62989.496
+  ],
+  "default_us": 61399.051,
+  "gpu": "6",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "s2_128",
+  "measure_iters": 500,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s2_128_backbone.onnx",
+  "ratio": 8.39466,
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_s2_128_fp16_tuned_clean_20260625_203000",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 7659.172,
+  "tuned_min_us": 6294.517,
+  "tuned_repeats_us": [
+    6294.517,
+    7659.172,
+    7521.229,
+    7542.363,
+    7553.021
+  ],
+  "tuned_us": 7314.06,
+  "warmup_iters": 1,
+  "width": [
+    64,
+    128,
+    128
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_s2_128_v2"
+}

@@ -1,0 +1,94 @@
+[2026-06-26 16:37:18] original60 artifact launcher started
+[2026-06-26 16:37:18] repo=/home/jichengzhi/V2X base=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1 artifact_root=/exdata/jichengzhi/s2_tvm gpus=0,1,2,3,4,5 max_trials=32
+[2026-06-26 16:37:20] idle gate passed for GPUs 0,1,2,3,4,5
+[2026-06-26 16:37:20] GPU status:
+0, 4, 0
+1, 4, 0
+2, 4, 0
+3, 4, 0
+4, 4, 0
+5, 4, 0
+6, 7, 0
+7, 8479, 49
+# gpu         pid  type    sm    mem    enc    dec    command
+# Idx           #   C/G     %      %      %      %    name
+    0          -     -     -     -     -     -   -              
+    1          -     -     -     -     -     -   -              
+    2          -     -     -     -     -     -   -              
+    3          -     -     -     -     -     -   -              
+    4          -     -     -     -     -     -   -              
+    5          -     -     -     -     -     -   -              
+    6          -     -     -     -     -     -   -              
+    7    2323317     C    50     7     -     -   python         
+[2026-06-26 16:37:21] starting controller gpu=0 shard=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu0.jsonl
+[2026-06-26 16:37:21] starting controller gpu=1 shard=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu1.jsonl
+[2026-06-26 16:37:21] starting controller gpu=2 shard=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu2.jsonl
+[2026-06-26 16:37:21] starting controller gpu=3 shard=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu3.jsonl
+[2026-06-26 16:37:21] starting controller gpu=4 shard=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu4.jsonl
+[2026-06-26 16:37:21] starting controller gpu=5 shard=multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_artifact_shards/artifact_build_queue_original60_gpu5.jsonl
+[2026-06-26 16:37:21] controller gpu=0 remaining=7; starting one-job worker
+[2026-06-26 16:37:21] controller gpu=1 remaining=9; starting one-job worker
+[2026-06-26 16:37:21] controller gpu=2 remaining=8; starting one-job worker
+[2026-06-26 16:37:21] controller gpu=3 remaining=9; starting one-job worker
+[2026-06-26 16:37:21] controller gpu=4 remaining=9; starting one-job worker
+[2026-06-26 16:37:21] controller gpu=5 remaining=9; starting one-job worker
+[2026-06-26 16:38:44] controller gpu=4 remaining=8; starting one-job worker
+[2026-06-26 16:39:07] controller gpu=1 remaining=8; starting one-job worker
+[2026-06-26 16:39:09] controller gpu=3 remaining=8; starting one-job worker
+[2026-06-26 16:39:09] controller gpu=2 remaining=7; starting one-job worker
+[2026-06-26 16:39:09] controller gpu=5 remaining=8; starting one-job worker
+[2026-06-26 16:39:11] controller gpu=0 remaining=6; starting one-job worker
+[2026-06-26 16:39:58] controller gpu=4 remaining=7; starting one-job worker
+[2026-06-26 16:40:57] controller gpu=2 remaining=6; starting one-job worker
+[2026-06-26 16:40:58] controller gpu=3 remaining=7; starting one-job worker
+[2026-06-26 16:40:58] controller gpu=1 remaining=7; starting one-job worker
+[2026-06-26 16:40:58] controller gpu=5 remaining=7; starting one-job worker
+[2026-06-26 16:41:50] controller gpu=4 remaining=6; starting one-job worker
+[2026-06-26 16:41:50] controller gpu=0 remaining=5; starting one-job worker
+[2026-06-26 16:42:56] controller gpu=2 remaining=5; starting one-job worker
+[2026-06-26 16:42:56] controller gpu=3 remaining=6; starting one-job worker
+[2026-06-26 16:42:58] controller gpu=5 remaining=6; starting one-job worker
+[2026-06-26 16:42:58] controller gpu=1 remaining=6; starting one-job worker
+[2026-06-26 16:43:58] controller gpu=0 remaining=4; starting one-job worker
+[2026-06-26 16:43:58] controller gpu=4 remaining=5; starting one-job worker
+[2026-06-26 16:44:46] controller gpu=3 remaining=5; starting one-job worker
+[2026-06-26 16:44:47] controller gpu=2 remaining=4; starting one-job worker
+[2026-06-26 16:44:48] controller gpu=5 remaining=5; starting one-job worker
+[2026-06-26 16:44:49] controller gpu=1 remaining=5; starting one-job worker
+[2026-06-26 16:45:45] controller gpu=0 remaining=3; starting one-job worker
+[2026-06-26 16:45:47] controller gpu=4 remaining=4; starting one-job worker
+[2026-06-26 16:46:36] controller gpu=3 remaining=4; starting one-job worker
+[2026-06-26 16:46:37] controller gpu=2 remaining=3; starting one-job worker
+[2026-06-26 16:47:59] controller gpu=1 remaining=4; starting one-job worker
+[2026-06-26 16:48:10] controller gpu=5 remaining=4; starting one-job worker
+[2026-06-26 16:48:11] controller gpu=0 remaining=2; starting one-job worker
+[2026-06-26 16:48:19] controller gpu=2 remaining=2; starting one-job worker
+[2026-06-26 16:48:22] controller gpu=3 remaining=3; starting one-job worker
+[2026-06-26 16:50:09] controller gpu=3 remaining=2; starting one-job worker
+[2026-06-26 16:50:10] controller gpu=1 remaining=3; starting one-job worker
+[2026-06-26 16:50:11] controller gpu=5 remaining=3; starting one-job worker
+[2026-06-26 16:50:11] controller gpu=0 remaining=1; starting one-job worker
+[2026-06-26 16:50:12] controller gpu=4 remaining=3; starting one-job worker
+[2026-06-26 16:50:43] controller gpu=2 remaining=1; starting one-job worker
+[2026-06-26 16:51:42] controller gpu=0 completed all shard jobs
+[2026-06-26 16:51:42] worker gpu=0 completed
+[2026-06-26 16:51:42] controller gpu=1 remaining=2; starting one-job worker
+[2026-06-26 16:51:43] controller gpu=5 remaining=2; starting one-job worker
+[2026-06-26 16:51:43] controller gpu=3 remaining=1; starting one-job worker
+[2026-06-26 16:51:45] controller gpu=4 remaining=2; starting one-job worker
+[2026-06-26 16:53:34] controller gpu=4 remaining=1; starting one-job worker
+[2026-06-26 16:53:35] controller gpu=1 remaining=1; starting one-job worker
+[2026-06-26 16:53:36] controller gpu=5 remaining=1; starting one-job worker
+[2026-06-26 16:53:36] controller gpu=2 completed all shard jobs
+[2026-06-26 16:53:37] controller gpu=3 completed all shard jobs
+[2026-06-26 16:54:54] controller gpu=1 completed all shard jobs
+[2026-06-26 16:54:54] worker gpu=1 completed
+[2026-06-26 16:54:54] worker gpu=2 completed
+[2026-06-26 16:54:54] worker gpu=3 completed
+[2026-06-26 16:54:54] controller gpu=5 completed all shard jobs
+[2026-06-26 16:54:54] controller gpu=4 completed all shard jobs
+[2026-06-26 16:54:54] worker gpu=4 completed
+[2026-06-26 16:54:54] worker gpu=5 completed
+{"ap_status_counts": {"source_missing": 60}, "artifact_registry_out": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/artifacts/artifact_registry_original60_v1.jsonl", "artifact_state_out": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/artifacts/artifact_state_original60_v1.jsonl", "artifact_tasks_out": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/artifacts/artifact_tasks_original60_v1.jsonl", "candidates": 60, "schema": "stage2_artifact_task_plan_summary_v1", "status_counts": {"ready": 60}}
+{"active_quarantine_count": 0, "artifact_root": "/exdata/jichengzhi/s2_tvm", "candidate_count": 60, "is_complete": true, "missing_artifact_count": 0, "original60_artifact_ready_count": 60, "schema": "stage2_original60_artifact_readiness_v1"}
+[2026-06-26 16:54:56] original60 artifact launcher completed

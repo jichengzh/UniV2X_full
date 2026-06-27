@@ -1,0 +1,24 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": null,
+  "input_shape": {},
+  "latency_max_us": null,
+  "latency_mean_us": null,
+  "latency_min_us": null,
+  "latency_p50_us": null,
+  "measure_iters": 500,
+  "notes": "latency calibration medium clean retry g1; s1_64; default; backbone-only; no fresh tune",
+  "provenance": "H800 TVM latency calibration medium clean retry g1; default; reuse existing artifacts",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_203806",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_203806",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/s1_64_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_bumped_s1_64",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_203806/latency_result.json"
+  ],
+  "tvm_strategy": "relax_default",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

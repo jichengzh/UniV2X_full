@@ -1,0 +1,9 @@
+{
+  "schema": "stage2_h800_p1_p2_latency_command_v1",
+  "phase": "p2_latency_repeat",
+  "label": "mix_d",
+  "gpu": "1",
+  "run_id": "calib_h800_tvm_pyramid_mix_d_p2_latency_repeat_20260625_234914",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_d_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_d"
+}

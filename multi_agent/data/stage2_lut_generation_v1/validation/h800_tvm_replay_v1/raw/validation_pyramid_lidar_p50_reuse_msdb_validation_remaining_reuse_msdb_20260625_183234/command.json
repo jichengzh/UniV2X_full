@@ -1,0 +1,12 @@
+{
+  "schema": "stage2_h800_validation_measurement_command_v1",
+  "mode": "reuse_existing_ms_db",
+  "gpu": "4",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50",
+  "expected_tuned_ms_range": [
+    2.6,
+    3.6
+  ],
+  "run_id": "validation_pyramid_lidar_p50_reuse_msdb_validation_remaining_reuse_msdb_20260625_183234"
+}

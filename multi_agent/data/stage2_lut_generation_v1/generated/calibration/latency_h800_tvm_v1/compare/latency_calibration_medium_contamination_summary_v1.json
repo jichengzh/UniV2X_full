@@ -1,0 +1,10 @@
+{
+  "schema": "calibration_latency_medium_contamination_summary_v1",
+  "run_group": "calib_latency_medium_reuse_clean_20260625_194602",
+  "decision": "NO_CLAIM_MEDIUM_RERUN_REQUIRED",
+  "valid_rows_retained": 18,
+  "quarantined_rows": 18,
+  "quarantine_jsonl": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/latency/latency_lut_rows_quarantine_medium_contaminated_20260625_194602.jsonl",
+  "reason": "medium preflight recorded foreign process pid=3260506 serve_qwen_ra_grpo.py on GPUs 3-7 before/while jobs ran; energy also blocked while this process remains",
+  "valid_jsonl": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/latency/latency_lut_rows_v1.jsonl"
+}

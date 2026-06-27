@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 5.299,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 40760.325,
+  "latency_mean_us": 40757.676,
+  "latency_min_us": 40752.756,
+  "latency_p50_us": 40759.946,
+  "measure_iters": 100,
+  "notes": "original60_measured_v1; frontier_33; default; backbone-only; no fresh tune",
+  "provenance": "H800 TVM original60_measured_v1 measured on clean target GPU; default; reuse existing artifacts",
+  "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_latency/original60_measured_v1_original60_frontier_33_gpu5",
+  "repeat": 3,
+  "run_id": "original60_measured_v1_original60_frontier_33_gpu5",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/frontier_33_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/workdirs/frontier_33",
+    "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_latency/original60_measured_v1_original60_frontier_33_gpu5/latency_result.json"
+  ],
+  "tvm_strategy": "relax_default",
+  "tvm_target": "cuda",
+  "warmup_iters": 30
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "stage2_existing_h800_tvm_inventory_summary_v1",
+  "created_at": "2026-06-25",
+  "unit_policy": "all normalized CSV latency columns use ms; raw source may use us",
+  "files": {
+    "pyramid_fp16_backbone": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing_h800_tvm/pyramid_h800_tvm_backbone_fp16_ms.csv",
+    "pyramid_gap1_corrected": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing_h800_tvm/pyramid_h800_tvm_gap1_corrected_ms.csv",
+    "pyramid_int8_scope_limited": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing_h800_tvm/pyramid_h800_tvm_int8_scope_limited_ms.csv",
+    "codriving_backbone": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing_h800_tvm/codriving_h800_tvm_backbone_ms.csv",
+    "codriving_probes": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/existing_h800_tvm/codriving_h800_tvm_s0_and_int8_probes_ms.csv"
+  },
+  "pyramid_fp16_backbone_rows": 19,
+  "pyramid_fp16_speedup_min_median_max": [
+    1.96,
+    7.466,
+    26.237
+  ],
+  "codriving_backbone_rows": 4,
+  "codriving_speedup_min_median_max": [
+    1.135,
+    1.6124999999999998,
+    2.264
+  ],
+  "key_conclusions": [
+    "Pyramid H800+TVM FP16 backbone has strong MetaSchedule speedup; corrected base is about 56.321ms default to 6.320ms tuned, 8.912x.",
+    "Pyramid p75 corrected row reaches 12.689ms default to 0.484ms tuned, 26.237x, but lower AP70.",
+    "Pyramid Gap1 corrected W_g/P_g: trap25 default-Pareto drops after tuning; pad64 becomes tuned-Pareto at same AP70 0.590.",
+    "CoDriving H800+TVM backbone has weaker speedup around 1.135x-2.264x in current real rows, serving as negative/separable anchor.",
+    "Pyramid INT8 evidence is currently scope-limited mainly to stage0/format mechanisms; do not treat as full-backbone INT8 LUT without new generation.",
+    "CoDriving INT8 stage0 verifies no categorical trap; Cin48 and Cin64 both build and preserve rank ordering."
+  ],
+  "superseded_sources_to_avoid_as_claims": [
+    "results/gap1_schedule_lut.json pad64 ratio=1.0 is superseded by results/gap1_grid_corrected.json pad64 ratio=7.706.",
+    "old C1/C7 claims that FP16 MetaSchedule had zero valid trials were corrected in C2_C3_pyramid.json; use revised verdicts."
+  ]
+}

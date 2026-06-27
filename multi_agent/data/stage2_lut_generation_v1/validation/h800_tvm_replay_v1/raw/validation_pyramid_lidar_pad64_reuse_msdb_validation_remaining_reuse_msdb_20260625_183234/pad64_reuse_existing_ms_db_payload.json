@@ -1,0 +1,32 @@
+{
+  "latency_p50_us": 7963.3,
+  "latency_mean_us": 7963.3,
+  "latency_min_us": 6983.28,
+  "latency_max_us": 8257.25,
+  "warmup_iters": 1,
+  "measure_iters": 500,
+  "repeat": 5,
+  "batch_size": 1,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "tvm_target": "cuda",
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "build_status": "success",
+  "build_time_s": 8.361,
+  "provenance": "H800 TVM validation replay using existing MetaSchedule DB",
+  "run_id": "validation_pyramid_lidar_pad64_reuse_msdb_validation_remaining_reuse_msdb_20260625_183234",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/pad64_backbone_fixed.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest",
+    "/exdata/jichengzhi/s2_tvm/s2_2e_e2e.py",
+    "/exdata/jichengzhi/s2_tvm/s2_codriving_e2e.py"
+  ],
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/validation/h800_tvm_replay_v1/raw/validation_pyramid_lidar_pad64_reuse_msdb_validation_remaining_reuse_msdb_20260625_183234/pad64_reuse_existing_ms_db_result.json",
+  "notes": "validation replay; comparison_mode=reuse_existing_ms_db; Pyramid pad64 backbone-only"
+}

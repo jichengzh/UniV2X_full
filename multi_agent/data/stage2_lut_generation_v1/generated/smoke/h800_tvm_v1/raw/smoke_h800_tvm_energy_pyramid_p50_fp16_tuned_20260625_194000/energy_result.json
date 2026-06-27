@@ -1,0 +1,38 @@
+{
+  "active_duration_s": 9.034719,
+  "active_samples": 59,
+  "batch_size": 1,
+  "build_time_s": 9.214,
+  "gpu": "3",
+  "idle_samples": 25,
+  "idle_watt_avg": 72.91,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "joule_per_inference": 0.77631822,
+  "label": "p50",
+  "measure_iters": 3000,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/p50_backbone.onnx",
+  "repeat": 1,
+  "run_id": "smoke_h800_tvm_energy_pyramid_p50_fp16_tuned_20260625_194000",
+  "sample_window_ms": 9035,
+  "schema": "stage2_h800_energy_smoke_result_v1",
+  "status": "success",
+  "time_evaluator_s": 0.003006,
+  "warmup_iters": 50,
+  "watt_avg": 330.6883,
+  "watt_p50": 340.89,
+  "watt_p90": 342.67,
+  "width": [
+    32,
+    64,
+    128
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_p50"
+}

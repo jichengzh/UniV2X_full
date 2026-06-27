@@ -1,0 +1,45 @@
+{
+  "batch_size": 1,
+  "error": "OSError('/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/lib/libtvm_runtime.so: undefined symbol: cudaGraphAddDependencies_v2, version libcudart.so.12')",
+  "gpu": "1",
+  "idle_history_tail": [
+    {
+      "gpu": "1",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:38:34+0800",
+      "util": 0
+    },
+    {
+      "gpu": "1",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:38:40+0800",
+      "util": 0
+    },
+    {
+      "gpu": "1",
+      "has_pmon": false,
+      "mem_mib": 4,
+      "ts": "2026-06-25T20:38:45+0800",
+      "util": 0
+    }
+  ],
+  "label": "mix_b",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_b_backbone.onnx",
+  "preflight_status": "clean",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_mix_b_fp16_medium_clean_retry_g1_20260625_203806",
+  "schema": "stage2_h800_calibration_latency_result_v1",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/latency_medium_retry_g1_serial.py\", line 198, in measure\n    import tvm\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/__init__.py\", line 29, in <module>\n    from .base import TVMError, __version__, _RUNTIME_ONLY\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/base.py\", line 51, in <module>\n    _LIB_RUNTIME = libinfo.load_lib_ctypes(\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/libinfo.py\", line 143, in load_lib_ctypes\n    return ctypes.CDLL(str(lib_path), getattr(ctypes, mode))\n  File \"/usr/lib/python3.10/ctypes/__init__.py\", line 374, in __init__\n    self._handle = _dlopen(self._name, mode)\nOSError: /exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/lib/libtvm_runtime.so: undefined symbol: cudaGraphAddDependencies_v2, version libcudart.so.12\n",
+  "warmup_iters": 1,
+  "width": [
+    48,
+    64,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_b"
+}

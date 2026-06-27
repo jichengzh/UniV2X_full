@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 9.953,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 7246.516,
+  "latency_mean_us": 7244.972,
+  "latency_min_us": 7244.099,
+  "latency_p50_us": 7244.972,
+  "measure_iters": 500,
+  "notes": "latency calibration small; iso_s2 dense-core/backbone-only; no fresh tune",
+  "provenance": "H800 TVM latency calibration small; reuse existing MetaSchedule DB",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_iso_s2_fp16_tuned_20260625_201500",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_iso_s2_fp16_tuned_20260625_201500",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/iso_s2_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s2_retest",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_iso_s2_fp16_tuned_20260625_201500/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

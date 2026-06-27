@@ -1,0 +1,30 @@
+{"execute": true, "jobs_to_run": ["s0_024", "s0_040", "s0_056", "s1_048", "s2_160"]}
+{
+  "results": [
+    {
+      "label": "s0_024",
+      "status": "succeeded",
+      "ap70": 0.6324952062228805
+    },
+    {
+      "label": "s0_040",
+      "status": "succeeded",
+      "ap70": 0.6266594834369248
+    },
+    {
+      "label": "s0_056",
+      "status": "succeeded",
+      "ap70": 0.623711042347296
+    },
+    {
+      "label": "s1_048",
+      "status": "succeeded",
+      "ap70": 0.6356162107296647
+    },
+    {
+      "label": "s2_160",
+      "status": "failed",
+      "failure_reason": "JobFailure:onnx_export_failed_rc_1"
+    }
+  ]
+}

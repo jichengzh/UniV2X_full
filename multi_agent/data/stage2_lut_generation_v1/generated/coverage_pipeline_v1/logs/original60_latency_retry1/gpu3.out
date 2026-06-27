@@ -1,0 +1,1 @@
+{"jobs_run": 1, "results": [{"job_id": "original60_latency_gpu3:original60_retry1:frontier_25", "returncode": null, "status": "skipped"}], "schema": "lut_worker_summary_v1", "state": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/jobs/original60_latency_retry1/latency_job_state_original60_gpu3.jsonl"}

@@ -1,0 +1,15 @@
+label,width,ap30,ap50,ap70,source_kind,claim_status,ckpt_digest,gpu_id,finetune_runs,epoches,raw_artifact
+base,"[64, 128, 256]",0.8331590992961461,0.7910410096521415,0.6308636231895992,true_import,provisional_missing_digest,unknown,,,,multi_agent/data/sources/stage_a_ap_real.csv
+p50,"[32, 64, 128]",0.8182540380073546,0.7644278293218837,0.5641315043713827,true_import,provisional_missing_digest,unknown,,,,multi_agent/data/sources/stage_a_ap_real.csv
+p75,"[16, 32, 64]",0.8159088887034824,0.7566691198482532,0.5299883430444458,true_import,provisional_missing_digest,unknown,,,,multi_agent/data/sources/stage_a_ap_real.csv
+trap25,"[48, 96, 192]",0.8244337699817538,0.7769392127544705,0.5904723815291678,true_import,provisional_missing_digest,unknown,,,,multi_agent/data/sources/stage_a_ap_real.csv
+mix_b,"[48, 64, 256]",0.8185807520379588,0.7804962518701479,0.6361597419498289,true_eval,provisional_missing_digest,unknown,,,,results/ap70_depgraph_expansion.json
+mix_d,"[48, 128, 128]",0.8257724708092585,0.7858346455876241,0.6369383152509643,true_eval,provisional_missing_digest,unknown,,,,results/ap70_depgraph_expansion.json
+iso_s0,"[48, 128, 256]",0.8239780210949827,0.7843230776293404,0.6299191671696608,true_eval,provisional_missing_digest,unknown,,,,results/b2_eval/b2_iso_s0_fp16.json
+iso_s1,"[64, 96, 256]",0.830390736701155,0.7896136418194055,0.6335990600322648,true_eval,provisional_missing_digest,unknown,,,,results/b2_eval/b2_iso_s1_fp16.json
+iso_s2,"[64, 128, 192]",0.8212674468185364,0.783870689064531,0.6338902378413247,true_eval,provisional_missing_digest,unknown,,,,results/b2_eval/b2_iso_s2_fp16.json
+p50b2_136,"[32, 64, 136]",0.8270852477130309,0.7876921123503781,0.6425296366136182,true_eval,provisional_missing_digest,unknown,,,,results/p0_2_136/p50b2_136_fp16.json
+s0_040,"[40, 128, 256]",0.8227288286926274,0.7812451204720512,0.6266594834369248,true_eval,claimable_true_eval,6f5959572dd7525565365ffd642605237ccef5ec189f9bcdc27ebc0cbbffccf6,1,1,31,/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s0_040
+s0_056,"[56, 128, 256]",0.8320723613691059,0.7906587220629877,0.623711042347296,true_eval,claimable_true_eval,1599b1b58eca803b3216df915dfab34d4a5283f688ae58efd62dd25e474691c8,2,1,31,/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s0_056
+s1_048,"[64, 48, 256]",0.822220053164143,0.7828524390515933,0.6356162107296647,true_eval,claimable_true_eval,6ea24f149d57e61e3671a92bd100ce8c8084765a05b494561efa32c5bb36b19d,3,1,31,/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s1_048
+s0_024,"[24, 128, 256]",0.8331413894577057,0.791044145458815,0.6324952062228805,true_eval,claimable_true_eval,74bdf34458d0972f519b57f6862a936a57e4ebeba7087e34b97af1dd9b6d7009,0,1,31,/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s0_024

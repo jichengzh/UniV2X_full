@@ -1,0 +1,10 @@
+{
+  "error": "ModuleNotFoundError(\"No module named 'tvm'\")",
+  "gpu": "2",
+  "label": "wg_pair5",
+  "phase": "coverage_ready_first_v1",
+  "run_id": "energy_ready_first_v1:0001:coverage_ready-pyramid_lidar-w48x32x128-fp16",
+  "schema": "stage2_h800_overnight_energy_result_v1",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/scripts/stage2_h800_run_measurement_job.py\", line 453, in run_energy\n    import tvm\nModuleNotFoundError: No module named 'tvm'\n"
+}

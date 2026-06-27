@@ -142,6 +142,22 @@ def _forward(net, x):
     return net(x) if not isinstance(x, (list, tuple)) else net(*x)
 
 
+def _coverage(adapter, status: str) -> dict:
+    skipped = adapter.typed_skipped_subgraphs() if hasattr(adapter, "typed_skipped_subgraphs") else []
+    return {
+        "coverage_scope": "trace_net_only",
+        "trace_net_latency_pct": 100.0 if status != "skipped" else None,
+        "full_model_latency_pct": None,
+        "skipped_subgraphs_accounted_separately": True,
+        "n_skipped_subgraphs": len(skipped),
+        "note": (
+            "Trace-net latency coverage only; this is not full-model coverage. "
+            "Skipped sparse/fusion/attention/custom subgraphs are excluded from "
+            "the hook-timed trace net and must be gated separately."
+        ),
+    }
+
+
 def profile_latency(net: nn.Module, x, adapter, device: str,
                     warmup: int = 30, measure: int = 100) -> dict:
     """对已建好的 trace net 跑逐层计时, 返回 view_latency dict。
@@ -249,6 +265,7 @@ def profile_latency(net: nn.Module, x, adapter, device: str,
         "by_b1_search_knob": by_b1,       # 对齐 view_b1_search_groups
         "top_layers": layer_rows[:_TOP_K],
         "full_detail_sidecar": sidecar_path,
+        "coverage": _coverage(adapter, status),
     }
 
 

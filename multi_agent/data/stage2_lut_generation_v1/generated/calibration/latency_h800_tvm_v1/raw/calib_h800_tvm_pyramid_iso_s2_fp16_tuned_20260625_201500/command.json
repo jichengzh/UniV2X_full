@@ -1,0 +1,13 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "label": "iso_s2",
+  "width": [
+    64,
+    128,
+    192
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/iso_s2_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_iso_s2_retest",
+  "gpu": "5",
+  "run_id": "calib_h800_tvm_pyramid_iso_s2_fp16_tuned_20260625_201500"
+}

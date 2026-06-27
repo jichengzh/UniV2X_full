@@ -698,8 +698,9 @@ def build_from_manifest(manifest_path,
     parsing — no GPU.  Derivation (all from the manifest, zero per-model hardcode):
 
       * gating knob   = the cliff knob (legal ⊋ int8-buildable) with the smallest
-        base width (= stage0, the searcher's s0 axis).  None → no cliff (separable
-        architecture, e.g. CoDriving/V2X-ViT): int8 always buildable.
+        base width (= stage0, the searcher's s0 axis).  None → no int8
+        buildability cliff in traced dense space; this is not a model-level
+        separability proof.
       * key_scale     = gating.base_width // base_s0  (cur_width = scale×num_filters,
         the bottleneck expansion; base_s0 = max s0 in the seed grid).
       * bridge_int8_align = gating.int8_buildable_align (already in cur_width space).
@@ -720,11 +721,12 @@ def build_from_manifest(manifest_path,
         key_scale = gating.base_width // base_s0
         bridge_align = gating.int8_buildable_align
     else:
-        # No cliff (separable, e.g. CoDriving/V2X-ViT): int8 builds for every legal
-        # width.  Gate on pack_factor alone (dp4a per-group packing, groups=1) so
-        # all widths %pack==0 are buildable — matches measured all-build, exactly
-        # replacing the old QLookupCoDriving (can_build_int8≡True). key_scale=1.
-        key_scale = 1                       # separable: keys stay num_filters
+        # No int8 buildability cliff in traced dense space: int8 builds for every
+        # legal dense width. Gate on pack_factor alone (dp4a per-group packing,
+        # groups=1) so all widths %pack==0 are buildable — matches measured
+        # all-build, exactly replacing the old QLookupCoDriving
+        # (can_build_int8≡True). key_scale=1.
+        key_scale = 1
         bridge_align = spec.hw.int8_pack_factor
 
     q_kwargs = {} if q_path is None else {"q_path": q_path}
@@ -863,22 +865,21 @@ if __name__ == "__main__":
 # Q-axis (quantization) extension  — T1 P×Q×S
 # ============================================================================
 # DISCIPLINE:
-#   * INT8 latency = H800_TVM_latency / Q_ratio_4090
-#     where Q_ratio_4090 = fp16_4090_p50_ms / int8_4090_p50_ms
-#     This is ESTIMATED (cross-hardware scaling). Labeled "H800_TVM×4090_Q_ratio"
-#     in every record.  NEVER mixed with true H800 TRT measurements.
+#   * New INT8 latency evidence must be H800 TVM only.
+#   * Historical RTX 4090 TRT ratios may be kept as historical context only and
+#     are disabled as an active latency backend unless explicitly opted in.
 #   * INT8 AP penalty: constant -0.007 AP70 (median from e2e pipeline, 8 widths).
-#     Labeled "estimated" — derived from 4090 e2e pipeline, not stage_a full eval.
-#   * CROSS-HARDWARE WARNING: Q_ratio comes from RTX 4090 TRT; H800 INT8 speedup
-#     may differ. Use ratio only for rank-flip detection, not absolute claims.
+#     Labeled historical evidence — derived from 4090 e2e pipeline, not stage_a full eval.
+#   * CROSS-HARDWARE WARNING: historical Q_ratio comes from RTX 4090 TRT; H800
+#     INT8 speedup may differ. Do not use it as a new H800 backend.
 
 QUANT_MODES = ("fp16", "int8")
 Q_LUT_JSON = RESULTS / "latency_lut_pyramid_q.json"
 
 # Median INT8 AP70 penalty from e2e pipeline measurements (8 widths, minmax calib).
 # Source: results/a0_refresh_ap/ + models/e2e_cache/*.bench.json
-_INT8_AP_DELTA_MEDIAN = -0.008   # real DAIR val 1789 TRT INT8 MinMax: base=-0.0081, p50=-0.0099, p75=-0.0064, median=-0.0081
-_INT8_AP_DELTA_LABEL  = "real(-0.008_median_DAIR_val_1789_TRT_INT8_MinMaxCalib)"
+_INT8_AP_DELTA_MEDIAN = -0.008   # historical DAIR val 1789 TRT INT8 MinMax: base=-0.0081, p50=-0.0099, p75=-0.0064, median=-0.0081
+_INT8_AP_DELTA_LABEL = "historical_trt_evidence:median_DAIR_val_1789_int8_minmax_ap_delta"
 
 
 class QLookup:
@@ -887,7 +888,8 @@ class QLookup:
     speedup(width) -> float, default 1.0 (no speedup) for unknown widths.
     int8_lat(h800_tvm_us, width) -> float  estimated H800 INT8 latency (us).
 
-    Cross-hardware WARNING: ratios from RTX 4090 TRT.  H800 INT8 may differ.
+    Cross-hardware WARNING: historical ratios from RTX 4090 TRT are not a new
+    H800 backend and are disabled for active latency by default.
     """
 
     # Fallback table for widths not in the Q-LUT file (from session measurements)
@@ -932,6 +934,7 @@ class QLookup:
         # (keeps the Pareto axis H800-pure: uses the one real H800 int8 measurement
         #  as a uniform per-width proxy, instead of cross-hardware 4090 ratios).
         self.uniform_int8_speedup: Optional[float] = None
+        self.allow_historical_trt_ratio_fallback: bool = False
         # When True, evaluate() treats non-buildable INT8 as structurally unreachable.
         self.enforce_int8_buildable: bool = False
         self._mode = "builtin"
@@ -1004,15 +1007,17 @@ class QLookup:
           1. Real H800 TVM int8 measurement (h800_tvm_int8_*_us in the Q-LUT).
           2. uniform_int8_speedup proxy (H800_FP16 / measured stage0 speedup) —
              H800-pure, used by the P×Q×S ablation driver.
-          3. Cross-hardware fallback: H800_FP16 / 4090_Q_ratio (labeled estimated).
+          3. Historical TRT ratio fallback only when explicitly enabled; otherwise
+             return neutral FP16 latency so no new backend is implied.
         """
         key = (tuple(int(x) for x in width), sched)
         if key in self._h800_int8:
             return self._h800_int8[key]  # real H800 TVM int8
         if self.uniform_int8_speedup:
             return h800_tvm_us / self.uniform_int8_speedup
-        # Fallback: estimate from 4090 TRT ratio
-        return h800_tvm_us / self.speedup(width)
+        if self.allow_historical_trt_ratio_fallback:
+            return h800_tvm_us / self.speedup(width)
+        return h800_tvm_us
 
     def is_complete(self, width: Width) -> bool:
         """True if both FP16 and INT8 measured for this width."""
@@ -1028,9 +1033,10 @@ class QLookup:
 class CostModelPQS:
     """P×Q×S cost model: evaluate(width, sched, quant) -> (lat_us, -ap70).
 
-    INT8 latency = H800_TVM_lat / Q_ratio (estimated, cross-hardware).
-    INT8 AP      = FP16_AP70 - 0.007 (estimated, from e2e pipeline delta).
-    All INT8 results are flagged 'estimated' in records.
+    INT8 latency uses H800 TVM measurements or an explicit H800 stage0 proxy.
+    Historical TRT ratio fallback is disabled by default and must be labeled
+    historical if explicitly enabled.
+    INT8 AP uses a historical TRT AP delta context label.
     """
     lut: LatencyLUT
     apm: APModel
@@ -1078,8 +1084,10 @@ class CostModelPQS:
             elif self.qlut.uniform_int8_speedup:
                 lat_source = (f"H800_TVM_fp16/{self.qlut.uniform_int8_speedup}"
                               "(measured_stage0_speedup_proxy)")
+            elif self.qlut.allow_historical_trt_ratio_fallback:
+                lat_source = "historical_trt_evidence:4090_q_ratio_context"
             else:
-                lat_source = "H800_TVM×4090_Q_ratio(estimated)"
+                lat_source = "H800_TVM_int8_unmeasured_neutral_fp16_latency"
             ap_source  = _INT8_AP_DELTA_LABEL
 
         obj = (lat, -ap)
@@ -1346,8 +1354,15 @@ def detect_q_rank_flip_pairs(width_grid: list[Width],
                     qlut.int8_lat(lut.latency(pg_fp16, sched), pg_fp16, sched=sched), 3),
                 "wg_int8_complete": qlut.is_complete(wg_fp16),
                 "pg_int8_complete": qlut.is_complete(pg_fp16),
-                "source": ("H800_TVM_INT8_measured" if is_measured
-                           else "H800_TVM×4090_Q_ratio(estimated,cross-hardware)"),
+                "source": (
+                    "H800_TVM_INT8_measured"
+                    if is_measured
+                    else (
+                        "historical_trt_evidence:4090_q_ratio_context"
+                        if qlut.allow_historical_trt_ratio_fallback
+                        else "H800_TVM_int8_unmeasured_no_new_backend"
+                    )
+                ),
             })
     return sorted(pairs, key=lambda p: -p["q_rank_flip_ratio"])
 

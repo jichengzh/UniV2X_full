@@ -1,0 +1,18 @@
+{
+  "schema": "stage2_h800_energy_smoke_command_v1",
+  "mode": "nvidia_smi_power_draw_tuned_vm",
+  "status": "blocked_preflight_only",
+  "gpu": "7",
+  "model": "pyramid_lidar",
+  "label": "pad64",
+  "width": [
+    64,
+    96,
+    192
+  ],
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/trap25_pad64_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_pad64_retest",
+  "run_id": "smoke_h800_tvm_energy_pyramid_pad64_fp16_tuned_blocked_20260625_205500",
+  "latency_run_id": "smoke_h800_tvm_pyramid_pad64_fp16_tuned_20260625_192000",
+  "measure_iters": 1500
+}

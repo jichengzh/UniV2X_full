@@ -1,0 +1,18 @@
+{
+  "schema": "calibration_latency_worker_log_v1",
+  "job": {
+    "label": "base",
+    "width": [
+      64,
+      128,
+      256
+    ],
+    "onnx": "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+    "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_base",
+    "gpu": "3",
+    "run_id": "calib_h800_tvm_pyramid_base_fp16_tuned_clean_20260625_203000"
+  },
+  "returncode": 0,
+  "stdout": "{\"batch_size\": 1, \"build_default_s\": 4.987, \"build_tuned_s\": 13.076, \"default_max_us\": 56261.465, \"default_min_us\": 56257.324, \"default_repeats_us\": [56257.324, 56259.148, 56260.391, 56260.676, 56261.465], \"default_us\": 56259.801, \"gpu\": \"3\", \"input_shape\": {\"spatial_features\": [2, 64, 128, 256]}, \"label\": \"base\", \"measure_iters\": 500, \"onnx_path\": \"/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx\", \"ratio\": 9.059552, \"repeat\": 5, \"run_id\": \"calib_h800_tvm_pyramid_base_fp16_tuned_clean_20260625_203000\", \"schema\": \"stage2_h800_calibration_latency_result_v1\", \"status\": \"success\", \"tuned_max_us\": 6212.837, \"tuned_min_us\": 6202.861, \"tuned_repeats_us\": [6202.861, 6211.18, 6211.791, 6212.837, 6211.321], \"tuned_us\": 6209.998, \"warmup_iters\": 1, \"width\": [64, 128, 256], \"work_dir\": \"/exdata/jichengzhi/s2_tvm/ms_work_2e_base\"}\n",
+  "stderr": "[19:31:11] /workspace/tvm/src/relax/transform/meta_schedule.cc:95: Warning: Creating JSONDatabase. Workload at: /exdata/jichengzhi/s2_tvm/ms_work_2e_base/database_workload.json, Tuning records at: /exdata/jichengzhi/s2_tvm/ms_work_2e_base/database_tuning_record.json\n"
+}

@@ -1,0 +1,30 @@
+{
+  "apply_database_smoke": true,
+  "candidate_id": "coverage:pyramid_lidar:w64x96x224:fp16",
+  "created_at": "2026-06-26T08:51:36Z",
+  "database_tuning_record_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25/database_tuning_record.json",
+  "database_workload_path": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25/database_workload.json",
+  "elapsed_s": 77.146,
+  "gpu": 0,
+  "hostname": "zs-nj-tap-gpu18",
+  "input_shapes": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "job_id": "artifact_original60:frontier_25",
+  "label": "frontier_25",
+  "max_trials": 32,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_25_backbone.onnx",
+  "schema": "stage2_original60_artifact_build_manifest_row_v1",
+  "tuned_this_run": true,
+  "tvm_work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25",
+  "width": [
+    64,
+    96,
+    224
+  ]
+}

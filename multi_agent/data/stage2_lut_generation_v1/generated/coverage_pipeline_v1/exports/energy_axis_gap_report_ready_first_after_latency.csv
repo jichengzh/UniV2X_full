@@ -1,0 +1,7 @@
+candidate_id,label,width,artifact_status,latency_status,energy_status,ap_status,next_action,gap_reason,tag
+coverage_ready:pyramid_lidar:w48x96x256:fp16,wg_pair4,"[48,96,256]",ready,measured,queued,not_evaluated_by_energy_generator,queue_energy,latency_succeeded,coverage
+coverage_ready:pyramid_lidar:w48x32x128:fp16,wg_pair5,"[48,32,128]",ready,measured,queued,not_evaluated_by_energy_generator,queue_energy,latency_succeeded,coverage
+coverage_ready:pyramid_lidar:w64x32x128:fp16,pg_pair5,"[64,32,128]",ready,measured,queued,not_evaluated_by_energy_generator,queue_energy,latency_succeeded,coverage
+coverage_ready:pyramid_lidar:w48x64x192:fp16,wg_pair6,"[48,64,192]",ready,measured,queued,not_evaluated_by_energy_generator,queue_energy,latency_succeeded,coverage
+coverage_ready:pyramid_lidar:w64x64x192:fp16,pg_pair6,"[64,64,192]",ready,measured,queued,not_evaluated_by_energy_generator,queue_energy,latency_succeeded,coverage
+coverage_ready:pyramid_lidar:w32x64x64:fp16,mix_f,"[32,64,64]",ready,measured,queued,not_evaluated_by_energy_generator,queue_energy,latency_succeeded,coverage

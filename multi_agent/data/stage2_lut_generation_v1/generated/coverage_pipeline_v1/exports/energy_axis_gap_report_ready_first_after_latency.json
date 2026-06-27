@@ -1,0 +1,98 @@
+[
+  {
+    "ap_status": "not_evaluated_by_energy_generator",
+    "artifact_status": "ready",
+    "candidate_id": "coverage_ready:pyramid_lidar:w48x96x256:fp16",
+    "energy_status": "queued",
+    "gap_reason": "latency_succeeded",
+    "label": "wg_pair4",
+    "latency_status": "measured",
+    "next_action": "queue_energy",
+    "tag": "coverage",
+    "width": [
+      48,
+      96,
+      256
+    ]
+  },
+  {
+    "ap_status": "not_evaluated_by_energy_generator",
+    "artifact_status": "ready",
+    "candidate_id": "coverage_ready:pyramid_lidar:w48x32x128:fp16",
+    "energy_status": "queued",
+    "gap_reason": "latency_succeeded",
+    "label": "wg_pair5",
+    "latency_status": "measured",
+    "next_action": "queue_energy",
+    "tag": "coverage",
+    "width": [
+      48,
+      32,
+      128
+    ]
+  },
+  {
+    "ap_status": "not_evaluated_by_energy_generator",
+    "artifact_status": "ready",
+    "candidate_id": "coverage_ready:pyramid_lidar:w64x32x128:fp16",
+    "energy_status": "queued",
+    "gap_reason": "latency_succeeded",
+    "label": "pg_pair5",
+    "latency_status": "measured",
+    "next_action": "queue_energy",
+    "tag": "coverage",
+    "width": [
+      64,
+      32,
+      128
+    ]
+  },
+  {
+    "ap_status": "not_evaluated_by_energy_generator",
+    "artifact_status": "ready",
+    "candidate_id": "coverage_ready:pyramid_lidar:w48x64x192:fp16",
+    "energy_status": "queued",
+    "gap_reason": "latency_succeeded",
+    "label": "wg_pair6",
+    "latency_status": "measured",
+    "next_action": "queue_energy",
+    "tag": "coverage",
+    "width": [
+      48,
+      64,
+      192
+    ]
+  },
+  {
+    "ap_status": "not_evaluated_by_energy_generator",
+    "artifact_status": "ready",
+    "candidate_id": "coverage_ready:pyramid_lidar:w64x64x192:fp16",
+    "energy_status": "queued",
+    "gap_reason": "latency_succeeded",
+    "label": "pg_pair6",
+    "latency_status": "measured",
+    "next_action": "queue_energy",
+    "tag": "coverage",
+    "width": [
+      64,
+      64,
+      192
+    ]
+  },
+  {
+    "ap_status": "not_evaluated_by_energy_generator",
+    "artifact_status": "ready",
+    "candidate_id": "coverage_ready:pyramid_lidar:w32x64x64:fp16",
+    "energy_status": "queued",
+    "gap_reason": "latency_succeeded",
+    "label": "mix_f",
+    "latency_status": "measured",
+    "next_action": "queue_energy",
+    "tag": "coverage",
+    "width": [
+      32,
+      64,
+      64
+    ]
+  }
+]

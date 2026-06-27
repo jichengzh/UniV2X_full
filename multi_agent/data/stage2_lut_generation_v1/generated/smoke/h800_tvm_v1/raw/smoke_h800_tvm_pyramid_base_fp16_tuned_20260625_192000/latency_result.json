@@ -1,0 +1,50 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.973,
+  "build_tuned_s": 12.984,
+  "default_max_us": 56285.789,
+  "default_min_us": 56254.918,
+  "default_repeats_us": [
+    56254.918,
+    56285.789,
+    56284.617,
+    56285.648,
+    56266.559
+  ],
+  "default_us": 56275.506,
+  "gpu": "3",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "base",
+  "measure_iters": 500,
+  "model": "pyramid_lidar",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+  "ratio": 9.063642,
+  "repeat": 5,
+  "run_id": "smoke_h800_tvm_pyramid_base_fp16_tuned_20260625_192000",
+  "schema": "stage2_h800_smoke_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 6213.751,
+  "tuned_min_us": 6203.207,
+  "tuned_repeats_us": [
+    6204.381,
+    6203.207,
+    6209.886,
+    6213.751,
+    6213.418
+  ],
+  "tuned_us": 6208.929,
+  "warmup_iters": 1,
+  "width": [
+    64,
+    128,
+    256
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_base"
+}

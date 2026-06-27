@@ -1,0 +1,134 @@
+{
+  "blocked_reasons": [],
+  "gpu_check": {
+    "pmon": {
+      "command": [
+        "nvidia-smi",
+        "pmon",
+        "-c",
+        "1"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "# gpu         pid  type    sm    mem    enc    dec    command\n# Idx           #   C/G     %      %      %      %    name\n    0    1684398     C     3     0     -     -   python         \n    1          -     -     -     -     -     -   -              \n    2          -     -     -     -     -     -   -              \n    3          -     -     -     -     -     -   -              \n    4          -     -     -     -     -     -   -              \n    5          -     -     -     -     -     -   -              \n    6          -     -     -     -     -     -   -              \n    7          -     -     -     -     -     -   -"
+    },
+    "query": {
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,pstate",
+        "--format=csv"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "index, name, utilization.gpu [%], memory.used [MiB], memory.total [MiB], power.draw [W], pstate\n0, NVIDIA H800, 4 %, 32899 MiB, 81559 MiB, 123.65 W, P0\n1, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 67.15 W, P0\n2, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 68.05 W, P0\n3, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 69.74 W, P0\n4, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 69.39 W, P0\n5, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 72.34 W, P0\n6, NVIDIA H800, 0 %, 8 MiB, 81559 MiB, 71.46 W, P0\n7, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 69.33 W, P0"
+    }
+  },
+  "paths": {
+    "base_ckpt": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29/net_epoch_bestval_at23.pth",
+      "resolved": "/exdata/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29/net_epoch_bestval_at23.pth"
+    },
+    "base_ckpt_dir": {
+      "exists": true,
+      "kind": "dir",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29",
+      "resolved": "/exdata/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29"
+    },
+    "base_config": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29/config.yaml",
+      "resolved": "/exdata/jichengzhi/heal_research/checkpoints/stage1/Pyramid_DAIR_m1_base_2023_08_14_11_42_29/config.yaml"
+    },
+    "dataset_root": {
+      "exists": true,
+      "kind": "dir",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/HEAL/dataset/my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure",
+      "resolved": "/exdata/jichengzhi/DAIR-V2X/DAIR-V2X-C/cooperative-vehicle-infrastructure"
+    },
+    "dataset_train": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/HEAL/dataset/my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure/train.json",
+      "resolved": "/exdata/jichengzhi/DAIR-V2X/DAIR-V2X-C/cooperative-vehicle-infrastructure/train.json"
+    },
+    "dataset_val": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/HEAL/dataset/my_dair_v2x/v2x_c/cooperative-vehicle-infrastructure/val.json",
+      "resolved": "/exdata/jichengzhi/DAIR-V2X/DAIR-V2X-C/cooperative-vehicle-infrastructure/val.json"
+    },
+    "env_python": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python",
+      "resolved": "/exdata/jichengzhi/conda_envs/UniV2X_2.0/bin/python3.9"
+    },
+    "heal_root": {
+      "exists": true,
+      "kind": "dir",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/HEAL",
+      "resolved": "/exdata/jichengzhi/heal_research/HEAL"
+    },
+    "structural_prune": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/V2X/tools/structural_prune_pyramid.py",
+      "resolved": "/home/jichengzhi/V2X/tools/structural_prune_pyramid.py"
+    },
+    "train_ddp": {
+      "exists": true,
+      "kind": "file",
+      "kind_ok": true,
+      "path": "/home/jichengzhi/heal_research/HEAL/opencood/tools/train_ddp.py",
+      "resolved": "/exdata/jichengzhi/heal_research/HEAL/opencood/tools/train_ddp.py"
+    }
+  },
+  "python_import_check": {
+    "imports": {
+      "numpy": {
+        "file": "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/lib/python3.9/site-packages/numpy/__init__.py",
+        "ok": true,
+        "version": "1.22.4"
+      },
+      "opencood": {
+        "file": "/home/jichengzhi/heal_research/HEAL/opencood/__init__.py",
+        "ok": true,
+        "version": ""
+      },
+      "torch": {
+        "file": "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/lib/python3.9/site-packages/torch/__init__.py",
+        "ok": true,
+        "version": "2.0.1+cu118"
+      },
+      "yaml": {
+        "file": "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/lib/python3.9/site-packages/yaml/__init__.py",
+        "ok": true,
+        "version": "6.0.3"
+      }
+    },
+    "process": {
+      "command": [
+        "/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python",
+        "-c",
+        "import json\nmods=['torch','numpy','yaml','opencood']\nout={}\nfor m in mods:\n    try:\n        mod=__import__(m)\n        out[m]={'ok': True, 'version': getattr(mod, '__version__', ''), 'file': getattr(mod, '__file__', '')}\n    except Exception as exc:\n        out[m]={'ok': False, 'error': type(exc).__name__ + ': ' + str(exc)}\nprint(json.dumps(out, sort_keys=True))\n"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\"numpy\": {\"file\": \"/home/jichengzhi/miniconda3/envs/UniV2X_2.0/lib/python3.9/site-packages/numpy/__init__.py\", \"ok\": true, \"version\": \"1.22.4\"}, \"opencood\": {\"file\": \"/home/jichengzhi/heal_research/HEAL/opencood/__init__.py\", \"ok\": true, \"version\": \"\"}, \"torch\": {\"file\": \"/home/jichengzhi/miniconda3/envs/UniV2X_2.0/lib/python3.9/site-packages/torch/__init__.py\", \"ok\": true, \"version\": \"2.0.1+cu118\"}, \"yaml\": {\"file\": \"/home/jichengzhi/miniconda3/envs/UniV2X_2.0/lib/python3.9/site-packages/yaml/__init__.py\", \"ok\": true, \"version\": \"6.0.3\"}}"
+    }
+  },
+  "schema": "stage2_h800_ap_env_preflight_v1",
+  "status": "pass"
+}

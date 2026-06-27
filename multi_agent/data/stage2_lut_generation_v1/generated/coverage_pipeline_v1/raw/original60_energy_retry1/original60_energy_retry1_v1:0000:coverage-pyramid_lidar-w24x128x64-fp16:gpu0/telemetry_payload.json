@@ -1,0 +1,28 @@
+{
+  "clock_policy": "default",
+  "idle_baseline_policy": "subtract_idle_avg_5s_pre_window",
+  "idle_watt_avg": 131.7823333333333,
+  "joule_per_inference": 3.4319825618329376,
+  "latency_config_id": "coverage_h800_tvm_pyramid_w24x128x64_fp16_metaschedule_tuned",
+  "latency_run_id": "original60_measured_v1_original60_lhc_26_gpu0_metaschedule_tuned",
+  "measure_iters": 1500,
+  "notes": "original60_measured_energy_retry1_v1 energy telemetry; clean target GPU preflight; backbone-only",
+  "power_cap_watt": null,
+  "provenance": "H800 power telemetry original60_measured_energy_retry1_v1 aligned with tuned TVM VM",
+  "raw_artifact": "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_energy_retry1/original60_energy_retry1_v1:0000:coverage-pyramid_lidar-w24x128x64-fp16:gpu0",
+  "repeat": 1,
+  "run_id": "original60_energy_retry1_v1:0000:coverage-pyramid_lidar-w24x128x64-fp16:gpu0",
+  "sample_window_ms": 256106,
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/lhc_26_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/workdirs/lhc_26",
+    "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_energy_retry1/original60_energy_retry1_v1:0000:coverage-pyramid_lidar-w24x128x64-fp16:gpu0/energy_result.json",
+    "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_energy_retry1/original60_energy_retry1_v1:0000:coverage-pyramid_lidar-w24x128x64-fp16:gpu0/idle_power_samples.csv",
+    "multi_agent/data/stage2_lut_generation_v1/generated/coverage_pipeline_v1/raw/original60_energy_retry1/original60_energy_retry1_v1:0000:coverage-pyramid_lidar-w24x128x64-fp16:gpu0/active_power_samples.csv"
+  ],
+  "telemetry_source": "nvidia-smi power.draw polling 50ms",
+  "warmup_iters": 50,
+  "watt_avg": 151.88328666666658,
+  "watt_p50": 150.68,
+  "watt_p90": 170.59
+}

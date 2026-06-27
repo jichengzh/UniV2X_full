@@ -1,0 +1,11 @@
+{
+  "schema": "stage2_h800_latency_medium_retry_command_v1",
+  "mode": "medium_clean_retry_g1_reuse_existing_ms_db",
+  "gpu": "1",
+  "label": "s1_64",
+  "run_id": "calib_h800_tvm_pyramid_s1_64_fp16_medium_clean_retry_g1_20260625_204246",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/s1_64_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_s1_64",
+  "measure_iters": 500,
+  "repeat": 5
+}

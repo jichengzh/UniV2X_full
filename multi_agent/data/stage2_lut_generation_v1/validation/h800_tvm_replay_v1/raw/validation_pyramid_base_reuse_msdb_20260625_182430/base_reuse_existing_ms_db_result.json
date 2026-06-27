@@ -1,0 +1,33 @@
+{
+  "schema": "h800_tvm_reuse_existing_ms_db_result_v1",
+  "run_id": "validation_pyramid_base_reuse_msdb_20260625_182430",
+  "model": "pyramid_lidar",
+  "label": "base",
+  "width": [
+    64,
+    128,
+    256
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/base_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_base",
+  "comparison_mode": "reuse_existing_ms_db",
+  "gpu_visible": "3",
+  "reps": 500,
+  "default_us": 56272.8,
+  "default_min_us": 56247.39,
+  "default_max_us": 56290.5,
+  "tuned_us": 6212.53,
+  "tuned_min_us": 6211.45,
+  "tuned_max_us": 6213.67,
+  "default_ms": 56.273,
+  "tuned_ms": 6.213,
+  "speedup_default_over_tuned": 9.058,
+  "default_build_s": 4.828,
+  "tuned_apply_compile_s": 13.217,
+  "pass_range_ms": [
+    5.5,
+    7.5
+  ],
+  "pass_fail": "pass",
+  "status": "DONE"
+}

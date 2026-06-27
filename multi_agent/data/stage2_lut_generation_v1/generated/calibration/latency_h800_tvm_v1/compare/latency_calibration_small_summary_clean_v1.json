@@ -1,0 +1,11 @@
+{
+  "schema": "calibration_latency_small_summary_v1",
+  "run_group": "calib_latency_small_reuse_clean_20260625_203000",
+  "created_at": "2026-06-25T19:35:13+0800",
+  "jobs": 9,
+  "succeeded": 8,
+  "failed": 1,
+  "out_jsonl": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/latency/latency_lut_rows_v1.jsonl",
+  "state": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/jobs/job_state_clean.jsonl",
+  "note": "clean rerun; no same-GPU overlap; canonical rows generated locally after rsync"
+}

@@ -1,0 +1,58 @@
+{
+  "job_id": "latency:calibration_h800_tvm_pyramid_mix_d_fp16_medium",
+  "raw": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_mix_d_fp16_medium_20260625_194602",
+  "result": {
+    "batch_size": 1,
+    "build_default_s": 5.103,
+    "build_tuned_s": 10.295,
+    "default_max_us": 59693.391,
+    "default_mean_us": 58154.887,
+    "default_min_us": 56363.395,
+    "default_repeats_us": [
+      56363.395,
+      57894.477,
+      58459.914,
+      58363.262,
+      59693.391
+    ],
+    "default_us": 58363.262,
+    "gpu": "6",
+    "input_shape": {
+      "spatial_features": [
+        2,
+        64,
+        128,
+        256
+      ]
+    },
+    "label": "mix_d",
+    "measure_iters": 500,
+    "model": "pyramid_lidar",
+    "onnx_path": "/exdata/jichengzhi/s2_tvm/models/mix_d_backbone.onnx",
+    "ratio": 1.977343,
+    "repeat": 5,
+    "run_id": "calib_h800_tvm_pyramid_mix_d_fp16_medium_20260625_194602",
+    "schema": "stage2_h800_calibration_latency_result_v1",
+    "status": "success",
+    "tuned_max_us": 29705.459,
+    "tuned_mean_us": 29109.679,
+    "tuned_min_us": 27400.131,
+    "tuned_repeats_us": [
+      27400.131,
+      29349.035,
+      29515.996,
+      29577.775,
+      29705.459
+    ],
+    "tuned_us": 29515.996,
+    "warmup_iters": 1,
+    "width": [
+      48,
+      128,
+      128
+    ],
+    "work_dir": "/exdata/jichengzhi/s2_tvm/ms_bumped_mix_d"
+  },
+  "returncode": 0,
+  "schema": "lut_job_log_v1"
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "stage2_h800_p1_p2_latency_command_v1",
+  "phase": "p2_latency_repeat",
+  "label": "trap25",
+  "gpu": "0",
+  "run_id": "calib_h800_tvm_pyramid_trap25_p2_latency_repeat_20260625_234205",
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/trap25_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_trap25"
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "h800_tvm_reuse_existing_ms_db_result_v1",
+  "run_id": "validation_codriving_base_reuse_msdb_validation_remaining_reuse_msdb_20260625_183234",
+  "model": "codriving",
+  "label": "base",
+  "width": [
+    64,
+    128,
+    256
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/codriving_cache/base_backbone.onnx",
+  "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_cod_base",
+  "comparison_mode": "reuse_existing_ms_db",
+  "gpu_visible": "7",
+  "batch": 2,
+  "reps": 500,
+  "default_path": "relax.build",
+  "default_us": 16673.35,
+  "default_min_us": 16671.83,
+  "default_max_us": 16674.3,
+  "tuned_us": 8037.45,
+  "tuned_min_us": 8036.92,
+  "tuned_max_us": 8038.97,
+  "default_ms": 16.673,
+  "tuned_ms": 8.037,
+  "speedup_default_over_tuned": 2.074,
+  "default_build_s": 7.014,
+  "tuned_apply_compile_s": 22.627,
+  "pass_range_ms": [
+    7.0,
+    9.5
+  ],
+  "pass_fail": "pass",
+  "status": "DONE"
+}

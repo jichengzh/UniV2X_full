@@ -1,0 +1,965 @@
+{
+  "rows": [
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x128x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s0_024",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        128,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x128x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s0_040",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        128,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x128x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s0_056",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        56,
+        128,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x48x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s1_048",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        48,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x64x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s1_064",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        64,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x80x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s1_080",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        80,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x112x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s1_112",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        112,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x128x96:fp16",
+      "energy_status": "blocked",
+      "gap_reason": "latency_not_measured_or_quarantined",
+      "label": "s2_096",
+      "latency_status": "quarantine",
+      "next_action": "resolve_latency_quarantine_before_energy",
+      "tag": "original60_final",
+      "width": [
+        64,
+        128,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x128x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s2_160",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        128,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x128x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "s2_224",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        128,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x64x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_01",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        64,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x96x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_02",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        96,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x128x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_03",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        128,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x48x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_04",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        48,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x80x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_05",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        56,
+        80,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x112x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_06",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        112,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x48x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_07",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        48,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x80x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_08",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        80,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x112x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_09",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        112,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x32x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_10",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        32,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x64x64:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_11",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        56,
+        64,
+        64
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x96x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_12",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        96,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x64x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_14",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        64,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x96x64:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_15",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        96,
+        64
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x128x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_16",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        128,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x48x256:fp16",
+      "energy_status": "blocked",
+      "gap_reason": "latency_not_measured_or_quarantined",
+      "label": "lhc_17",
+      "latency_status": "quarantine",
+      "next_action": "resolve_latency_quarantine_before_energy",
+      "tag": "original60_final",
+      "width": [
+        56,
+        48,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x80x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_18",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        80,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w16x112x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_19",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        16,
+        112,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x32x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_20",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        32,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x80x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_21",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        80,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x112x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_22",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        112,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x32x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_23",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        56,
+        32,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x64x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_24",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        64,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w16x96x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_25",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        16,
+        96,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x128x64:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "lhc_26",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        128,
+        64
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x64x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_01",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        64,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x64x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_02",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        64,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x48x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_03",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        48,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x80x128:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_04",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        80,
+        128
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x64x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_05",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        64,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w32x64x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_06",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        32,
+        64,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x48x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_07",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        48,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x80x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_08",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        80,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w24x32x64:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_10",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        24,
+        32,
+        64
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w16x48x64:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_11",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        16,
+        48,
+        64
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w16x32x96:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_12",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        16,
+        32,
+        96
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x96x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_14",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        96,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x96x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_15",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        56,
+        96,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x80x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_16",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        80,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x112x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_17",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        112,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x96x160:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_18",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        96,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x96x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_19",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        96,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x112x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_20",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        56,
+        112,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x80x192:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_22",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        80,
+        192
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x96x224:fp16",
+      "energy_status": "quarantine",
+      "gap_reason": "repeated_energy_cuda_illegal_memory_access",
+      "label": "frontier_25",
+      "latency_status": "measured",
+      "next_action": "manual_db_or_schedule_investigation",
+      "tag": "original60_final",
+      "width": [
+        64,
+        96,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w56x80x160:fp16",
+      "energy_status": "quarantine",
+      "gap_reason": "repeated_energy_cuda_illegal_memory_access",
+      "label": "frontier_26",
+      "latency_status": "measured",
+      "next_action": "manual_db_or_schedule_investigation",
+      "tag": "original60_final",
+      "width": [
+        56,
+        80,
+        160
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w64x112x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_27",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        64,
+        112,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x112x256:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_31",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        112,
+        256
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w48x128x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_32",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        48,
+        128,
+        224
+      ]
+    },
+    {
+      "ap_status": "not_evaluated_by_energy_generator",
+      "artifact_status": "ready",
+      "candidate_id": "coverage:pyramid_lidar:w40x112x224:fp16",
+      "energy_status": "measured",
+      "gap_reason": "energy_measured",
+      "label": "frontier_33",
+      "latency_status": "measured",
+      "next_action": "none",
+      "tag": "original60_final",
+      "width": [
+        40,
+        112,
+        224
+      ]
+    }
+  ],
+  "schema": "stage2_axis_gap_report_v1"
+}

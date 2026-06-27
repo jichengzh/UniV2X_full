@@ -300,6 +300,10 @@ def main():
     # Apply yaml parser
     parser_func = getattr(yaml_utils, hypes["yaml_parser"])
     hypes = parser_func(hypes)
+    if hypes.get("model", {}).get("args", {}).get("fusion_method") == "disconet":
+        from framework.stage1.auto_trace import _ensure_disco_fuse_compat
+
+        _ensure_disco_fuse_compat()
 
     print("[boot] building model", flush=True)
     model = train_utils.create_model(hypes)

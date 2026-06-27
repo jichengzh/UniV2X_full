@@ -1,0 +1,14 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "mode": "medium_reuse_existing_ms_db",
+  "label": "s0_16",
+  "width": [
+    16,
+    128,
+    256
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/s0_16_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_bumped_s0_16",
+  "gpu": "3",
+  "run_id": "calib_h800_tvm_pyramid_s0_16_fp16_medium_20260625_194602"
+}

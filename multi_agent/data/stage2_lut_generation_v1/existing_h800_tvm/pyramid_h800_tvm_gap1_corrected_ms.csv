@@ -1,0 +1,9 @@
+model,backend,scope,precision,label,width,in_per_g,aligned,ap70,default_ms,tuned_ms,speedup_default_over_tuned,evidence_status,source,source_file
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,base,"[64,128,256]","[4,8,16]",True,0.631,56.32121,6.31998,8.912,trusted_corrected_measured,s2_2e base_retest (≈旧9.06×),results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,p50,"[32,64,128]","[2,4,8]",True,0.564,26.24167,3.01051,8.717,trusted_corrected_measured,"s2_2e (ms_work_2e_p50, 旧)",results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,p75,"[16,32,64]","[1,2,4]",True,0.53,12.68907,0.48363,26.237,trusted_corrected_measured,s2_2e p75_retest,results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,trap25,"[48,96,192]","[3,6,12]",False,0.59,42.35527,21.6148,1.96,trusted_corrected_measured,"s2_2e (ms_work_2e_trap25, 旧, 已验证)",results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,pad64,"[64,96,192]","[4,6,12]",False,0.59,47.40726,6.15204,7.706,trusted_corrected_measured,"s2_2e pad64_retest (trap25权重 s0零填充48->64, AP不变=0.590)",results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,iso_s0,"[48,128,256]","[3,8,16]",False,,51.24903,21.75209,2.356,trusted_corrected_measured,s2_2e iso_s0_retest (仅s0失配),results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,iso_s1,"[64,96,256]","[4,6,16]",False,,51.62249,6.91063,7.47,trusted_corrected_measured,s2_2e iso_s1_retest (仅s1失配),results/gap1_grid_corrected.json
+pyramid_lidar,h800_tvm_relax_metaschedule,backbone_only,fp16,iso_s2,"[64,128,192]","[4,8,12]",False,,51.99238,7.24361,7.178,trusted_corrected_measured,s2_2e iso_s2_retest (仅s2失配),results/gap1_grid_corrected.json

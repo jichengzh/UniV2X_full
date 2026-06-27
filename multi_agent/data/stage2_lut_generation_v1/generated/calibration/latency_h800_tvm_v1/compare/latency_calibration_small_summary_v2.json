@@ -1,0 +1,11 @@
+{
+  "schema": "calibration_latency_small_summary_v2",
+  "run_group": "calib_latency_small_reuse_clean_20260625_203000_plus_pad64_isolated_retry",
+  "status": "GO_CALIBRATION_MEDIUM_LATENCY_ONLY",
+  "jobs_planned": 9,
+  "measured_rows": 9,
+  "failed_rows": 0,
+  "out_jsonl": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/latency/latency_lut_rows_v1.jsonl",
+  "quick_review_csv": "multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/compare/latency_calibration_small_quick_review_v1.csv",
+  "note": "clean run produced 8 rows; pad64 retry ran isolated on idle GPU and matched smoke/validation scale"
+}

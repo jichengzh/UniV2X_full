@@ -1,0 +1,48 @@
+{
+  "batch_size": 1,
+  "build_default_s": 5.245,
+  "build_tuned_s": 5.31,
+  "default_max_us": 44980.42,
+  "default_mean_us": 44974.196,
+  "default_min_us": 44970.571,
+  "default_repeats_us": [
+    44980.42,
+    44971.597,
+    44970.571
+  ],
+  "default_us": 44971.597,
+  "gpu": "1",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "frontier_17",
+  "measure_iters": 100,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_17_backbone.onnx",
+  "phase": "original60_measured_v1",
+  "ratio": 0.944625,
+  "repeat": 3,
+  "run_id": "original60_measured_v1_original60_frontier_17_gpu1",
+  "schema": "stage2_h800_overnight_latency_result_v1",
+  "status": "success",
+  "tuned_max_us": 47611.494,
+  "tuned_mean_us": 47605.684,
+  "tuned_min_us": 47597.69,
+  "tuned_repeats_us": [
+    47597.69,
+    47607.866,
+    47611.494
+  ],
+  "tuned_us": 47607.866,
+  "warmup_iters": 30,
+  "width": [
+    48,
+    112,
+    192
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_17"
+}

@@ -1,0 +1,304 @@
+{
+  "coverage_summary": {
+    "active_quarantine_row_count": 0,
+    "ap_row_count": 22,
+    "blocked_config_count": 60,
+    "blocked_job_count": 0,
+    "energy_row_count": 408,
+    "job_state_row_count": 0,
+    "latency_row_count": 888,
+    "latest_job_count": 0,
+    "latest_job_status_counts": {},
+    "measured_row_count": 1318,
+    "missing_artifact_config_count": 60,
+    "missing_artifact_row_count": 60,
+    "quarantine_row_count": 0,
+    "quarantined_config_count": 0,
+    "quarantined_job_count": 0,
+    "raw_row_count": 1318,
+    "repeat_policy_label": "repeat-heavy",
+    "repeat_ratio": 0.9142640364188164,
+    "repeat_rows": 1205,
+    "schema": "stage2_lut_coverage_summary_v1",
+    "top_repeated_cells": [
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_p75_fp16_default",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "default",
+        "width": [
+          16,
+          32,
+          64
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_p75_fp16_metaschedule_tuned",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "metaschedule_tuned",
+        "width": [
+          16,
+          32,
+          64
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_p50_fp16_default",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "default",
+        "width": [
+          32,
+          64,
+          128
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_p50_fp16_metaschedule_tuned",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "metaschedule_tuned",
+        "width": [
+          32,
+          64,
+          128
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_base_fp16_default",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "default",
+        "width": [
+          64,
+          128,
+          256
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_base_fp16_metaschedule_tuned",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "metaschedule_tuned",
+        "width": [
+          64,
+          128,
+          256
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_trap25_fp16_default",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "default",
+        "width": [
+          48,
+          96,
+          192
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_trap25_fp16_metaschedule_tuned",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "metaschedule_tuned",
+        "width": [
+          48,
+          96,
+          192
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_iso_s0_fp16_default",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "default",
+        "width": [
+          48,
+          128,
+          256
+        ]
+      },
+      {
+        "backend": "h800_tvm",
+        "config_id": "overnight_h800_tvm_pyramid_iso_s0_fp16_metaschedule_tuned",
+        "count": 25,
+        "dense_stage": "backbone",
+        "extra_rows": 24,
+        "kind": "latency",
+        "model": "Pyramid-LiDAR",
+        "quant_policy": "fp16",
+        "schedule_policy": "metaschedule_tuned",
+        "width": [
+          48,
+          128,
+          256
+        ]
+      }
+    ],
+    "unique_ap_cells": 22,
+    "unique_axis_cell_count": 113,
+    "unique_config_count": 113,
+    "unique_energy_cells": 21,
+    "unique_latency_cells": 70
+  },
+  "decision": "NO_GO",
+  "latest_job_status": {},
+  "latest_job_status_counts": {},
+  "quarantine": {
+    "active_config_count": 0,
+    "active_configs": [],
+    "growth": 0,
+    "previous_active_config_count": 0,
+    "previous_available": false
+  },
+  "queue": {
+    "ap_failed_jobs": 0,
+    "ap_planned_jobs": 0,
+    "ap_preflight_blocked_jobs": 0,
+    "ap_ready_jobs": 0,
+    "ap_running_jobs": 0,
+    "ap_skipped_jobs": 0,
+    "ap_succeeded_jobs": 0,
+    "artifact_failed_jobs": 0,
+    "artifact_planned_jobs": 0,
+    "artifact_preflight_blocked_jobs": 0,
+    "artifact_ready_jobs": 0,
+    "artifact_running_jobs": 0,
+    "artifact_skipped_jobs": 0,
+    "artifact_succeeded_jobs": 0,
+    "energy_failed_jobs": 0,
+    "energy_planned_jobs": 0,
+    "energy_preflight_blocked_jobs": 0,
+    "energy_ready_jobs": 0,
+    "energy_running_jobs": 0,
+    "energy_skipped_jobs": 0,
+    "energy_succeeded_jobs": 0,
+    "latency_failed_jobs": 0,
+    "latency_planned_jobs": 0,
+    "latency_preflight_blocked_jobs": 0,
+    "latency_ready_jobs": 0,
+    "latency_running_jobs": 0,
+    "latency_skipped_jobs": 0,
+    "latency_succeeded_jobs": 0,
+    "planned_jobs": 0,
+    "unknown_failed_jobs": 0,
+    "unknown_planned_jobs": 0,
+    "unknown_preflight_blocked_jobs": 0,
+    "unknown_ready_jobs": 0,
+    "unknown_running_jobs": 0,
+    "unknown_skipped_jobs": 0,
+    "unknown_succeeded_jobs": 0
+  },
+  "recommendations": [
+    {
+      "action": "stop repeat, generate new candidates",
+      "code": "repeat_ratio_high",
+      "condition": "repeat_ratio=0.914 > 0.300",
+      "severity": "stop"
+    },
+    {
+      "action": "ask artifact-agent for next batch",
+      "code": "latency_queue_low",
+      "condition": "latency_ready_jobs=0 < 10",
+      "severity": "warn"
+    },
+    {
+      "action": "prioritize energy subset",
+      "code": "energy_axis_lag",
+      "condition": "energy_cells=21 < 0.40 * latency_cells=70",
+      "severity": "warn"
+    },
+    {
+      "action": "prioritize AP source/eval",
+      "code": "ap_axis_lag",
+      "condition": "ap_cells=22 < 0.40 * latency_cells=70",
+      "severity": "warn"
+    }
+  ],
+  "schema": "stage2_supervisor_readiness_gate_v1",
+  "top_missing_axes": [
+    {
+      "axis": "ap",
+      "count": 60,
+      "examples": [
+        "coverage:pyramid_lidar:w24x128x256:fp16",
+        "coverage:pyramid_lidar:w40x128x256:fp16",
+        "coverage:pyramid_lidar:w56x128x256:fp16",
+        "coverage:pyramid_lidar:w64x48x256:fp16",
+        "coverage:pyramid_lidar:w64x64x256:fp16"
+      ],
+      "status": "blocked"
+    },
+    {
+      "axis": "energy",
+      "count": 60,
+      "examples": [
+        "coverage:pyramid_lidar:w24x128x256:fp16",
+        "coverage:pyramid_lidar:w40x128x256:fp16",
+        "coverage:pyramid_lidar:w56x128x256:fp16",
+        "coverage:pyramid_lidar:w64x48x256:fp16",
+        "coverage:pyramid_lidar:w64x64x256:fp16"
+      ],
+      "status": "blocked"
+    },
+    {
+      "axis": "latency",
+      "count": 60,
+      "examples": [
+        "coverage:pyramid_lidar:w24x128x256:fp16",
+        "coverage:pyramid_lidar:w40x128x256:fp16",
+        "coverage:pyramid_lidar:w56x128x256:fp16",
+        "coverage:pyramid_lidar:w64x48x256:fp16",
+        "coverage:pyramid_lidar:w64x64x256:fp16"
+      ],
+      "status": "missing"
+    }
+  ]
+}

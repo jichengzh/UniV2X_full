@@ -1,0 +1,28 @@
+{
+  "n_warmup": 100,
+  "n_measure": 200,
+  "mean_ms": 1.2399328017234803,
+  "std_ms": 0.005015394085246432,
+  "p50_ms": 1.2396159768104553,
+  "p95_ms": 1.2462911665439607,
+  "p99_ms": 1.2548211443424224,
+  "min_ms": 1.2290560007095337,
+  "max_ms": 1.269152045249939,
+  "engine_size_mb": 12.364036,
+  "input_shape": [
+    2,
+    64,
+    128,
+    256
+  ],
+  "input_name": "spatial_features",
+  "output_names": [
+    "cls_preds",
+    "reg_preds",
+    "dir_preds"
+  ],
+  "precision": "fp16",
+  "onnx": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s0_040/s0_040.onnx",
+  "engine": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/ap_stability_20260626/raw/s0_040/s0_040_fp16.engine",
+  "build_secs": 101.35407900810242
+}

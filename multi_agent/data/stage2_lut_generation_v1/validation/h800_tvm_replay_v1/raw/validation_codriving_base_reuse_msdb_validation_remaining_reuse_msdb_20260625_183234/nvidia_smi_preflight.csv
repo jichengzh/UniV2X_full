@@ -1,0 +1,9 @@
+index, name, utilization.gpu [%], memory.used [MiB], memory.total [MiB], power.draw [W], pstate
+0, NVIDIA H800, 99 %, 60271 MiB, 81559 MiB, 433.31 W, P0
+1, NVIDIA H800, 86 %, 61555 MiB, 81559 MiB, 397.50 W, P0
+2, NVIDIA H800, 82 %, 62011 MiB, 81559 MiB, 411.28 W, P0
+3, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 72.70 W, P0
+4, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 69.32 W, P0
+5, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 72.40 W, P0
+6, NVIDIA H800, 0 %, 8 MiB, 81559 MiB, 72.28 W, P0
+7, NVIDIA H800, 0 %, 4 MiB, 81559 MiB, 69.77 W, P0

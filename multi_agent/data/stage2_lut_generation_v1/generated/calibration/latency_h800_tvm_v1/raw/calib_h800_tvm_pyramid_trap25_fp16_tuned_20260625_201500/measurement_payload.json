@@ -1,0 +1,31 @@
+{
+  "batch_size": 1,
+  "build_status": "success",
+  "build_time_s": 8.256,
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "latency_max_us": 21594.193,
+  "latency_mean_us": 21593.497,
+  "latency_min_us": 21592.619,
+  "latency_p50_us": 21593.497,
+  "measure_iters": 500,
+  "notes": "latency calibration small; trap25 dense-core/backbone-only; no fresh tune",
+  "provenance": "H800 TVM latency calibration small; reuse existing MetaSchedule DB",
+  "raw_artifact": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_trap25_fp16_tuned_20260625_201500",
+  "repeat": 5,
+  "run_id": "calib_h800_tvm_pyramid_trap25_fp16_tuned_20260625_201500",
+  "source_files": [
+    "/exdata/jichengzhi/s2_tvm/models/trap25_backbone.onnx",
+    "/exdata/jichengzhi/s2_tvm/ms_work_2e_trap25",
+    "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_trap25_fp16_tuned_20260625_201500/latency_result.json"
+  ],
+  "tvm_strategy": "relax_metaschedule_reuse_existing_ms_db",
+  "tvm_target": "cuda",
+  "warmup_iters": 1
+}

@@ -1,0 +1,22 @@
+{
+  "ap_source_status_counts": {
+    "exact_true_source_available": 4,
+    "finetune_smoke_quarantined": 1,
+    "no_claim_missing_source": 54,
+    "weight_identity_transfer_available": 1
+  },
+  "claim_status_counts": {
+    "claimable_true_eval": 4,
+    "claimable_weight_identity_transfer": 1,
+    "no_claim_missing_source": 55
+  },
+  "exact_true_source_count": 4,
+  "finetune_smoke_blocked_environment_count": 0,
+  "finetune_smoke_quarantined_count": 1,
+  "finetune_smoke_queued_count": 0,
+  "no_claim_missing_source_count": 54,
+  "policy": "No predicted/model-fit/interpolated AP is written as measured. Rows without full-model AP source remain no-claim until finetune/eval.",
+  "schema": "stage2_original60_ap_axis_gap_report_v2",
+  "total_original60": 60,
+  "weight_identity_transfer_count": 1
+}

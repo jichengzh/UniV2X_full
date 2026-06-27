@@ -1,0 +1,7 @@
+{
+  "schema": "h800_tvm_reuse_existing_ms_db_result_v1",
+  "run_id": "validation_pyramid_base_reuse_msdb_20260625_182315",
+  "status": "FAILED",
+  "error": "OSError('/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/lib/libtvm_runtime.so: undefined symbol: cudaGraphAddDependencies_v2, version libcudart.so.12')",
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 52, in <module>\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/__init__.py\", line 29, in <module>\n    from .base import TVMError, __version__, _RUNTIME_ONLY\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/base.py\", line 51, in <module>\n    _LIB_RUNTIME = libinfo.load_lib_ctypes(\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/libinfo.py\", line 143, in load_lib_ctypes\n    return ctypes.CDLL(str(lib_path), getattr(ctypes, mode))\n  File \"/usr/lib/python3.10/ctypes/__init__.py\", line 374, in __init__\n    self._handle = _dlopen(self._name, mode)\nOSError: /exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/lib/libtvm_runtime.so: undefined symbol: cudaGraphAddDependencies_v2, version libcudart.so.12\n"
+}

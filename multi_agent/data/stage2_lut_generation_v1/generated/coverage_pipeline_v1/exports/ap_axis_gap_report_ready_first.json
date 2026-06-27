@@ -1,0 +1,81 @@
+{
+  "blocked_no_claim": 6,
+  "created_at": "2026-06-26T00:00:00Z",
+  "queued_jobs": 0,
+  "rows": [
+    {
+      "ap_status": "blocked",
+      "candidate_id": "coverage_ready:pyramid_lidar:w48x96x256:fp16",
+      "claim_status": "no_claim",
+      "config_id": "coverage_ready:pyramid_lidar:w48x96x256:fp16",
+      "energy_status": "required",
+      "label": "wg_pair4",
+      "latency_status": "required",
+      "next_action": "block_ap_no_claim_missing_true_source",
+      "reason": "missing AP source_path",
+      "run_id": "ap_ready_first_v1"
+    },
+    {
+      "ap_status": "blocked",
+      "candidate_id": "coverage_ready:pyramid_lidar:w48x32x128:fp16",
+      "claim_status": "no_claim",
+      "config_id": "coverage_ready:pyramid_lidar:w48x32x128:fp16",
+      "energy_status": "required",
+      "label": "wg_pair5",
+      "latency_status": "required",
+      "next_action": "block_ap_no_claim_missing_true_source",
+      "reason": "missing AP source_path",
+      "run_id": "ap_ready_first_v1"
+    },
+    {
+      "ap_status": "blocked",
+      "candidate_id": "coverage_ready:pyramid_lidar:w64x32x128:fp16",
+      "claim_status": "no_claim",
+      "config_id": "coverage_ready:pyramid_lidar:w64x32x128:fp16",
+      "energy_status": "required",
+      "label": "pg_pair5",
+      "latency_status": "required",
+      "next_action": "block_ap_no_claim_missing_true_source",
+      "reason": "missing AP source_path",
+      "run_id": "ap_ready_first_v1"
+    },
+    {
+      "ap_status": "blocked",
+      "candidate_id": "coverage_ready:pyramid_lidar:w48x64x192:fp16",
+      "claim_status": "no_claim",
+      "config_id": "coverage_ready:pyramid_lidar:w48x64x192:fp16",
+      "energy_status": "required",
+      "label": "wg_pair6",
+      "latency_status": "required",
+      "next_action": "block_ap_no_claim_missing_true_source",
+      "reason": "missing AP source_path",
+      "run_id": "ap_ready_first_v1"
+    },
+    {
+      "ap_status": "blocked",
+      "candidate_id": "coverage_ready:pyramid_lidar:w64x64x192:fp16",
+      "claim_status": "no_claim",
+      "config_id": "coverage_ready:pyramid_lidar:w64x64x192:fp16",
+      "energy_status": "required",
+      "label": "pg_pair6",
+      "latency_status": "required",
+      "next_action": "block_ap_no_claim_missing_true_source",
+      "reason": "missing AP source_path",
+      "run_id": "ap_ready_first_v1"
+    },
+    {
+      "ap_status": "blocked",
+      "candidate_id": "coverage_ready:pyramid_lidar:w32x64x64:fp16",
+      "claim_status": "no_claim",
+      "config_id": "coverage_ready:pyramid_lidar:w32x64x64:fp16",
+      "energy_status": "required",
+      "label": "mix_f",
+      "latency_status": "required",
+      "next_action": "block_ap_no_claim_missing_true_source",
+      "reason": "missing AP source_path",
+      "run_id": "ap_ready_first_v1"
+    }
+  ],
+  "run_id": "ap_ready_first_v1",
+  "schema": "stage2_axis_gap_report_v1"
+}

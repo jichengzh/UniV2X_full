@@ -1,0 +1,130 @@
+{
+  "decision": "NO_GO",
+  "gates": {
+    "artifact_registry": {
+      "blocked_jobs": [
+        "latency_gpu1:pad64",
+        "latency_gpu2:mix_a",
+        "ap_gpu4:pad64",
+        "ap_gpu4:mix_a",
+        "energy_gpu3:mix_a",
+        "latency_cont_gpu5:r01:mix_a",
+        "latency_cont_gpu1:r01:pad64",
+        "latency_cont_gpu2:r02:mix_a",
+        "latency_cont_gpu5:r02:pad64",
+        "latency_cont_gpu0:r03:mix_a",
+        "latency_cont_gpu2:r03:pad64",
+        "latency_cont_gpu4:r04:mix_a",
+        "latency_cont_gpu0:r04:pad64",
+        "latency_cont_gpu1:r05:mix_a",
+        "latency_cont_gpu4:r05:pad64",
+        "latency_cont_gpu5:r06:mix_a",
+        "latency_cont_gpu1:r06:pad64",
+        "latency_cont_gpu2:r07:mix_a",
+        "latency_cont_gpu5:r07:pad64",
+        "latency_cont_gpu0:r08:mix_a",
+        "latency_cont_gpu2:r08:pad64",
+        "latency_cont_gpu4:r09:mix_a",
+        "latency_cont_gpu0:r09:pad64",
+        "latency_cont_gpu1:r10:mix_a",
+        "latency_cont_gpu4:r10:pad64",
+        "latency_cont_gpu5:r11:mix_a",
+        "latency_cont_gpu1:r11:pad64",
+        "latency_cont_gpu2:r12:mix_a",
+        "latency_cont_gpu5:r12:pad64",
+        "latency_cont_gpu0:r13:mix_a",
+        "latency_cont_gpu2:r13:pad64",
+        "latency_cont_gpu4:r14:mix_a",
+        "latency_cont_gpu0:r14:pad64",
+        "latency_cont_gpu1:r15:mix_a",
+        "latency_cont_gpu4:r15:pad64",
+        "latency_cont_gpu5:r16:mix_a",
+        "latency_cont_gpu1:r16:pad64",
+        "latency_cont_gpu2:r17:mix_a",
+        "latency_cont_gpu5:r17:pad64",
+        "latency_cont_gpu0:r18:mix_a",
+        "latency_cont_gpu2:r18:pad64",
+        "latency_cont_gpu4:r19:mix_a",
+        "latency_cont_gpu0:r19:pad64",
+        "latency_cont_gpu1:r20:mix_a",
+        "latency_cont_gpu4:r20:pad64",
+        "latency_cont_gpu5:r21:mix_a",
+        "latency_cont_gpu1:r21:pad64",
+        "latency_cont_gpu2:r22:mix_a",
+        "latency_cont_gpu5:r22:pad64",
+        "latency_cont_gpu0:r23:mix_a",
+        "latency_cont_gpu2:r23:pad64",
+        "latency_cont_gpu4:r24:mix_a",
+        "latency_cont_gpu0:r24:pad64"
+      ],
+      "not_ready_artifacts": 2,
+      "status": "fail",
+      "total_artifacts": 78
+    },
+    "energy": {
+      "claimable": true,
+      "energy_rows": 408,
+      "status": "pass"
+    },
+    "evidence_registry": {
+      "coverage_summary": {
+        "ap_anchors": {
+          "expected_cells": 22,
+          "failed_cells": 0,
+          "measured_cells": 22,
+          "proxy_cells": 0
+        },
+        "downstream_objective": {
+          "expected_cells": 0,
+          "failed_cells": 0,
+          "measured_cells": 0,
+          "proxy_cells": 0
+        },
+        "energy_lut": {
+          "expected_cells": 408,
+          "failed_cells": 0,
+          "measured_cells": 408,
+          "proxy_cells": 0
+        },
+        "latency_lut": {
+          "expected_cells": 888,
+          "failed_cells": 0,
+          "measured_cells": 888,
+          "proxy_cells": 0
+        },
+        "quant_evidence": {
+          "expected_cells": 10,
+          "failed_cells": 0,
+          "measured_cells": 0,
+          "proxy_cells": 10
+        },
+        "total_expected_cells": 1328,
+        "total_failed_cells": 0,
+        "total_measured_cells": 1318,
+        "total_proxy_cells": 10
+      },
+      "energy_claim_allowed": true,
+      "model": "pyramid_lidar",
+      "path": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/overnight_6h_20260626/registry/evidence_registry_latest.json",
+      "status": "pass",
+      "unsupported_conclusions": [
+        "cross_model_ds_map_for_pyramid",
+        "historical_trt_as_h800_measured_quant_evidence"
+      ]
+    },
+    "outlier": {
+      "claimable_rows": 887,
+      "report": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/overnight_6h_20260626/exports/latency_outlier_report_v1.json",
+      "status": "conditional",
+      "unstable_rows": 1
+    },
+    "schema": {
+      "artifact_rows": 78,
+      "errors": [],
+      "job_rows": 871,
+      "lut_rows": 1318,
+      "status": "pass"
+    }
+  },
+  "schema": "stage2_three_arm_readiness_gate_v1"
+}

@@ -1,0 +1,11 @@
+{
+  "blocked_artifacts": 0,
+  "missing_artifacts": 0,
+  "quarantined_artifacts": 0,
+  "ready_artifacts": 41,
+  "schema": "stage2_artifact_registry_summary_v1",
+  "status_counts": {
+    "ready": 41
+  },
+  "total_artifacts": 41
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "label": "trap25",
+  "width": [
+    48,
+    96,
+    192
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/trap25_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_work_2e_trap25",
+  "gpu": "5",
+  "run_id": "calib_h800_tvm_pyramid_trap25_fp16_tuned_clean_20260625_203000"
+}

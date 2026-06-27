@@ -1,0 +1,82 @@
+{
+  "job_id": "latency:p2_latency_repeat:trap25",
+  "raw": "/home/jichengzhi/V2X/multi_agent/data/stage2_lut_generation_v1/generated/calibration/latency_h800_tvm_v1/raw/calib_h800_tvm_pyramid_trap25_p2_latency_repeat_20260625_234205",
+  "result": {
+    "batch_size": 1,
+    "build_default_s": 5.207,
+    "build_tuned_s": 8.273,
+    "default_max_us": 42359.129,
+    "default_mean_us": 42356.859,
+    "default_min_us": 42349.73,
+    "default_repeats_us": [
+      42349.73,
+      42359.027,
+      42357.953,
+      42358.457,
+      42359.129
+    ],
+    "default_us": 42358.457,
+    "gpu": "0",
+    "idle_history_tail": [
+      {
+        "gpu": "0",
+        "has_pmon": false,
+        "mem_mib": 4,
+        "ts": "2026-06-25T23:42:06+0800",
+        "util": 0
+      },
+      {
+        "gpu": "0",
+        "has_pmon": false,
+        "mem_mib": 4,
+        "ts": "2026-06-25T23:42:11+0800",
+        "util": 0
+      },
+      {
+        "gpu": "0",
+        "has_pmon": false,
+        "mem_mib": 4,
+        "ts": "2026-06-25T23:42:17+0800",
+        "util": 0
+      }
+    ],
+    "input_shape": {
+      "spatial_features": [
+        2,
+        64,
+        128,
+        256
+      ]
+    },
+    "label": "trap25",
+    "measure_iters": 500,
+    "model": "pyramid_lidar",
+    "onnx_path": "/exdata/jichengzhi/s2_tvm/models/trap25_backbone.onnx",
+    "phase": "p2_latency_repeat",
+    "ratio": 1.404025,
+    "repeat": 5,
+    "run_id": "calib_h800_tvm_pyramid_trap25_p2_latency_repeat_20260625_234205",
+    "schema": "stage2_h800_calibration_latency_result_v1",
+    "status": "success",
+    "tuned_max_us": 46872.504,
+    "tuned_mean_us": 33343.303,
+    "tuned_min_us": 21621.723,
+    "tuned_repeats_us": [
+      21621.723,
+      21622.115,
+      30169.297,
+      46872.504,
+      46430.875
+    ],
+    "tuned_us": 30169.297,
+    "warmup_iters": 1,
+    "width": [
+      48,
+      96,
+      192
+    ],
+    "work_dir": "/exdata/jichengzhi/s2_tvm/ms_work_2e_trap25"
+  },
+  "returncode": 0,
+  "schema": "lut_job_log_v1"
+}

@@ -1,0 +1,40 @@
+{
+  "batch_size": 1,
+  "build_default_s": 4.596,
+  "build_tuned_s": 5.205,
+  "default_max_us": 49669.531,
+  "default_mean_us": 49663.729,
+  "default_min_us": 49659.756,
+  "default_repeats_us": [
+    49661.899,
+    49659.756,
+    49669.531
+  ],
+  "default_us": 49661.899,
+  "error": "InternalError('Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered')",
+  "gpu": "4",
+  "input_shape": {
+    "spatial_features": [
+      2,
+      64,
+      128,
+      256
+    ]
+  },
+  "label": "frontier_25",
+  "measure_iters": 100,
+  "onnx_path": "/exdata/jichengzhi/s2_tvm/models/frontier_25_backbone.onnx",
+  "phase": "original60_measured_v1",
+  "repeat": 3,
+  "run_id": "original60_measured_v1_original60_frontier_25_gpu4",
+  "schema": "stage2_h800_overnight_latency_result_v1",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jichengzhi/V2X/scripts/stage2_h800_run_measurement_job.py\", line 306, in run_latency\n    tuned_stats = time_vm(vm2, vm_args, dev, warmup=args.warmup_iters, number=args.measure_iters, repeat=args.repeat)\n  File \"/home/jichengzhi/V2X/scripts/stage2_h800_run_measurement_job.py\", line 183, in time_vm\n    dev.sync()\n  File \"/exdata/jichengzhi/tvm310/lib/python3.10/site-packages/tvm/runtime/device.py\", line 320, in sync\n    _ffi_api.Device_StreamSync(self, stream or 0)\n  File \"python/tvm_ffi/cython/function.pxi\", line 968, in tvm_ffi.core.Function.__call__\n  File \"/workspace/tvm/src/runtime/cuda/cuda_device_api.cc\", line 250, in virtual void tvm::runtime::CUDADeviceAPI::StreamSync(tvm::Device, TVMStreamHandle)\ntvm.error.InternalError: Check failed: (e == cudaSuccess || e == cudaErrorCudartUnloading) is false: CUDA: an illegal memory access was encountered\n",
+  "warmup_iters": 30,
+  "width": [
+    64,
+    96,
+    224
+  ],
+  "work_dir": "/exdata/jichengzhi/s2_tvm/workdirs/frontier_25"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "stage2_h800_calibration_latency_command_v1",
+  "mode": "medium_clean_g012_reuse_existing_ms_db",
+  "label": "s1_32",
+  "width": [
+    64,
+    32,
+    256
+  ],
+  "onnx": "/exdata/jichengzhi/s2_tvm/models/s1_32_backbone.onnx",
+  "work": "/exdata/jichengzhi/s2_tvm/ms_bumped_s1_32",
+  "gpu": "2",
+  "run_id": "calib_h800_tvm_pyramid_s1_32_fp16_medium_clean_g012_20260625_202323"
+}
