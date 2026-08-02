@@ -1,6 +1,0 @@
-anchor,prune_pct,precision,engine_mb,lat_p50_ms,speedup_vs_pt_fp32,ap30,ap50,ap70,delta_ap50_pp,trt_coverage_pct,notes
-A0_pytorch_fp32_baseline,0,FP32,,5.713,1.0,0.8327,0.7907,0.6314,0.0,0.0,reproduces HEAL paper baseline ✓
-A1_trt_fp16_collab,0,FP16,12.48,1.261,4.53,0.8331,0.7909,0.6308,0.02,90.4,
-A2_trt_int8_collab,0,INT8,8.59,0.808,7.07,0.8333,0.791,0.6243,0.03,90.4,
-A3_pruned50_ft_fp16_collab,50,FP16,7.66,1.009,5.66,0.8184,0.7644,0.5641,-2.63,90.4,50% L1-channel prune + 1ep finetune
-A4_pruned50_ft_int8_collab,50,INT8,5.27,0.776,7.36,0.8049,0.753,0.5542,-3.77,90.4,50% L1-channel prune + 1ep finetune + INT8 PTQ

@@ -1,9 +1,0 @@
-model,precision,build_status,gpu_compute_ms_mean,gpu_compute_ms_p99,gpu_compute_ms_p50,build_time_s,engine_size_kb
-resnet18,fp16,OK,1.18356,1.19373,1.18311,48,23732
-resnet18,int8,OK,0.954964,0.962158,0.955078,70,12320
-resnet34,fp16,OK,2.10721,2.11621,2.10596,50,43500
-resnet34,int8,OK,1.74537,1.75464,1.74536,74,22296
-resnet50,fp16,OK,2.83201,2.84448,2.83203,99,50528
-resnet50,int8,OK,2.54056,2.56604,2.53931,148,26404
-resnet101,fp16,OK,5.15512,5.17773,5.15454,104,87800
-resnet101,int8,OK,4.8073,4.84839,4.80798,159,45468
