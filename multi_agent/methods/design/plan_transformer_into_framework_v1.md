@@ -11,9 +11,9 @@
   `framework/stage1/*` + `framework/partitions/*.yaml`; memory `project-stage1-bridge-construction`):
   bridge 的 B1/B2/D + 耦合分数 `κ` 框架本计划要复用到注意力上。
 - e2e profiler 模板: `scripts/phase2/profile_v2xvit_e2e_breakdown.py`(CUDA-event 逐模块)。
-- V2X-ViT ckpt(真): `/home/jichengzhi/heal_research/checkpoints/baselines_hf/`
+- V2X-ViT ckpt(真): `${V2X_HOME}/heal_research/checkpoints/baselines_hf/`
   `HeterBaseline_DAIR_lidar_v2xvit_2023_09_09_11_19_26`(config.yaml + net_epoch_bestval_at17.pth)。
-- 注意力模块代码: `/home/jichengzhi/heal_research/HEAL/opencood/models/fuse_modules/transformer_fuse.py`
+- 注意力模块代码: `${V2X_HOME}/heal_research/HEAL/opencood/models/fuse_modules/transformer_fuse.py`
   (`TransformerFusion`=若干 `EncodeLayer`(MultiheadAtt+FFN); 现 stage1 adapter **skip 了它**)。
 
 **本计划第一步 = Phase T0(go/no-go gate, 1 GPU session, 无需新模型)**:
@@ -24,11 +24,11 @@ MSwin window-attn / window partition·reverse / FFN Linear / softmax·LN)挂 CUD
 编译后已不瓶颈→退回 conv 框架)。**T0+T1(后端可行性实测)= 整个计划生死 gate, 不假设后端支持。**
 
 **环境 + 纪律 (硬约束)**:
-- 真仓库 `/home/jichengzhi/V2X`(**绝不用** `/home/jichengzhi/UniV2X` 断链空壳)。
-- conda python `/home/jichengzhi/miniconda3/envs/UniV2X_2.0/bin/python`; HEAL: `sys.path` 加
-  `/home/jichengzhi/heal_research/HEAL` + `os.chdir(HEAL_ROOT)`(见 profiler 模板)。
-- 若需 TVM 试编译注意力: H800 `sshpass -p 12345678 ssh -p 30001 -o ConnectTimeout=45 -o
-  StrictHostKeyChecking=no jichengzhi@222.95.84.215`; python `/exdata/jichengzhi/tvm310/bin/python`;
+- 真仓库 `${V2X_ROOT}`(**绝不用** `${V2X_HOME}/UniV2X` 断链空壳)。
+- conda python `${V2X_HOME}/miniconda3/envs/UniV2X_2.0/bin/python`; HEAL: `sys.path` 加
+  `${V2X_HOME}/heal_research/HEAL` + `os.chdir(HEAL_ROOT)`(见 profiler 模板)。
+- 若需 TVM 试编译注意力: H800 `ssh -p 30001 -o ConnectTimeout=45 -o
+  StrictHostKeyChecking=accept-new ${V2X_REMOTE_USER}@<PRIVATE_HOST>`; python `${V2X_DATA_ROOT}/tvm310/bin/python`;
   **GPU 只 4/5/6**(`nvidia-smi` 先确认 idle)。
 - 区分 eager vs 编译口径(216ms 是 eager, 编译后量级待复测); **不轻信自报**必复跑;
   **仅在用户明确要求时 commit**。
