@@ -213,3 +213,43 @@ UniV2X/
 github/
 home/
 relative/
+
+# LaTeX compilation state (the source files remain trackable)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.dvi
+
+# Rebuildable visual and archive outputs are excluded by default.  Add a
+# deliberately selected, non-generated asset with `git add -f` when needed.
+*.png
+*.pdf
+*.svg
+*.tiff
+*.zip
+
+# Local paper previews, renderings, and submission archives
+multi_agent/paper/**/_preview/
+multi_agent/paper/**/preview*/
+multi_agent/paper/**/preview_render/
+multi_agent/paper/**/render*/
+multi_agent/paper/**/.stage*/
+multi_agent/paper/**/.lane_b_v2_staging/
+
+# Rebuildable paper and experiment visual directories; retain their scripts.
+paper_learning/**/data/figs/
+paper_learning/**/data/stats_*/
