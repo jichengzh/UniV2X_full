@@ -13,7 +13,17 @@ Compatible with Python 3.8 + PyTorch 1.12+.
 Author: sw-optimizer (Task #12, 2026-06-06)
 """
 
+import numpy as np
 import torch
+
+
+def _stable_argsort(values: torch.Tensor) -> torch.Tensor:
+    """Stable argsort with a compatibility path for Jetson's PyTorch 1.12."""
+    try:
+        return torch.argsort(values, dim=0, stable=True)
+    except TypeError:
+        order = np.argsort(values.detach().cpu().numpy(), kind="stable")
+        return torch.from_numpy(order).to(device=values.device)
 
 
 def voxelize_torch(
@@ -71,7 +81,7 @@ def voxelize_torch(
     flat = vox_ixyz[:, 2] * (gy * gx) + vox_ixyz[:, 1] * gx + vox_ixyz[:, 0]
 
     # ── 4. Sort points by flat voxel index ───────────────────────────────────
-    order = torch.argsort(flat, stable=True)
+    order = _stable_argsort(flat)
     flat = flat[order]
     pts  = pts[order]
 

@@ -173,3 +173,43 @@ plugins/build/
 calibration/*.pkl
 calibration/*.npy
 docs/quant/outputs/
+
+# Local assistant and editor state
+.claude/
+.codegraph/
+.codex-docs-cache/
+.serena/
+
+# Local Python/TVM environments and disposable run state
+tvm_venv310/
+tvm_offline_cp310/
+logs/
+migration_logs/
+remote_artifacts/
+*.pid
+
+# Rebuildable model exports, checkpoints, and calibration material
+checkpoints/
+models/
+*.ckpt
+*.pt
+*.engine
+*.onnx
+*.plan
+*.trt
+calibration/
+
+# Experiment outputs are regenerated from the tracked scripts and configs.
+results/
+multi_agent/data/**/generated/
+multi_agent/data/**/raw/
+multi_agent/data/**/logs/
+multi_agent/data/**/artifacts/
+multi_agent/data/**/exports/
+tools/orin_deploy/m1_standalone/dair_val_npy/
+
+# Separate checkouts used only for local comparison or submission management
+UniV2X/
+github/
+home/
+relative/

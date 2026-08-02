@@ -120,13 +120,20 @@ def validate_grouped_conv_shapes(model: BackboneOnly, width: list[int]) -> None:
             raise ValueError(f"{layer_name}.0.conv2 shape {actual} != expected {expected}")
 
 
-def export_one(candidate: dict[str, Any], *, out_dir: Path, force: bool) -> dict[str, Any]:
+def export_one(candidate: dict[str, Any], *, out_dir: Path, force: bool,
+               input_hw: tuple[int, int] = (128, 256)) -> dict[str, Any]:
     import onnx
 
     label = _label(candidate)
     width = _width(candidate)
-    out_path = out_dir / f"{label}_backbone.onnx"
-    log_path = out_dir / f"{label}_backbone.export.json"
+    ih, iw = int(input_hw[0]), int(input_hw[1])
+    # default (128,256) keeps the original filename (fp32/int8 LUT口径); any other
+    # spatial shape (e.g. AP-shape 256x256 for the fp16 rewrite) gets a suffix so it
+    # never clobbers the default-shape ONNX. Backbone is fully conv -> HxW just scales.
+    in_shape = (2, 64, ih, iw)
+    suffix = "" if (ih, iw) == (128, 256) else f"_ap{ih}x{iw}"
+    out_path = out_dir / f"{label}_backbone{suffix}.onnx"
+    log_path = out_dir / f"{label}_backbone{suffix}.export.json"
     row: dict[str, Any] = {
         "schema": SCHEMA,
         "candidate_id": candidate.get("candidate_id"),
@@ -155,13 +162,13 @@ def export_one(candidate: dict[str, Any], *, out_dir: Path, force: bool) -> dict
         torch.manual_seed(42)
         model = build_backbone(width).eval()
         validate_grouped_conv_shapes(model, width)
-        dummy = torch.randn(*INPUT_SHAPE)
+        dummy = torch.randn(*in_shape)
         with torch.no_grad():
             outputs = model(dummy)
         expected_shapes = [
-            [INPUT_SHAPE[0], width[0], 128, 256],
-            [INPUT_SHAPE[0], width[1], 64, 128],
-            [INPUT_SHAPE[0], width[2], 32, 64],
+            [in_shape[0], width[0], ih, iw],
+            [in_shape[0], width[1], ih // 2, iw // 2],
+            [in_shape[0], width[2], ih // 4, iw // 4],
         ]
         actual_shapes = [list(item.shape) for item in outputs]
         if actual_shapes != expected_shapes:
@@ -190,7 +197,7 @@ def export_one(candidate: dict[str, Any], *, out_dir: Path, force: bool) -> dict
                 "size_bytes": out_path.stat().st_size,
                 "sha256": sha256_file(out_path),
                 "opset": OPSET,
-                "input_shape": list(INPUT_SHAPE),
+                "input_shape": list(in_shape),
                 "output_shapes": expected_shapes,
                 "parameter_count": sum(param.numel() for param in model.parameters()),
             }
@@ -214,6 +221,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest-out", required=True)
     parser.add_argument("--labels", default="")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--input-hw", default="128,256",
+                        help="spatial HxW of the exported input (default 128,256 = "
+                             "fp32/int8 LUT口径; use 256,256 for AP-shape fp16 rewrite)")
     return parser.parse_args()
 
 
@@ -226,9 +236,10 @@ def main() -> int:
         candidates = [row for row in candidates if _label(row) in labels]
     Path(args.manifest_out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.manifest_out).write_text("", encoding="utf-8")
+    ihw = tuple(int(x) for x in args.input_hw.replace("x", ",").split(","))
     counts: dict[str, int] = {}
     for candidate in candidates:
-        row = export_one(candidate, out_dir=out_dir, force=args.force)
+        row = export_one(candidate, out_dir=out_dir, force=args.force, input_hw=ihw)
         counts[row["status"]] = counts.get(row["status"], 0) + 1
         append_jsonl(args.manifest_out, row)
         print(json.dumps(row, ensure_ascii=False, sort_keys=True), flush=True)

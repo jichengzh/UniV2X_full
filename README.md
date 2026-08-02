@@ -21,6 +21,7 @@
     - [Prepare Dataset](docs/DATA_PREP.md)
     - [Train/Eval](docs/TRAIN_EVAL.md)
     - [TRT Acceleration & Evaluation](docs/TRT_EVAL.md)
+    - [Reproducibility map](docs/REPRODUCIBILITY.zh-CN.md)
 4. [TODO List](#todos)
 5. [License](#license)
 6. [Citation](#citation)
@@ -43,6 +44,7 @@
 - [Evaluation Example](docs/TRAIN_EVAL.md)
 - [Train/Eval](docs/TRAIN_EVAL.md)
 - [TRT Acceleration & Evaluation](docs/TRT_EVAL.md)
+- [Reproducibility map](docs/REPRODUCIBILITY.zh-CN.md)
 
 
 ## TODO List <a name="todos"></a>

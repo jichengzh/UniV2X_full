@@ -62,9 +62,14 @@ def plot_hv_boxplot(hv: dict, ref_hv: float, path: Path):
     fig, ax = plt.subplots(figsize=(6.2, 4.2))
     arms = ["A-joint-PQS", "A-serial-PQS", "A-noS-PQS"]
     data = [hv[a] for a in arms]
-    bp = ax.boxplot(data, labels=[a.replace("-PQS", "") for a in arms],
-                    patch_artist=True, widths=0.55,
-                    medianprops=dict(color="black"))
+    try:
+        bp = ax.boxplot(data, tick_labels=[a.replace("-PQS", "") for a in arms],
+                        patch_artist=True, widths=0.55,
+                        medianprops=dict(color="black"))
+    except TypeError:  # older matplotlib
+        bp = ax.boxplot(data, labels=[a.replace("-PQS", "") for a in arms],
+                        patch_artist=True, widths=0.55,
+                        medianprops=dict(color="black"))
     for patch, c in zip(bp["boxes"], ["#2c7fb8", "#d95f0e", "#999999"]):
         patch.set_facecolor(c); patch.set_alpha(0.75)
     ax.axhline(ref_hv, ls="--", color="green", lw=1,
@@ -132,7 +137,8 @@ def plot_pareto_int8(joint_visited, serial_visited, apm, lut, qlut,
 # ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
-def run(n_seeds=12, budget=60, pop=8, verbose=True, manifest=None):
+def run(n_seeds=12, budget=60, pop=8, verbose=True, manifest=None,
+        int8_buildable_all=False, int8_speedup=None):
     if manifest:
         # Bridge-native path: space + int8 buildability auto-derived from the
         # stage1 manifest (cur_width keys, key_scale×). Legacy path (manifest=None)
@@ -157,8 +163,10 @@ def run(n_seeds=12, budget=60, pop=8, verbose=True, manifest=None):
         qlut = QLookup()
         key_scale = 1
     # Wire the structural int8 constraint + H800-pure uniform int8 speedup.
-    qlut.enforce_int8_buildable = True
-    qlut.uniform_int8_speedup = UNIFORM_INT8_SPEEDUP
+    # int8_buildable_all: int8_tc (im2col+MMA) builds every width (no dp4a pack-4 wall,
+    # verified 2026-07-03: all 60 measured widths incl. 46 dp4a-"unbuildable" built+tensorized).
+    qlut.enforce_int8_buildable = not int8_buildable_all
+    qlut.uniform_int8_speedup = int8_speedup if int8_speedup else UNIFORM_INT8_SPEEDUP
 
     grid = candidate_widths(lut, apm)
     seed_grid = load_seed_grid(key_scale=key_scale)
@@ -398,6 +406,12 @@ if __name__ == "__main__":
                     help="stage1 partition manifest (bridge-native space); "
                          "omit for legacy num_filters path (bit-identical regression)")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--int8-buildable-all", action="store_true",
+                    help="int8_tc (im2col+MMA) reality: no dp4a pack-4 wall, every width buildable")
+    ap.add_argument("--int8-speedup", type=float, default=None,
+                    help="uniform int8/fp16 speedup (default 1.449 dp4a stage0 proxy; "
+                         "use ~1.095 for measured network-level int8_tc)")
     args = ap.parse_args()
     run(n_seeds=args.seeds, budget=args.budget, pop=args.pop,
-        verbose=not args.quiet, manifest=args.manifest)
+        verbose=not args.quiet, manifest=args.manifest,
+        int8_buildable_all=args.int8_buildable_all, int8_speedup=args.int8_speedup)

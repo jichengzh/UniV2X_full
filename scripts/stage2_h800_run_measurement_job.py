@@ -10,6 +10,7 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 import time
 import traceback
 from datetime import datetime, timezone
@@ -18,6 +19,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 TVM_SITE = "/exdata/jichengzhi/tvm310/lib/python3.10/site-packages"
 LD_PREFIX = [
     f"{TVM_SITE}/nvidia/cuda_runtime/lib",
@@ -25,6 +28,8 @@ LD_PREFIX = [
 ]
 CUDA_BIN = "/usr/local/cuda-12.2/bin"
 TVM_NVLIBS_PATH = "/exdata/jichengzhi/tvm_nvlibs.path"
+
+from framework.stage2.lut_productization import default_quant_contract  # noqa: E402
 
 
 def now_local() -> str:
@@ -163,6 +168,26 @@ def read_inputs(onnx_model: Any) -> dict[str, tuple[int, ...]]:
     }
 
 
+def read_input_dtypes(onnx_model: Any) -> dict[str, str]:
+    init = {item.name for item in onnx_model.graph.initializer}
+    tensor_type_names = {
+        1: "float32",
+        2: "uint8",
+        3: "int8",
+        6: "int32",
+        7: "int64",
+        10: "float16",
+        11: "float64",
+    }
+    dtypes: dict[str, str] = {}
+    for item in onnx_model.graph.input:
+        if item.name in init:
+            continue
+        elem_type = int(item.type.tensor_type.elem_type)
+        dtypes[item.name] = tensor_type_names.get(elem_type, "float32")
+    return dtypes
+
+
 def summarize_times(results_s: list[float]) -> dict[str, object]:
     vals = [float(item) * 1e6 for item in results_s]
     vals_sorted = sorted(vals)
@@ -185,21 +210,29 @@ def time_vm(vm: Any, args: list[Any], dev: Any, *, warmup: int, number: int, rep
     return summarize_times(list(result.results))
 
 
-def load_relax_module(onnx_path: Path) -> tuple[Any, dict[str, tuple[int, ...]]]:
+def load_relax_module(onnx_path: Path) -> tuple[Any, dict[str, tuple[int, ...]], dict[str, str]]:
     import onnx
     from tvm.relax.frontend.onnx import from_onnx
 
     model = onnx.load(str(onnx_path))
     shapes = read_inputs(model)
-    return from_onnx(model, shape_dict=shapes, keep_params_in_input=False), shapes
+    dtypes = read_input_dtypes(model)
+    return from_onnx(model, shape_dict=shapes, keep_params_in_input=False), shapes, dtypes
 
 
-def make_args(shapes: dict[str, tuple[int, ...]], dev: Any) -> list[Any]:
+def make_args(
+    shapes: dict[str, tuple[int, ...]],
+    dev: Any,
+    dtypes: dict[str, str] | None = None,
+) -> list[Any]:
     import numpy as np
     import tvm
 
     rng = np.random.RandomState(0)
-    feeds_np = {key: rng.rand(*shape).astype("float32") for key, shape in shapes.items()}
+    feeds_np = {
+        key: rng.rand(*shape).astype((dtypes or {}).get(key, "float32"))
+        for key, shape in shapes.items()
+    }
     return [tvm.runtime.tensor(feeds_np[key], device=dev) for key in shapes]
 
 
@@ -235,6 +268,77 @@ def call_generator(command: list[str]) -> None:
         raise RuntimeError(detail or f"generator failed: {command}")
 
 
+def generator_quant_args(
+    args: argparse.Namespace,
+    *,
+    schedule_policy: str,
+    backend: str = "h800_tvm",
+) -> list[str]:
+    contract = default_quant_contract(
+        quant_policy=args.quant_policy,
+        backend=backend,
+        optimized_scope=args.optimized_scope,
+        schedule_policy=schedule_policy,
+        measurement_status="measured",
+        schema="latency_lut_row_v1",
+    )
+    override_pairs = (
+        ("precision", "precision"),
+        ("quant_scheme", "quant_scheme"),
+        ("quant_method", "quant_method"),
+        ("quant_scope", "quant_scope"),
+        ("calibration_source", "calibration_source"),
+        ("calibration_digest", "calibration_digest"),
+        ("calibrator", "calibrator"),
+        ("fallback_policy", "fallback_policy"),
+        ("layer_precision_summary", "layer_precision_summary"),
+        ("engine_kind", "engine_kind"),
+        ("engine_digest", "engine_digest"),
+        ("measurement_source", "measurement_source"),
+        ("claim_status", "claim_status"),
+        ("quality_gate_status", "quality_gate_status"),
+        ("tune_budget", "tune_budget"),
+    )
+    for arg_name, row_name in override_pairs:
+        value = getattr(args, arg_name, None)
+        if value not in (None, ""):
+            contract[row_name] = value
+    full_network_claim = getattr(args, "full_network_claim", None)
+    if full_network_claim not in (None, ""):
+        contract["full_network_claim"] = str(full_network_claim).lower() == "true"
+    calibration_inputs = getattr(args, "calibration_inputs", "")
+    if calibration_inputs:
+        contract["calibration_inputs"] = [
+            item.strip() for item in str(calibration_inputs).split(",") if item.strip()
+        ]
+    contract["schedule_profile"] = schedule_policy
+
+    items = [
+        ("--precision", contract["precision"]),
+        ("--quant-scheme", contract["quant_scheme"]),
+        ("--quant-method", contract["quant_method"]),
+        ("--quant-scope", contract["quant_scope"]),
+        ("--calibration-source", contract["calibration_source"]),
+        ("--calibration-digest", contract["calibration_digest"]),
+        ("--calibrator", contract["calibrator"]),
+        ("--calibration-inputs", ",".join(contract["calibration_inputs"])),
+        ("--fallback-policy", contract["fallback_policy"]),
+        ("--layer-precision-summary", contract["layer_precision_summary"]),
+        ("--full-network-claim", "true" if contract["full_network_claim"] else "false"),
+        ("--engine-kind", contract["engine_kind"]),
+        ("--engine-digest", contract["engine_digest"]),
+        ("--measurement-source", contract["measurement_source"]),
+        ("--claim-status", contract["claim_status"]),
+        ("--quality-gate-status", contract["quality_gate_status"]),
+        ("--schedule-profile", contract["schedule_profile"]),
+        ("--tune-budget", contract["tune_budget"]),
+    ]
+    out: list[str] = []
+    for flag, value in items:
+        out.extend([flag, str(value)])
+    return out
+
+
 def run_latency(args: argparse.Namespace) -> int:
     raw = Path(args.raw_root) / args.run_id
     raw.mkdir(parents=True, exist_ok=True)
@@ -266,9 +370,10 @@ def run_latency(args: argparse.Namespace) -> int:
 
         dev = tvm.cuda(0)
         target = tvm.target.Target.from_device(dev)
-        mod0, shapes = load_relax_module(Path(args.onnx))
+        mod0, shapes, input_dtypes = load_relax_module(Path(args.onnx))
         result["input_shape"] = {key: list(value) for key, value in shapes.items()}
-        vm_args = make_args(shapes, dev)
+        result["input_dtype"] = input_dtypes
+        vm_args = make_args(shapes, dev, input_dtypes)
 
         start = time.time()
         with tvm.transform.PassContext(opt_level=3):
@@ -342,6 +447,7 @@ def run_latency(args: argparse.Namespace) -> int:
                     args.width,
                     "--quant-policy",
                     args.quant_policy,
+                    *generator_quant_args(args, schedule_policy=schedule, backend="h800_tvm"),
                     "--schedule-policy",
                     schedule,
                     "--backend",
@@ -415,6 +521,14 @@ def power_stats(rows: list[tuple[float, float]]) -> dict[str, float | None]:
 
 
 def energy_payload(result: dict[str, object], raw: Path, args: argparse.Namespace) -> dict[str, object]:
+    schedule_policy = str(getattr(args, "energy_schedule_policy", "metaschedule_tuned"))
+    sampling_mode = str(
+        result.get("energy_sampling_mode")
+        or getattr(args, "energy_sampling_mode", "post_sync_per_iter")
+    )
+    completed_measure_iters = int(
+        result.get("completed_measure_iters") or getattr(args, "energy_measure_iters", 0)
+    )
     return {
         "run_id": args.run_id,
         "latency_run_id": args.latency_run_id,
@@ -430,9 +544,13 @@ def energy_payload(result: dict[str, object], raw: Path, args: argparse.Namespac
         "power_cap_watt": None,
         "clock_policy": "default",
         "warmup_iters": args.energy_warmup_iters,
-        "measure_iters": args.energy_measure_iters,
+        "measure_iters": completed_measure_iters,
+        "requested_measure_iters": args.energy_measure_iters,
+        "completed_measure_iters": completed_measure_iters,
+        "min_active_s": result.get("min_active_s"),
+        "energy_sampling_mode": sampling_mode,
         "repeat": 1,
-        "provenance": f"H800 power telemetry {args.phase} aligned with tuned TVM VM",
+        "provenance": f"H800 power telemetry {args.phase} aligned with {schedule_policy} TVM VM; {sampling_mode}",
         "source_files": [
             str(args.onnx),
             str(args.work_dir),
@@ -441,7 +559,77 @@ def energy_payload(result: dict[str, object], raw: Path, args: argparse.Namespac
             str(raw / "active_power_samples.csv"),
         ],
         "raw_artifact": str(raw),
-        "notes": f"{args.phase} energy telemetry; clean target GPU preflight; backbone-only",
+        "notes": f"{args.phase} energy telemetry; {schedule_policy}; {sampling_mode}; clean target GPU preflight; backbone-only",
+    }
+
+
+def measure_energy_loop(
+    vm: Any,
+    vm_args: list[Any],
+    dev: Any,
+    args: argparse.Namespace,
+) -> dict[str, object]:
+    idle_samples = sample_power(args.gpu, 5.0, 0.05)
+    active_samples: list[tuple[float, float]] = []
+    completed_iters = 0
+    start = time.time()
+    if args.energy_sampling_mode == "threaded_window":
+        stop_sampling = threading.Event()
+
+        def poll_power() -> None:
+            while not stop_sampling.is_set():
+                try:
+                    active_samples.append((time.time(), query_power_w(args.gpu)))
+                except Exception:
+                    pass
+                time.sleep(0.05)
+
+        sampler = threading.Thread(target=poll_power, name="fp32_energy_power_sampler", daemon=True)
+        sampler.start()
+        try:
+            while completed_iters < args.energy_measure_iters or (time.time() - start) < args.energy_min_active_s:
+                vm["main"](*vm_args)
+                completed_iters += 1
+                if completed_iters % args.energy_sync_interval_iters == 0:
+                    dev.sync()
+            dev.sync()
+        finally:
+            stop_sampling.set()
+            sampler.join(timeout=1.0)
+    else:
+        for _ in range(args.energy_measure_iters):
+            sample_start = time.time()
+            vm["main"](*vm_args)
+            dev.sync()
+            completed_iters += 1
+            try:
+                active_samples.append((sample_start, query_power_w(args.gpu)))
+            except Exception:
+                pass
+    elapsed = max(time.time() - start, 1e-9)
+    idle = power_stats(idle_samples)
+    active = power_stats(active_samples)
+    idle_avg = float(idle["avg"] or 0.0)
+    watt_avg = float(active["avg"] or 0.0)
+    net_watt = max(watt_avg - idle_avg, 0.0)
+    completed = max(completed_iters, 1)
+    return {
+        "idle_watt_avg": idle_avg,
+        "watt_avg": watt_avg,
+        "watt_p50": active["p50"],
+        "watt_p90": active["p90"],
+        "sample_window_ms": int(round(elapsed * 1000.0)),
+        "joule_per_inference": net_watt * elapsed / float(completed),
+        "elapsed_s": elapsed,
+        "completed_measure_iters": completed_iters,
+        "requested_measure_iters": args.energy_measure_iters,
+        "min_active_s": args.energy_min_active_s if args.energy_sampling_mode == "threaded_window" else None,
+        "energy_sampling_mode": args.energy_sampling_mode,
+        "status": "success",
+        "active_sample_count": len(active_samples),
+        "idle_sample_count": len(idle_samples),
+        "active_samples": active_samples,
+        "idle_samples": idle_samples,
     }
 
 
@@ -469,53 +657,34 @@ def run_energy(args: argparse.Namespace) -> int:
 
         dev = tvm.cuda(0)
         target = tvm.target.Target.from_device(dev)
-        mod0, shapes = load_relax_module(Path(args.onnx))
-        vm_args = make_args(shapes, dev)
-        seq = tvm.transform.Sequential(
-            [
-                relax.transform.LegalizeOps(),
-                relax.transform.AnnotateTIROpPattern(),
-                relax.transform.FuseOps(),
-                relax.transform.FuseTIR(),
-            ]
-        )
-        with target, tvm.transform.PassContext(opt_level=3):
-            modt = seq(mod0)
-            scheduled = relax.transform.MetaScheduleApplyDatabase(work_dir=str(args.work_dir))(modt)
-            ex = tvm.compile(scheduled, target=target)
+        mod0, shapes, input_dtypes = load_relax_module(Path(args.onnx))
+        result["input_shape"] = {key: list(value) for key, value in shapes.items()}
+        result["input_dtype"] = input_dtypes
+        vm_args = make_args(shapes, dev, input_dtypes)
+        if args.energy_schedule_policy == "default":
+            with tvm.transform.PassContext(opt_level=3):
+                ex = relax.build(mod0, target="cuda")
+        else:
+            seq = tvm.transform.Sequential(
+                [
+                    relax.transform.LegalizeOps(),
+                    relax.transform.AnnotateTIROpPattern(),
+                    relax.transform.FuseOps(),
+                    relax.transform.FuseTIR(),
+                ]
+            )
+            with target, tvm.transform.PassContext(opt_level=3):
+                modt = seq(mod0)
+                scheduled = relax.transform.MetaScheduleApplyDatabase(work_dir=str(args.work_dir))(modt)
+                ex = tvm.compile(scheduled, target=target)
         vm = relax.VirtualMachine(ex, dev)
         for _ in range(args.energy_warmup_iters):
             vm["main"](*vm_args)
             dev.sync()
-        idle_samples = sample_power(args.gpu, 5.0, 0.05)
-        active_samples: list[tuple[float, float]] = []
-        start = time.time()
-        for _ in range(args.energy_measure_iters):
-            sample_start = time.time()
-            vm["main"](*vm_args)
-            dev.sync()
-            try:
-                active_samples.append((sample_start, query_power_w(args.gpu)))
-            except Exception:
-                pass
-        elapsed = max(time.time() - start, 1e-9)
-        idle = power_stats(idle_samples)
-        active = power_stats(active_samples)
-        idle_avg = float(idle["avg"] or 0.0)
-        watt_avg = float(active["avg"] or 0.0)
-        net_watt = max(watt_avg - idle_avg, 0.0)
-        result.update(
-            {
-                "idle_watt_avg": idle_avg,
-                "watt_avg": watt_avg,
-                "watt_p50": active["p50"],
-                "watt_p90": active["p90"],
-                "sample_window_ms": int(round(elapsed * 1000.0)),
-                "joule_per_inference": net_watt * elapsed / float(args.energy_measure_iters),
-                "elapsed_s": elapsed,
-                "status": "success",
-            }
-        )
+        measured = measure_energy_loop(vm, vm_args, dev, args)
+        idle_samples = measured.pop("idle_samples", [])
+        active_samples = measured.pop("active_samples", [])
+        result.update(measured)
         write_power_csv(raw / "idle_power_samples.csv", idle_samples)
         write_power_csv(raw / "active_power_samples.csv", active_samples)
         write_text(raw / "energy_result.json", json.dumps(result, indent=2, sort_keys=True) + "\n")
@@ -543,8 +712,13 @@ def run_energy(args: argparse.Namespace) -> int:
                 args.width,
                 "--quant-policy",
                 args.quant_policy,
+                *generator_quant_args(
+                    args,
+                    schedule_policy=args.energy_schedule_policy,
+                    backend="h800_tvm_power_telemetry",
+                ),
                 "--schedule-policy",
-                "metaschedule_tuned",
+                args.energy_schedule_policy,
                 "--backend",
                 "h800_tvm_power_telemetry",
                 "--manifest-digest",
@@ -556,7 +730,7 @@ def run_energy(args: argparse.Namespace) -> int:
                 "--warmup-iters",
                 str(args.energy_warmup_iters),
                 "--measure-iters",
-                str(args.energy_measure_iters),
+                str(measured.get("completed_measure_iters") or args.energy_measure_iters),
                 "--repeat",
                 "1",
                 "--telemetry-command-json",
@@ -597,11 +771,40 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest-digest", default="overnight_6h_20260626")
     parser.add_argument("--optimized-scope", default="backbone_only")
     parser.add_argument("--quant-policy", default="fp16")
+    parser.add_argument("--precision")
+    parser.add_argument("--quant-scheme")
+    parser.add_argument("--quant-method")
+    parser.add_argument("--quant-scope")
+    parser.add_argument("--calibration-source")
+    parser.add_argument("--calibration-digest")
+    parser.add_argument("--calibrator")
+    parser.add_argument("--calibration-inputs", default="")
+    parser.add_argument("--fallback-policy")
+    parser.add_argument("--layer-precision-summary")
+    parser.add_argument("--full-network-claim", choices=("true", "false"), default="false")
+    parser.add_argument("--engine-kind")
+    parser.add_argument("--engine-digest")
+    parser.add_argument("--measurement-source")
+    parser.add_argument("--claim-status")
+    parser.add_argument("--quality-gate-status")
+    parser.add_argument("--tune-budget")
     parser.add_argument("--warmup-iters", type=int, default=1)
     parser.add_argument("--measure-iters", type=int, default=500)
     parser.add_argument("--repeat", type=int, default=5)
     parser.add_argument("--energy-warmup-iters", type=int, default=50)
     parser.add_argument("--energy-measure-iters", type=int, default=1500)
+    parser.add_argument(
+        "--energy-sampling-mode",
+        choices=("post_sync_per_iter", "threaded_window"),
+        default="post_sync_per_iter",
+    )
+    parser.add_argument("--energy-min-active-s", type=float, default=5.0)
+    parser.add_argument("--energy-sync-interval-iters", type=int, default=50)
+    parser.add_argument(
+        "--energy-schedule-policy",
+        choices=("metaschedule_tuned", "default"),
+        default="metaschedule_tuned",
+    )
     args = parser.parse_args()
     if args.kind == "latency" and not args.config_id_default:
         parser.error("--config-id-default is required for latency")

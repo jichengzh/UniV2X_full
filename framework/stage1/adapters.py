@@ -315,10 +315,20 @@ REGISTRY = {
 }
 
 
+def available_models() -> tuple[str, ...]:
+    from framework.stage1.auto_trace import AUTO_REGISTRY
+
+    return tuple(dict.fromkeys([*REGISTRY, *AUTO_REGISTRY]))
+
+
 def get_adapter(name: str) -> TraceAdapter:
-    if name not in REGISTRY:
-        raise KeyError(f"unknown model '{name}', choices={list(REGISTRY)}")
-    return REGISTRY[name]()
+    if name in REGISTRY:
+        return REGISTRY[name]()
+    from framework.stage1.auto_trace import AUTO_REGISTRY
+
+    if name in AUTO_REGISTRY:
+        return AUTO_REGISTRY[name]
+    raise KeyError(f"unknown model '{name}', choices={list(available_models())}")
 
 
-__all__ = ["TraceAdapter", "REGISTRY", "get_adapter"]
+__all__ = ["TraceAdapter", "REGISTRY", "available_models", "get_adapter"]

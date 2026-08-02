@@ -1,0 +1,77 @@
+schema_version: "1.0"
+basic:
+  name: "NVIDIA H800"
+  vendor: "nvidia"
+  category: "datacenter"
+  cost_estimate_usd: 0
+  tdp_w: 700
+arch:
+  family: "hopper"
+  sm: "sm90"
+  cuda_capability: [9, 0]
+  fab_node: "4nm_tsmc"
+  tensor_core_gen: 4
+ips:
+  gpu:
+    enabled: true
+    cores: 14592
+    streams_max: 8
+    mig_supported: true
+    mps_supported: true
+    sparse_tc_supported: true
+    cusparse_lt: true
+    cuda_graph: true
+    precisions: [FP32, TF32, BF16, FP16, FP8_E4M3, FP8_E5M2, INT8]
+  dla:
+    enabled: false
+  cpu:
+    cores_total: 0
+    arch: "x86_64"
+    isa_extensions: []
+alignment:
+  fp16_dense_channel: 8
+  fp16_sparse_channel: 16
+  int8_dense_channel: 32
+  int8_sparse_channel: 32
+  k_dim_min_for_2_4_sparse: 64
+  int8_pack_factor: 4
+  alignment_enforcement: "hard"
+quant_constraints:
+  symmetric_only: true
+  per_channel_activation_supported: false
+  per_group_supported: true
+  bit_widths_w: [8, 16, 32]
+  bit_widths_a: [8, 16, 32]
+  granularity_w: [per_tensor, per_channel, per_group]
+  granularity_a: [per_tensor]
+toolchain:
+  framework: "tensorrt"
+  framework_version: "10.13.0.35"
+  cuda: "11.8"
+  cudnn: "8.7.0"
+  driver: "runtime_scan"
+  python: "3.9"
+power:
+  modes:
+    - {id: 0, name: "default", power_w: 700, gpu_max_freq_mhz: 1980}
+  default_mode_id: 0
+memory:
+  type: "hbm3"
+  capacity_gb: 80
+  bandwidth_gbs: 2000
+  unified: false
+  available_for_inference_gb: 78
+features:
+  tensor_core: true
+  sparse_tc: true
+  cuda_graph: true
+  cuda_streams_priority: true
+  trt_strongly_typed: true
+  trt_sparse_weights_flag: true
+  trt_timing_cache: true
+  cuDLA: false
+  dla_count: 0
+paths:
+  trtexec: null
+  cuda_root: "/usr/local/cuda"
+  onnx_samples: null

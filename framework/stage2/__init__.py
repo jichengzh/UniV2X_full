@@ -1,5 +1,7 @@
 """Stage2 integration helpers with lightweight LUT imports."""
 
+from __future__ import annotations
+
 CONTRACT_EXPORTS: list[str] = []
 
 try:

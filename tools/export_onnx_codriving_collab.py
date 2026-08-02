@@ -40,8 +40,13 @@ REPO_ROOT = Path("/exdata/jichengzhi/V2Xverse_pyramid")
 T2LIB = Path("/data/jichengzhi_v2x/t2lib")
 TVM_SP = Path("/exdata/jichengzhi/tvm310/lib/python3.10/site-packages")
 
-# onnx package must come BEFORE t2lib so torch.onnx can find it
-for p in [str(TVM_SP), str(T2LIB), str(REPO_ROOT)]:
+def external_python_paths() -> list[str]:
+    if os.environ.get("CODRIVING_EXPORT_DISABLE_LEGACY_T2LIB", "").lower() in {"1", "true", "yes"}:
+        return [str(REPO_ROOT)]
+    return [str(REPO_ROOT), str(TVM_SP), str(T2LIB)]
+
+
+for p in reversed(external_python_paths()):
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -216,14 +221,17 @@ class CoDrivingCollabN2(nn.Module):
 # Build model from checkpoint
 # -----------------------------------------------------------------------
 
-def build_codriving_from_ckpt(hypes_path: str, ckpt_path: str,
-                               device: str = "cpu") -> nn.Module:
+def load_hypes_for_create_model(hypes_path: str) -> dict:
+    try:
+        from opencood.hypes_yaml.yaml_utils import load_yaml
+
+        return load_yaml(hypes_path)
+    except Exception as exc:
+        print(f"  [warn] opencood load_yaml failed, fallback to raw yaml.Loader: {type(exc).__name__}: {exc}")
+
     import re
     import yaml
-    # Use V2Xverse_pyramid's train_utils.create_model pattern
-    from opencood.tools.train_utils import create_model
 
-    # Config uses !!python/object/apply:... tags -> requires yaml.Loader (not SafeLoader)
     with open(hypes_path, "r") as f:
         loader = yaml.Loader
         loader.add_implicit_resolver(
@@ -236,7 +244,15 @@ def build_codriving_from_ckpt(hypes_path: str, ckpt_path: str,
             |[-+]?\\.(?:inf|Inf|INF)
             |\\.(?:nan|NaN|NAN))$''', re.X),
             list(u'-+0123456789.'))
-        hypes = yaml.load(f, Loader=loader)
+        return yaml.load(f, Loader=loader)
+
+
+def build_codriving_from_ckpt(hypes_path: str, ckpt_path: str,
+                               device: str = "cpu") -> nn.Module:
+    # Use V2Xverse_pyramid's train_utils.create_model pattern
+    from opencood.tools.train_utils import create_model
+
+    hypes = load_hypes_for_create_model(hypes_path)
 
     model = create_model(hypes)
     ckpt = torch.load(ckpt_path, map_location="cpu")

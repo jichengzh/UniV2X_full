@@ -29,6 +29,8 @@ VALID_MEASUREMENT_STATUSES = {
     "predicted",
     "failed",
     "not_done",
+    "no_claim",
+    "quarantine",
 }
 VALID_LUT_KINDS = {"latency", "ap", "energy"}
 VALID_JOB_TYPES = {
@@ -107,6 +109,110 @@ def parse_width_csv(value: str) -> list[int]:
         raise LutProductizationError(f"width contains a non-integer value: {value}") from exc
 
 
+def precision_from_quant_policy(quant_policy: str | None) -> str:
+    text = str(quant_policy or "").lower()
+    if "int8" in text or "w8" in text or "a8" in text:
+        return "int8"
+    if "fp32" in text or text == "none":
+        return "fp32"
+    return "fp16"
+
+
+def default_quant_contract(
+    *,
+    quant_policy: str | None,
+    backend: str,
+    optimized_scope: str,
+    schedule_policy: str,
+    measurement_status: str,
+    schema: str,
+) -> dict[str, Any]:
+    precision = precision_from_quant_policy(quant_policy)
+    is_h800_tvm = str(backend).startswith("h800_tvm")
+    if is_h800_tvm:
+        engine_kind = "tvm_vm"
+    elif str(backend) == MEASURED_AP_BACKEND:
+        engine_kind = "model_eval"
+    elif "trt" in str(backend).lower():
+        engine_kind = "trt_reference"
+    else:
+        engine_kind = str(backend)
+
+    if precision == "int8":
+        quant_scheme = "tvm_int8_experimental"
+        quant_method = (
+            "h800_tvm_int8_backbone_subnet_experimental"
+            if is_h800_tvm
+            else "int8_reference_non_h800_tvm"
+        )
+        calibrator = "unknown_pending_tvm_quant_route"
+        fallback_policy = "unknown_pending_tvm_inventory"
+        layer_precision_summary = "unknown_pending_tvm_inventory"
+        calibration_source = "unknown_pending_tvm_quant_route"
+        calibration_digest = "unknown"
+    elif precision == "fp32":
+        quant_scheme = "none"
+        quant_method = "h800_tvm_relax_fp32" if is_h800_tvm else "none"
+        calibrator = "none"
+        fallback_policy = "none"
+        layer_precision_summary = "not_applicable_fp32"
+        calibration_source = "none"
+        calibration_digest = "none"
+    else:
+        quant_scheme = "fp16_cast"
+        quant_method = "h800_tvm_relax_metaschedule_fp16" if is_h800_tvm else "fp16_eval"
+        calibrator = "none"
+        fallback_policy = "none"
+        layer_precision_summary = "not_applicable_fp16"
+        calibration_source = "none"
+        calibration_digest = "none"
+
+    if measurement_status == "measured":
+        if schema == AP_ROW_SCHEMA:
+            measurement_source = "true_eval"
+            claim_status = "claimable_true_eval"
+        else:
+            measurement_source = "true_measurement_smoke"
+            claim_status = "claimable_true_measurement_smoke"
+    else:
+        measurement_source = "no_claim"
+        claim_status = "no_claim"
+
+    return {
+        "precision": precision,
+        "quant_scheme": quant_scheme,
+        "quant_method": quant_method,
+        "quant_scope": optimized_scope,
+        "calibration_source": calibration_source,
+        "calibration_digest": calibration_digest,
+        "calibrator": calibrator,
+        "calibration_inputs": [],
+        "fallback_policy": fallback_policy,
+        "layer_precision_summary": layer_precision_summary,
+        "full_network_claim": False,
+        "engine_kind": engine_kind,
+        "engine_digest": "unknown",
+        "measurement_source": measurement_source,
+        "claim_status": claim_status,
+        "quality_gate_status": "",
+        "schedule_profile": schedule_policy,
+        "tune_budget": "unknown",
+    }
+
+
+def _ensure_quant_contract_defaults(row: dict[str, Any]) -> None:
+    defaults = default_quant_contract(
+        quant_policy=str(row.get("quant_policy") or ""),
+        backend=str(row.get("backend") or ""),
+        optimized_scope=str(row.get("optimized_scope") or "rsu_dense_core"),
+        schedule_policy=str(row.get("schedule_policy") or "not_applicable"),
+        measurement_status=str(row.get("measurement_status") or "not_done"),
+        schema=str(row.get("schema") or ""),
+    )
+    for key, value in defaults.items():
+        row.setdefault(key, value)
+
+
 def run_json_command(command_json: str) -> dict[str, Any]:
     try:
         command = json.loads(command_json)
@@ -150,12 +256,13 @@ def _base_row(
     created_at: str,
     **extra: Any,
 ) -> dict[str, Any]:
+    optimized_scope = extra.pop("optimized_scope", "rsu_dense_core")
     hardware_target = (
         "H800 Hopper"
         if str(backend).startswith("h800")
         else "not_hardware_specific"
     )
-    return {
+    row = {
         "schema": schema,
         "row_id": f"{schema.removesuffix('_row_v1')}:{model}:{config_id}:{backend}:{run_id}",
         "config_id": config_id,
@@ -165,7 +272,7 @@ def _base_row(
         "candidate_id": candidate_id,
         "software_point_id": software_point_id,
         "dense_stage": dense_stage,
-        "optimized_scope": extra.pop("optimized_scope", "rsu_dense_core"),
+        "optimized_scope": optimized_scope,
         "width": [int(item) for item in width],
         "quant_policy": quant_policy,
         "schedule_policy": schedule_policy,
@@ -181,6 +288,17 @@ def _base_row(
         "notes": extra.pop("notes", ""),
         **extra,
     }
+    defaults = default_quant_contract(
+        quant_policy=quant_policy,
+        backend=backend,
+        optimized_scope=optimized_scope,
+        schedule_policy=schedule_policy,
+        measurement_status=measurement_status,
+        schema=schema,
+    )
+    for key, value in defaults.items():
+        row.setdefault(key, value)
+    return row
 
 
 def latency_lut_row(**kwargs: Any) -> dict[str, Any]:
@@ -212,6 +330,7 @@ def _require_non_null(row: dict[str, Any], fields: list[str]) -> None:
 
 
 def validate_lut_row(row: dict[str, Any]) -> None:
+    _ensure_quant_contract_defaults(row)
     required = [
         "schema",
         "row_id",
@@ -236,6 +355,24 @@ def validate_lut_row(row: dict[str, Any]) -> None:
         "raw_artifact",
         "failure_reason",
         "notes",
+        "precision",
+        "quant_scheme",
+        "quant_method",
+        "quant_scope",
+        "calibration_source",
+        "calibration_digest",
+        "calibrator",
+        "calibration_inputs",
+        "fallback_policy",
+        "layer_precision_summary",
+        "full_network_claim",
+        "engine_kind",
+        "engine_digest",
+        "measurement_source",
+        "claim_status",
+        "quality_gate_status",
+        "schedule_profile",
+        "tune_budget",
     ]
     _require(row, required)
 
@@ -251,6 +388,10 @@ def validate_lut_row(row: dict[str, Any]) -> None:
         raise LutProductizationError("width must be a list[int]")
     if not isinstance(row["source_files"], list):
         raise LutProductizationError("source_files must be a list")
+    if not isinstance(row["calibration_inputs"], list):
+        raise LutProductizationError("calibration_inputs must be a list")
+    if bool(row["full_network_claim"]):
+        raise LutProductizationError("full_network_claim is not allowed for current Stage2 LUT rows")
     if status == "failed" and not row.get("failure_reason"):
         raise LutProductizationError("failed rows must include failure_reason")
 
@@ -260,6 +401,7 @@ def validate_lut_row(row: dict[str, Any]) -> None:
     if schema == LATENCY_ROW_SCHEMA:
         if row["backend"] != MEASURED_LATENCY_BACKEND:
             raise LutProductizationError("measured latency rows must use backend=h800_tvm")
+        _validate_h800_tvm_quant_claim(row)
         _require_non_null(row, ["latency_unit", "latency_p50_us"])
     elif schema == AP_ROW_SCHEMA:
         if row["backend"] != MEASURED_AP_BACKEND:
@@ -273,6 +415,7 @@ def validate_lut_row(row: dict[str, Any]) -> None:
             raise LutProductizationError(
                 "measured energy rows must use backend=h800_tvm_power_telemetry"
             )
+        _validate_h800_tvm_quant_claim(row)
         _require_non_null(
             row,
             [
@@ -285,6 +428,30 @@ def validate_lut_row(row: dict[str, Any]) -> None:
                 "raw_artifact",
             ],
         )
+
+
+def _validate_h800_tvm_quant_claim(row: dict[str, Any]) -> None:
+    if not str(row.get("backend") or "").startswith("h800_tvm"):
+        return
+    text = " ".join(
+        str(row.get(key) or "").lower()
+        for key in ("quant_method", "engine_kind", "measurement_source")
+    )
+    if "trt" in text:
+        raise LutProductizationError("TRT reference cannot be used as H800 TVM measured LUT")
+    if str(row.get("precision")) == "int8":
+        quant_method = str(row.get("quant_method") or "")
+        quant_scope = str(row.get("quant_scope") or "")
+        engine_kind = str(row.get("engine_kind") or "")
+        native_int8_graph_executor = (
+            quant_method == "h800_tvm_native_int8_backbone_subnet"
+            and quant_scope == "backbone_subnet_native_int8"
+            and engine_kind == "tvm_graph_executor"
+        )
+        if engine_kind != "tvm_vm" and not native_int8_graph_executor:
+            raise LutProductizationError("H800 TVM INT8 rows must use engine_kind=tvm_vm")
+        if not quant_method.startswith("h800_tvm"):
+            raise LutProductizationError("H800 TVM INT8 rows must use a TVM quant_method")
 
 
 def job_plan_row(

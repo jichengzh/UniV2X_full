@@ -13,6 +13,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from framework.stage2.lut_productization import (  # noqa: E402
+    LATENCY_ROW_SCHEMA,
+    default_quant_contract,
     job_plan_row,
     parse_width_csv,
     stable_config_id,
@@ -33,6 +35,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--optimized-scope", default="rsu_dense_core")
     parser.add_argument("--width", default="64,128,256")
     parser.add_argument("--quant-policy", default="fp16")
+    parser.add_argument("--precision")
+    parser.add_argument("--quant-scheme")
+    parser.add_argument("--quant-method")
+    parser.add_argument("--quant-scope")
+    parser.add_argument("--calibration-source")
+    parser.add_argument("--calibration-digest")
+    parser.add_argument("--calibrator")
+    parser.add_argument("--calibration-inputs", default="")
+    parser.add_argument("--fallback-policy")
+    parser.add_argument("--layer-precision-summary")
+    parser.add_argument("--full-network-claim", choices=("true", "false"))
+    parser.add_argument("--engine-kind")
+    parser.add_argument("--engine-digest")
+    parser.add_argument("--measurement-source")
+    parser.add_argument("--claim-status")
+    parser.add_argument("--quality-gate-status")
+    parser.add_argument("--schedule-profile")
+    parser.add_argument("--tune-budget")
     parser.add_argument("--schedule-policy", default="default")
     parser.add_argument("--manifest-digest", default="unknown")
     parser.add_argument("--latency-measurement-command-json", required=True)
@@ -58,6 +78,7 @@ def _generator_command(
     optimized_scope: str,
     width: str,
     quant_policy: str,
+    quant_contract: dict[str, object],
     schedule_policy: str,
     manifest_digest: str,
     command_flag: str,
@@ -84,6 +105,42 @@ def _generator_command(
         width,
         "--quant-policy",
         quant_policy,
+        "--precision",
+        str(quant_contract["precision"]),
+        "--quant-scheme",
+        str(quant_contract["quant_scheme"]),
+        "--quant-method",
+        str(quant_contract["quant_method"]),
+        "--quant-scope",
+        str(quant_contract["quant_scope"]),
+        "--calibration-source",
+        str(quant_contract["calibration_source"]),
+        "--calibration-digest",
+        str(quant_contract["calibration_digest"]),
+        "--calibrator",
+        str(quant_contract["calibrator"]),
+        "--calibration-inputs",
+        ",".join(str(item) for item in quant_contract["calibration_inputs"]),
+        "--fallback-policy",
+        str(quant_contract["fallback_policy"]),
+        "--layer-precision-summary",
+        str(quant_contract["layer_precision_summary"]),
+        "--full-network-claim",
+        "true" if quant_contract["full_network_claim"] else "false",
+        "--engine-kind",
+        str(quant_contract["engine_kind"]),
+        "--engine-digest",
+        str(quant_contract["engine_digest"]),
+        "--measurement-source",
+        str(quant_contract["measurement_source"]),
+        "--claim-status",
+        str(quant_contract["claim_status"]),
+        "--quality-gate-status",
+        str(quant_contract["quality_gate_status"]),
+        "--schedule-profile",
+        str(quant_contract["schedule_profile"]),
+        "--tune-budget",
+        str(quant_contract["tune_budget"]),
         "--schedule-policy",
         schedule_policy,
         "--manifest-digest",
@@ -98,6 +155,45 @@ def _generator_command(
     return command
 
 
+def _quant_contract(args: argparse.Namespace) -> dict[str, object]:
+    contract = default_quant_contract(
+        quant_policy=args.quant_policy,
+        backend="h800_tvm",
+        optimized_scope=args.optimized_scope,
+        schedule_policy=args.schedule_policy,
+        measurement_status="not_done",
+        schema=LATENCY_ROW_SCHEMA,
+    )
+    overrides = {
+        "precision": args.precision,
+        "quant_scheme": args.quant_scheme,
+        "quant_method": args.quant_method,
+        "quant_scope": args.quant_scope,
+        "calibration_source": args.calibration_source,
+        "calibration_digest": args.calibration_digest,
+        "calibrator": args.calibrator,
+        "fallback_policy": args.fallback_policy,
+        "layer_precision_summary": args.layer_precision_summary,
+        "engine_kind": args.engine_kind,
+        "engine_digest": args.engine_digest,
+        "measurement_source": args.measurement_source,
+        "claim_status": args.claim_status,
+        "quality_gate_status": args.quality_gate_status,
+        "schedule_profile": args.schedule_profile,
+        "tune_budget": args.tune_budget,
+    }
+    for key, value in overrides.items():
+        if value is not None:
+            contract[key] = value
+    if args.calibration_inputs:
+        contract["calibration_inputs"] = [
+            item.strip() for item in args.calibration_inputs.split(",") if item.strip()
+        ]
+    if args.full_network_claim is not None:
+        contract["full_network_claim"] = args.full_network_claim == "true"
+    return contract
+
+
 def main() -> int:
     args = parse_args()
     parse_width_csv(args.width)
@@ -110,6 +206,7 @@ def main() -> int:
         quant_policy=args.quant_policy,
         schedule_policy=args.schedule_policy,
     )
+    quant_contract = _quant_contract(args)
 
     latency_out = base_output / "latency/latency_lut_rows_v1.jsonl"
     ap_out = base_output / "ap/ap_anchor_rows_v1.jsonl"
@@ -137,6 +234,7 @@ def main() -> int:
                 optimized_scope=args.optimized_scope,
                 width=args.width,
                 quant_policy=args.quant_policy,
+                quant_contract=quant_contract,
                 schedule_policy=args.schedule_policy,
                 manifest_digest=args.manifest_digest,
                 command_flag="--measurement-command-json",
@@ -170,6 +268,7 @@ def main() -> int:
                 optimized_scope=args.optimized_scope,
                 width=args.width,
                 quant_policy=args.quant_policy,
+                quant_contract=quant_contract,
                 schedule_policy="not_applicable",
                 manifest_digest=args.manifest_digest,
                 command_flag="--eval-command-json",
@@ -202,6 +301,7 @@ def main() -> int:
                 optimized_scope=args.optimized_scope,
                 width=args.width,
                 quant_policy=args.quant_policy,
+                quant_contract=quant_contract,
                 schedule_policy=args.schedule_policy,
                 manifest_digest=args.manifest_digest,
                 command_flag="--telemetry-command-json",
